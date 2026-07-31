@@ -993,7 +993,7 @@ const LEGEND = [
 export default function App() {
   const [mode, setMode] = useState("level");
   const [levelIndex, setLevelIndex] = useState(0);
-  const [grid, setGrid] = useState({});
+  const [grid, setGrid] = useState(() => JSON.parse(JSON.stringify(LEVELS[0].cells)));
   const [tool, setTool] = useState("wire");
   const [orient, setOrient] = useState("h");
   const [completed, setCompleted] = useState(new Set());
@@ -1006,10 +1006,16 @@ export default function App() {
   const { W, H } = cfg;
   const palette = mode === "sandbox" ? SANDBOX_PALETTE : cfg.palette;
 
-  useEffect(() => {
+  /* Das Feld muss immer zum aktuellen Level gehören. Der Wechsel wird deshalb noch im
+     Render nachgezogen und nicht in einem Effekt: sonst liefe die Zielprüfung einmal mit
+     dem Feld des vorigen Levels und würde das neue sofort als gelöst eintragen. */
+  const boardKey = mode === "sandbox" ? "sandbox" : levelIndex;
+  const [gridKey, setGridKey] = useState(boardKey);
+  if (gridKey !== boardKey) {
+    setGridKey(boardKey);
     setGrid(JSON.parse(JSON.stringify(cfg.cells)));
     setTool("wire");
-  }, [mode, levelIndex]); // eslint-disable-line
+  }
 
   const sim = useMemo(() => simulate(grid), [grid]);
   const check = useMemo(
