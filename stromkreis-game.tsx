@@ -593,7 +593,7 @@ const CHAPTERS = [
           "4,0": { type: "switch", orient: "h", closed: false },
           ...wall("1,1 2,1 3,1 4,1 5,1"),
         },
-        goals: [{ k: "logic", at: "6,1", expr: "and", inputs: ["2,0", "4,0"], label: "Lampe leuchtet nur, wenn BEIDE Schalter geschlossen sind" }],
+        goals: [{ k: "logic", at: "6,1", expr: "and", inputs: ["2,0", "4,0"], live: true, label: "Lampe leuchtet nur, wenn BEIDE Schalter geschlossen sind" }],
       },
       {
         name: "Parallel – beide Lampen", W: 7, H: 3, palette: BASE,
@@ -926,8 +926,10 @@ function checkLevel(level, grid, sim) {
       items.push({ t: g.label, ok });
     } else if (g.k === "logic") {
       const ix = g.inputs.map((key) => inputs.indexOf(key));
+      /* live: zusätzlich muss die Schaltung gerade wirklich durchgeschaltet sein */
       const ok = combos.every((cb) =>
-        !cb.sim.short && cb.sim.lit.has(g.at) === !!EXPR[g.expr](ix.map((i) => cb.st[i])));
+        !cb.sim.short && cb.sim.lit.has(g.at) === !!EXPR[g.expr](ix.map((i) => cb.st[i])))
+        && (!g.live || sim.lit.has(g.at));
       items.push({ t: g.label, ok });
     } else if (g.k === "toggle") {
       /* Umschalt-Eigenschaft: jeder einzelne Schalter kehrt den Zustand um.
