@@ -809,27 +809,38 @@ const CHAPTERS = [
     name: "Schaltplan lesen",
     levels: [
       {
-        /* Quelle bewusst in der Mitte: nur dort treffen drei Leitungen zusammen.
-           An den Lampen und in den Schienen sind es zwei – sichtbarer Gegensatz
-           zwischen Knotenpunkt und bloßer Ecke. */
-        name: "Der Knotenpunkt", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Verbinde beide Lampen mit der Quelle in der Mitte. Achte danach darauf, wo dicke Punkte erscheinen: dort treffen drei Leitungen elektrisch zusammen. An einer bloßen Ecke erscheint keiner.",
-        lesson: "Ein Knotenpunkt ist eine Stelle, an der drei oder mehr Leitungen elektrisch verbunden sind. Was in ihn hineinfließt, fließt auch wieder heraus.",
-        cells: {
-          "3,1": { type: "battery", orient: "v" },
-          "0,1": { type: "lamp", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
-          ...wall("1,1 2,1 4,1 5,1"),
-        },
-      },
-      {
-        name: "Kreuzung ohne Verbindung", W: 7, H: 5, palette: ["wire", "cross", "select", "erase"],
-        hint: "Zwei getrennte Stromkreise müssen sich überkreuzen. Setze an den Kreuzungspunkten das Bauteil „Kreuzung“ ein statt einer Leitung.",
-        lesson: "Im Schaltplan bedeutet eine Kreuzung ohne Punkt: keine Verbindung. Nur ein Knotenpunkt verbindet.",
+        /* Fertig verdrahtet ausgeliefert, an den vier Kreuzungsstellen aber mit
+           gewöhnlichen Leitungen: dadurch verschmilzt alles zu einem Knoten und
+           beide Quellen sind kurzgeschlossen. Die vier Knotenpunkte sind der
+           einzige Hinweis – hier wird der Knotenpunkt zum Rätselgegenstand. */
+        name: "Knotenpunkt oder Kreuzung?", W: 7, H: 5, palette: ["cross", "wire", "erase"],
+        showValues: true,
+        hint: "Zwei getrennte Stromkreise – trotzdem Kurzschluss. Die vier Knotenpunkte zeigen, wo die Leitungen elektrisch verbunden sind. Lösche sie und setze dort „Kreuzung“ ein.",
+        lesson: "Ein Knotenpunkt verbindet drei oder mehr Leitungen elektrisch. Ohne ihn kreuzen sich zwei Leitungen nur.",
         cells: {
           "0,2": { type: "battery", orient: "v" }, "6,2": { type: "lamp", orient: "v" },
           "3,0": { type: "battery", orient: "h" }, "3,4": { type: "lamp", orient: "h" },
+          ...lockw("0,1 1,1 3,1 5,1 6,1 0,3 1,3 3,3 5,3 6,3 2,0 2,2 2,4 4,0 4,2 4,4"),
+          ...wire("2,1 4,1 2,3 4,3"),
           ...wall("1,0 5,0 1,4 5,4 1,2 3,2 5,2"),
         },
+      },
+      {
+        /* Ungleiche Zweige (90 Ω / 60 Ω), damit sich die Ströme sichtbar addieren
+           statt bloß zu halbieren: 99 mA + 148 mA = 247 mA. Zwischen Quelle und
+           unterem Knoten liegt mit 3,2 / 3,3 eine gerade Stammleitung – nur dort
+           misst das Amperemeter den Gesamtstrom, im Zweig den Zweigstrom. */
+        name: "Am Knotenpunkt teilt sich der Strom", W: 7, H: 5,
+        palette: ["wire", "ammeter", "erase"], showValues: true,
+        hint: "Die Knotenpunkte aus dem letzten Level – hier sind sie gewollt. Setze das Amperemeter so ein, dass es nur den Strom durch die Lampe misst.",
+        lesson: "Am Knotenpunkt gilt: was hineinfließt, fließt wieder heraus. 99 mA + 148 mA = 247 mA.",
+        cells: {
+          "3,1": { type: "battery", orient: "v" },
+          "0,1": { type: "lamp", orient: "v" }, "6,1": { type: "motor", orient: "v" },
+          ...wire("0,0 1,0 2,0 3,0 4,0 5,0 6,0 0,2 0,3 3,2 3,3 6,2 6,3 0,4 1,4 2,4 3,4 4,4 5,4 6,4"),
+          ...wall("1,1 2,1 4,1 5,1 1,2 2,2 4,2 5,2 1,3 2,3 4,3 5,3"),
+        },
+        goals: [{ k: "read", type: "ammeter", min: 0.09, max: 0.11, label: "Das Amperemeter zeigt nur den Lampenstrom (99 mA)" }],
       },
       {
         name: "Anders gezeichnet – UND", W: 7, H: 5, palette: BASE,
@@ -1008,17 +1019,6 @@ export default function App() {
   const { W, H } = cfg;
   const palette = mode === "sandbox" ? SANDBOX_PALETTE : cfg.palette;
 
-  /* Das Feld muss immer zum aktuellen Level gehören. Der Wechsel wird deshalb noch im
-     Render nachgezogen und nicht in einem Effekt: sonst liefe die Zielprüfung einmal mit
-     dem Feld des vorigen Levels und würde das neue sofort als gelöst eintragen. */
-  const boardKey = mode === "sandbox" ? "sandbox" : levelIndex;
-  const [gridKey, setGridKey] = useState(boardKey);
-  if (gridKey !== boardKey) {
-    setGridKey(boardKey);
-    setGrid(JSON.parse(JSON.stringify(cfg.cells)));
-    setTool("wire");
-  }
-
   const sim = useMemo(() => simulate(grid), [grid]);
   const check = useMemo(
     () => (mode === "level" ? checkLevel(cfg, grid, sim) : { items: [], won: false }),
@@ -1097,11 +1097,26 @@ export default function App() {
 
   const resetGrid = () => setGrid(JSON.parse(JSON.stringify(cfg.cells)));
   const clearGrid = () => setGrid({});
+
+  /* Level und Feld werden immer zusammen gesetzt. Beide Updates liegen im selben
+     Event-Batch, es gibt also keinen Render, in dem cfg und grid zu verschiedenen
+     Leveln gehören: weder bleibt die alte Schaltung stehen, noch sieht die
+     Zielprüfung ein fremdes Feld und trägt das neue Level sofort als gelöst ein. */
+  const loadBoard = (cells) => {
+    setGrid(JSON.parse(JSON.stringify(cells)));
+    setTool("wire");
+    setOrient("h");
+    drawing.current = false;
+    pressed.current = null;
+  };
   const goLevel = (i) => {
+    const n = Math.max(0, Math.min(LEVELS.length - 1, i));
     setMode("level");
-    setLevelIndex(Math.max(0, Math.min(LEVELS.length - 1, i)));
+    setLevelIndex(n);
+    loadBoard(LEVELS[n].cells);
     setOverlay(null);
   };
+  const goSandbox = () => { setMode("sandbox"); loadBoard(SANDBOX.cells); };
 
   /* ---- Brett zeichnen ---- */
   const dotEls = [], wallEls = [], lineEls = [], flowEls = [], nodeEls = [], compEls = [], labelEls = [];
@@ -1131,9 +1146,12 @@ export default function App() {
     if (c.type === "wall") { wallEls.push(wallEl(...k.split(",").map(Number))); continue; }
     if (c.type === "wire") {
       const [x, y] = k.split(",").map(Number), d = sim.deg[k] || 0;
-      const r = d >= 3 ? 5 : d <= 1 ? 4 : 0;
+      /* Knotenpunkt: groß und mit hellem Ring, sonst geht er auf der
+         stromführenden Leitung farblich unter. Loses Ende: kleiner Kreis. */
+      const node = d >= 3, r = node ? 7 : d <= 1 ? 4 : 0;
       if (r) nodeEls.push(<circle key={`wn${k}`} cx={center(x)} cy={center(y)} r={r}
-        fill={sim.liveNode.has(`w:${k}`) ? (sim.short ? HOT : LIVE) : WIRE} />);
+        fill={sim.liveNode.has(`w:${k}`) ? (sim.short ? HOT : LIVE) : WIRE}
+        stroke={node ? BG : "none"} strokeWidth={node ? 2.5 : 0} />);
       continue;
     }
     compEls.push(cellGlyph(k, c, sim));
@@ -1174,9 +1192,9 @@ export default function App() {
         </div>
 
         <div className="flex gap-1 mb-3 bg-stone-200 p-1 rounded-xl text-sm">
-          <button onClick={() => setMode("level")}
+          <button onClick={() => { if (mode !== "level") goLevel(levelIndex); }}
             className={`flex-1 py-1.5 rounded-lg font-medium transition ${mode === "level" ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>Level</button>
-          <button onClick={() => setMode("sandbox")}
+          <button onClick={() => { if (mode !== "sandbox") goSandbox(); }}
             className={`flex-1 py-1.5 rounded-lg font-medium transition ${mode === "sandbox" ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>Frei bauen</button>
         </div>
 
