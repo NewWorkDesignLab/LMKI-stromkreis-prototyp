@@ -809,6 +809,19 @@ const CHAPTERS = [
     name: "Schaltplan lesen",
     levels: [
       {
+        /* Quelle bewusst in der Mitte: nur dort treffen drei Leitungen zusammen.
+           An den Lampen und in den Schienen sind es zwei – sichtbarer Gegensatz
+           zwischen Knotenpunkt und bloßer Ecke. */
+        name: "Der Knotenpunkt", W: 7, H: 3, palette: BASE, showValues: true,
+        hint: "Verbinde beide Lampen mit der Quelle in der Mitte. Achte danach darauf, wo dicke Punkte erscheinen: dort treffen drei Leitungen elektrisch zusammen. An einer bloßen Ecke erscheint keiner.",
+        lesson: "Ein Knotenpunkt ist eine Stelle, an der drei oder mehr Leitungen elektrisch verbunden sind. Was in ihn hineinfließt, fließt auch wieder heraus.",
+        cells: {
+          "3,1": { type: "battery", orient: "v" },
+          "0,1": { type: "lamp", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
+          ...wall("1,1 2,1 4,1 5,1"),
+        },
+      },
+      {
         name: "Kreuzung ohne Verbindung", W: 7, H: 5, palette: ["wire", "cross", "select", "erase"],
         hint: "Zwei getrennte Stromkreise müssen sich überkreuzen. Setze an den Kreuzungspunkten das Bauteil „Kreuzung“ ein statt einer Leitung.",
         lesson: "Im Schaltplan bedeutet eine Kreuzung ohne Punkt: keine Verbindung. Nur ein Knotenpunkt verbindet.",
@@ -816,16 +829,6 @@ const CHAPTERS = [
           "0,2": { type: "battery", orient: "v" }, "6,2": { type: "lamp", orient: "v" },
           "3,0": { type: "battery", orient: "h" }, "3,4": { type: "lamp", orient: "h" },
           ...wall("1,0 5,0 1,4 5,4 1,2 3,2 5,2"),
-        },
-      },
-      {
-        name: "Der Knotenpunkt", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Drei Lampen an zwei Schienen. Wo sich drei Leitungen treffen, entsteht ein Knotenpunkt – im Plan ein dicker Punkt.",
-        lesson: "Am Knotenpunkt teilt sich der Strom auf; die Summe der abfließenden Ströme ist gleich dem zufließenden.",
-        cells: {
-          "0,1": { type: "battery", orient: "v" },
-          "2,1": { type: "lamp", orient: "v" }, "4,1": { type: "lamp", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
-          ...wall("1,1 3,1 5,1"),
         },
       },
       {

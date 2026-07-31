@@ -78,7 +78,7 @@ könnte. Die Topologie liefert genau das.
    immer `I = g·(Ua − Ub) − i`.
 3. **Getrennt lösen.** Jeder galvanisch getrennte Teil der Schaltung wird **einzeln**
    gelöst, mit eigenem Bezugsknoten (Gauß-Jordan mit Spaltenpivot). Das ist wichtig:
-   Level 21 besteht aus zwei absichtlich getrennten Kreisen, und ein Bauteil ohne
+   Level 22 besteht aus zwei absichtlich getrennten Kreisen, und ein Bauteil ohne
    geschlossenen Weg muss 0 A führen.
 4. **Iterieren.** LEDs sperren gegen die Durchlassrichtung, Sicherungen lösen bei Überstrom
    aus. Beides verändert die Schaltung, also wird neu gelöst, bis der Zustand stabil ist
@@ -173,8 +173,8 @@ keinen Stromkreis. In Reihe geschaltet sperrt es den Kreis praktisch, genau wie 
 | 19 | Parallel teilt den Strom | Stromteilung |
 | 20 | Ohmsches Gesetz | R = U / I rechnen |
 | | **Schaltplan lesen** | |
-| 21 | Kreuzung ohne Verbindung | zwei getrennte Kreise, Kreuzungssymbol |
-| 22 | Der Knotenpunkt | drei Zweige an einem Knoten |
+| 21 | Der Knotenpunkt | drei Leitungen treffen zusammen, Knotenregel |
+| 22 | Kreuzung ohne Verbindung | zwei getrennte Kreise, Kreuzungssymbol |
 | 23 | Anders gezeichnet – UND | Topologie statt Geometrie |
 | 24 | Zwei Quellen in Reihe | Spannungen addieren sich bei richtiger Polung |
 
