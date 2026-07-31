@@ -280,23 +280,30 @@ function simulate(grid) {
   /* Eine Verbindung leuchtet, wenn sie bei irgendeiner aktiven Quelle auf einem
      Weg von deren + zu deren − liegt. Die Quelle selbst darf den Weg nicht schließen. */
   const active = batts.filter((b) => Math.abs(res.cur[b.key] || 0) > EPS);
-  const isLive = (i) => active.some((b) => {
-    const bi = battEdge.get(b.key);
-    if (bi === i) return false;
-    const ex = new Set([i, bi]);
-    const Pp = reach(b.a, ex), Mm = reach(b.b, ex), e = te[i];
-    return (Pp.has(e.a) && Mm.has(e.b)) || (Pp.has(e.b) && Mm.has(e.a));
-  });
-  res.lines = segs.map((s) => ({ a: s.a, b: s.b, live: false }));
+  /* 0 = kein Strom, sonst die technische Stromrichtung: +1 von a nach b, −1 von b nach a.
+     Welches Ende vom Pluspol und welches vom Minuspol aus erreichbar ist, gibt sie vor. */
+  const flowDir = (i) => {
+    for (const b of active) {
+      const bi = battEdge.get(b.key);
+      if (bi === i) continue;
+      const ex = new Set([i, bi]);
+      const Pp = reach(b.a, ex), Mm = reach(b.b, ex), e = te[i];
+      if (Pp.has(e.a) && Mm.has(e.b)) return 1;
+      if (Pp.has(e.b) && Mm.has(e.a)) return -1;
+    }
+    return 0;
+  };
+  res.lines = segs.map((s) => ({ a: s.a, b: s.b, live: false, dir: 0 }));
   te.forEach((e, i) => {
-    const lv = isLive(i);
+    const d = flowDir(i);
     if (e.seg !== undefined) {
-      res.lines[e.seg].live = lv;
-      if (lv) {
+      res.lines[e.seg].live = d !== 0;
+      res.lines[e.seg].dir = d;
+      if (d) {
         res.liveNode.add(e.a); res.liveNode.add(e.b);
         res.glow.add(segs[e.seg].ka); res.glow.add(segs[e.seg].kb);
       }
-    } else if (lv) res.glow.add(e.el.key);
+    } else if (d) res.glow.add(e.el.key);
   });
   for (const b of active) res.glow.add(b.key);
   return res;
@@ -1091,7 +1098,10 @@ export default function App() {
     dotEls.push(<circle key={`d${x},${y}`} cx={center(x)} cy={center(y)} r={1.6} fill={DOT} />);
 
   sim.lines.forEach((ln, i) => {
-    const x1 = center(ln.a[0]), y1 = center(ln.a[1]), x2 = center(ln.b[0]), y2 = center(ln.b[1]);
+    /* gegen die Stromrichtung gezeichnete Stücke werden umgedreht – die Striche
+       laufen immer vom Anfang zum Ende der Linie */
+    const [p, q] = ln.dir < 0 ? [ln.b, ln.a] : [ln.a, ln.b];
+    const x1 = center(p[0]), y1 = center(p[1]), x2 = center(q[0]), y2 = center(q[1]);
     lineEls.push(<line key={`ln${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
       stroke={ln.live ? (sim.short ? HOT : LIVE) : WIRE} strokeWidth={8} strokeLinecap="round" />);
     if (ln.live) flowEls.push(<line key={`fl${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
