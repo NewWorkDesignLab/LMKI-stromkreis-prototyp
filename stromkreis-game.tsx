@@ -147,44 +147,54 @@ function simulate(grid) {
     return st;
   };
 
-  const gnd = find(batts[0].b);
+  /* Jeder galvanisch getrennte Teil der Schaltung wird für sich gelöst, jeweils mit
+     eigenem Bezugsknoten. Ohne das bekämen getrennte Kreise – und Bauteile ohne
+     geschlossenen Weg – keine definierte Knotenspannung und läsen sich wie kurzgeschlossen. */
   const solveOnce = () => {
     const st = stamps();
-    /* nur den mit Masse verbundenen Teil rechnen, sonst wird das System singulär */
     const nb = new Map();
+    const touch = (x) => { if (!nb.has(x)) nb.set(x, []); };
     for (const s of st) {
-      if (s.a === s.b) continue;
-      if (!nb.has(s.a)) nb.set(s.a, []); if (!nb.has(s.b)) nb.set(s.b, []);
-      nb.get(s.a).push(s.b); nb.get(s.b).push(s.a);
+      touch(s.a); touch(s.b);
+      if (s.a !== s.b) { nb.get(s.a).push(s.b); nb.get(s.b).push(s.a); }
     }
-    const inC = new Set([gnd]), stack = [gnd];
-    while (stack.length) {
-      const n = stack.pop();
-      for (const m of nb.get(n) || []) if (!inC.has(m)) { inC.add(m); stack.push(m); }
+    const compOf = new Map(), comps = [];
+    for (const start of nb.keys()) {
+      if (compOf.has(start)) continue;
+      const ci = comps.length, comp = [start];
+      compOf.set(start, ci);
+      for (let q = 0; q < comp.length; q++)
+        for (const m of nb.get(comp[q])) if (!compOf.has(m)) { compOf.set(m, ci); comp.push(m); }
+      comps.push(comp);
     }
-    const idx = new Map(); let n = 0;
-    for (const nd of inC) if (nd !== gnd) idx.set(nd, n++);
-    const A = Array.from({ length: n }, () => new Float64Array(n + 1));
-    for (const s of st) {
-      if (!inC.has(s.a) || !inC.has(s.b) || s.a === s.b) continue;
-      const ia = idx.has(s.a) ? idx.get(s.a) : -1, ib = idx.has(s.b) ? idx.get(s.b) : -1;
-      if (ia >= 0) { A[ia][ia] += s.g; A[ia][n] += s.i; if (ib >= 0) A[ia][ib] -= s.g; }
-      if (ib >= 0) { A[ib][ib] += s.g; A[ib][n] -= s.i; if (ia >= 0) A[ib][ia] -= s.g; }
-    }
-    for (let col = 0; col < n; col++) {          /* Gauß-Jordan mit Spaltenpivot */
-      let piv = col;
-      for (let r = col + 1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
-      if (Math.abs(A[piv][col]) < 1e-14) continue;
-      if (piv !== col) { const t = A[piv]; A[piv] = A[col]; A[col] = t; }
-      for (let r = 0; r < n; r++) {
-        if (r === col) continue;
-        const f = A[r][col] / A[col][col];
-        if (!f) continue;
-        for (let cc = col; cc <= n; cc++) A[r][cc] -= f * A[col][cc];
+    const V = new Map();
+    comps.forEach((comp, ci) => {
+      const gnd = comp[0];
+      V.set(gnd, 0);
+      const idx = new Map(); let n = 0;
+      for (const nd of comp) if (nd !== gnd) idx.set(nd, n++);
+      if (!n) return;
+      const A = Array.from({ length: n }, () => new Float64Array(n + 1));
+      for (const s of st) {
+        if (s.a === s.b || compOf.get(s.a) !== ci) continue;
+        const ia = idx.has(s.a) ? idx.get(s.a) : -1, ib = idx.has(s.b) ? idx.get(s.b) : -1;
+        if (ia >= 0) { A[ia][ia] += s.g; A[ia][n] += s.i; if (ib >= 0) A[ia][ib] -= s.g; }
+        if (ib >= 0) { A[ib][ib] += s.g; A[ib][n] -= s.i; if (ia >= 0) A[ib][ia] -= s.g; }
       }
-    }
-    const V = new Map([[gnd, 0]]);
-    for (const [nd, i] of idx) V.set(nd, Math.abs(A[i][i]) < 1e-14 ? 0 : A[i][n] / A[i][i]);
+      for (let col = 0; col < n; col++) {        /* Gauß-Jordan mit Spaltenpivot */
+        let piv = col;
+        for (let r = col + 1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
+        if (Math.abs(A[piv][col]) < 1e-14) continue;
+        if (piv !== col) { const t = A[piv]; A[piv] = A[col]; A[col] = t; }
+        for (let r = 0; r < n; r++) {
+          if (r === col) continue;
+          const f = A[r][col] / A[col][col];
+          if (!f) continue;
+          for (let cc = col; cc <= n; cc++) A[r][cc] -= f * A[col][cc];
+        }
+      }
+      for (const [nd, i] of idx) V.set(nd, Math.abs(A[i][i]) < 1e-14 ? 0 : A[i][n] / A[i][i]);
+    });
     return { V, st };
   };
 
@@ -679,18 +689,18 @@ const CHAPTERS = [
         goals: [{ k: "logic", at: "6,2", expr: "or", inputs: ["3,0", "3,1"], label: "Lampe leuchtet, wenn MINDESTENS EIN Schalter geschlossen ist" }],
       },
       {
-        name: "Der Wechselschalter", W: 8, H: 5, palette: BASE,
-        hint: "Ein Wechselschalter verbindet seinen Wurzelanschluss mit einem von zwei Ausgängen. Verdrahte beide Lampen und die gemeinsame Rückleitung.",
+        name: "Der Wechselschalter", W: 5, H: 5, palette: BASE,
+        hint: "Der Wechselschalter verbindet seinen Wurzelanschluss mit einem von zwei Ausgängen – an jedem hängt eine Lampe. Führe von den äußeren Lampenanschlüssen eine gemeinsame Rückleitung zur Quelle.",
         lesson: "Der Wechselschalter (Umschalter) schaltet nicht ein und aus, sondern um.",
         cells: {
           "1,2": { type: "battery", orient: "h" },
           "3,2": { type: "spdt", dir: "W", pos: 0 },
-          "5,1": { type: "lamp", orient: "h" }, "5,3": { type: "lamp", orient: "h" },
-          ...wall("2,1 2,3 4,2 5,2 6,2"),
+          "3,1": { type: "lamp", orient: "v" }, "3,3": { type: "lamp", orient: "v" },
+          ...wall("2,1 2,3"),
         },
         goals: [
-          { k: "logic", at: "5,1", expr: "not", inputs: ["3,2"], label: "Obere Lampe leuchtet in Stellung 1" },
-          { k: "logic", at: "5,3", expr: "id", inputs: ["3,2"], label: "Untere Lampe leuchtet in Stellung 2" },
+          { k: "logic", at: "3,1", expr: "not", inputs: ["3,2"], label: "Obere Lampe leuchtet in Stellung 1" },
+          { k: "logic", at: "3,3", expr: "id", inputs: ["3,2"], label: "Untere Lampe leuchtet in Stellung 2" },
         ],
       },
       {
@@ -872,7 +882,8 @@ function deriveGoals(level, grid) {
 function checkLevel(level, grid, sim) {
   const goals = deriveGoals(level, grid);
   const items = [];
-  const lg = goals.filter((g) => g.k === "logic");
+  /* alle Ziele, die über Schalterkombinationen geprüft werden */
+  const lg = goals.filter((g) => g.k === "logic" || g.k === "toggle");
   let inputs = null, combos = null;
   if (lg.length) {
     inputs = [...new Set(lg.flatMap((g) => g.inputs))];
