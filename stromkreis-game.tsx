@@ -829,9 +829,9 @@ const CHAPTERS = [
         },
       },
       {
-        name: "Anders gezeichnet", W: 7, H: 5, palette: BASE,
+        name: "Anders gezeichnet – UND", W: 7, H: 5, palette: BASE,
         hint: "Zwei Schalter in Reihe – dieselbe UND-Schaltung wie in Level 3 „Reihenschaltung = UND“. Nur läuft der Kreis diesmal außen um das Feld herum statt auf einer Linie.",
-        lesson: "Ein Schaltplan zeigt die elektrische Verschaltung, nicht die räumliche Anordnung der Bauteile. Dieselbe Schaltung kann daher auf unterschiedliche Weise gezeichnet werden, solange die elektrischen Verbindungen unverändert bleiben – hier dieselbe UND-Schaltung wie in Level 3.",
+        lesson: "Ein Schaltplan zeigt die elektrische Verschaltung, nicht die räumliche Anordnung der Bauteile. Dieselbe Schaltung kann daher auf unterschiedliche Weise gezeichnet werden, solange die elektrischen Verbindungen unverändert bleiben.",
         cells: {
           "0,2": { type: "battery", orient: "v" }, "6,2": { type: "lamp", orient: "v" },
           "3,0": { type: "switch", orient: "h", closed: false },
