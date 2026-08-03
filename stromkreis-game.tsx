@@ -852,7 +852,7 @@ const CHAPTERS = [
           "3,4": { type: "switch", orient: "h", closed: false },
           ...wall("1,1 2,1 3,1 4,1 5,1 1,2 2,2 3,2 4,2 5,2 1,3 2,3 3,3 4,3 5,3"),
         },
-        goals: [{ k: "logic", at: "6,2", expr: "and", inputs: ["3,0", "3,4"], label: "Die Lampe leuchtet nur, wenn beide Schalter geschlossen sind" }],
+        goals: [{ k: "logic", at: "6,2", expr: "and", inputs: ["3,0", "3,4"], live: true, label: "Die Lampe leuchtet nur, wenn beide Schalter geschlossen sind" }],
       },
       {
         name: "Zwei Quellen in Reihe", W: 7, H: 3, palette: BASE, showValues: true,
