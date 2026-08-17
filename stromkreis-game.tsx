@@ -1215,6 +1215,27 @@ export default function App() {
           </div>
         )}
 
+        <p className="mb-2 text-sm text-stone-500 leading-relaxed">
+          {mode === "sandbox"
+            ? "Baue frei: Bauteile platzieren, Leitungen ziehen und mit „Schalten“ Schalter umlegen, Widerstände ändern, LEDs drehen. Mehrere Quellen sind erlaubt."
+            : cfg.hint}
+        </p>
+
+        {/* Ziele */}
+        {mode === "level" && (
+          <div className="mb-2">
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Aufgabe</div>
+            <ul className="space-y-1">
+              {check.items.map((it, i) => (
+                <li key={i} className={`text-sm flex items-start gap-1.5 ${it.ok ? "text-emerald-600" : "text-stone-500"}`}>
+                  {it.ok ? <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> : <Circle size={15} className="mt-0.5 shrink-0 text-stone-300" />}
+                  <span>{it.t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="rounded-2xl p-2 shadow-inner" style={{ background: BG }}>
           <svg ref={svgRef} viewBox={`0 0 ${W * CELL} ${H * CELL}`}
             className="block mx-auto select-none"
@@ -1237,29 +1258,18 @@ export default function App() {
           </div>
         )}
 
-        {/* Ziele */}
-        {mode === "level" && (
-          won ? (
-            <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-emerald-700 flex items-center gap-1"><CheckCircle2 size={18} /> Geschafft!</span>
-                {levelIndex < LEVELS.length - 1
-                  ? <button onClick={() => goLevel(levelIndex + 1)}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center gap-1">Weiter <ArrowRight size={15} /></button>
-                  : <span className="text-sm text-emerald-700 font-medium">Alle Level gelöst!</span>}
-              </div>
-              {cfg.lesson && <p className="mt-1.5 text-sm text-emerald-800 leading-snug">💡 {cfg.lesson}</p>}
+        {/* Geschafft */}
+        {mode === "level" && won && (
+          <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-emerald-700 flex items-center gap-1"><CheckCircle2 size={18} /> Geschafft!</span>
+              {levelIndex < LEVELS.length - 1
+                ? <button onClick={() => goLevel(levelIndex + 1)}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center gap-1">Weiter <ArrowRight size={15} /></button>
+                : <span className="text-sm text-emerald-700 font-medium">Alle Level gelöst!</span>}
             </div>
-          ) : (
-            <ul className="mt-2 space-y-1">
-              {check.items.map((it, i) => (
-                <li key={i} className={`text-sm flex items-start gap-1.5 ${it.ok ? "text-emerald-600" : "text-stone-500"}`}>
-                  {it.ok ? <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> : <Circle size={15} className="mt-0.5 shrink-0 text-stone-300" />}
-                  <span>{it.t}</span>
-                </li>
-              ))}
-            </ul>
-          )
+            {cfg.lesson && <p className="mt-1.5 text-sm text-emerald-800 leading-snug">💡 {cfg.lesson}</p>}
+          </div>
         )}
 
         {/* Werkzeuge */}
@@ -1289,11 +1299,6 @@ export default function App() {
           )}
         </div>
 
-        <p className="mt-3 text-sm text-stone-500 leading-relaxed">
-          {mode === "sandbox"
-            ? "Baue frei: Bauteile platzieren, Leitungen ziehen und mit „Schalten“ Schalter umlegen, Widerstände ändern, LEDs drehen. Mehrere Quellen sind erlaubt."
-            : cfg.hint}
-        </p>
       </div>
 
       {/* Overlays */}
