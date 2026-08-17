@@ -130,8 +130,14 @@ function simulate(grid) {
   }
 
   /* --- Stempel: Leitwert g zwischen a und b, Stromquelle i (Norton) --- */
+  /* Eine ausgelöste Sicherung bleibt offen, bis sie von Hand eingeschaltet wird
+     (cell.open). Sie ist damit der einzige Bauteilzustand, den die Simulation
+     zurück ins Feld schreibt – siehe useEffect in App. */
   const fuseOpen = {}, ledOn = {};
-  for (const e of els) if (e.type === "led") ledOn[e.key] = true;
+  for (const e of els) {
+    if (e.type === "led") ledOn[e.key] = true;
+    if (e.type === "fuse" && e.cell.open) fuseOpen[e.key] = true;
+  }
 
   const stamps = () => {
     const st = [];
@@ -660,11 +666,11 @@ const CHAPTERS = [
       },
       {
         name: "Die Sicherung", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Die Sicherung hat ausgelöst und trennt den Kreis. Beseitige die Ursache, dann hält sie wieder.",
-        lesson: "Eine Sicherung trennt den Kreis, wenn der Strom zu groß wird – sie schützt Leitung und Quelle.",
+        hint: "Die Sicherung hat ausgelöst und trennt den Kreis. Beseitige die Ursache und schalte sie mit „Schalten“ wieder ein.",
+        lesson: "Eine Sicherung trennt den Kreis, wenn der Strom zu groß wird – sie schützt Leitung und Quelle. Einschalten hilft erst, wenn die Ursache weg ist.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
-          "2,0": { type: "fuse", orient: "h", imax: 0.5 },
+          "2,0": { type: "fuse", orient: "h", imax: 0.5, open: true },
           ...wire("0,0 1,0 3,0 4,0 5,0 6,0 0,2 1,2 2,2 3,2 4,2 5,2 6,2 4,1"),
           ...wall("1,1 2,1 3,1 5,1"),
         },
@@ -1022,7 +1028,7 @@ const LEGEND = [
   [{ type: "switch", orient: "h", closed: false }, "Schalter", "bleibt in seiner Stellung"],
   [{ type: "button", orient: "h", closed: false }, "Taster", "leitet nur während der Betätigung"],
   [{ type: "spdt", dir: "W", pos: 0 }, "Wechselschalter", "schaltet zwischen zwei Ausgängen um"],
-  [{ type: "fuse", orient: "h" }, "Sicherung", "trennt bei Überstrom"],
+  [{ type: "fuse", orient: "h" }, "Sicherung", "trennt bei Überstrom, danach von Hand einschalten"],
   [{ type: "ammeter", orient: "h" }, "Amperemeter", "misst Strom – IN REIHE einbauen"],
   [{ type: "voltmeter", orient: "h" }, "Voltmeter", "misst Spannung – PARALLEL einbauen"],
   [{ type: "motor", orient: "h" }, "Motor", "wandelt Strom in Bewegung"],
@@ -1057,6 +1063,18 @@ export default function App() {
     if (won) setCompleted((s) => (s.has(levelIndex) ? s : new Set([...s, levelIndex])));
   }, [won, levelIndex]);
 
+  /* Auslösen wird ins Feld übernommen: die Sicherung bleibt offen, bis sie mit
+     „Schalten“ wieder eingeschaltet wird. */
+  useEffect(() => {
+    setGrid((p) => {
+      const blown = [...sim.tripped].filter((k) => p[k] && !p[k].open);
+      if (!blown.length) return p;
+      const n = { ...p };
+      for (const k of blown) n[k] = { ...n[k], open: true };
+      return n;
+    });
+  }, [sim]);
+
   /* ---- Änderungen am Feld ---- */
   const setWire = (x, y) => setGrid((p) => {
     const k = `${x},${y}`;
@@ -1087,6 +1105,9 @@ export default function App() {
     if (c.type === "switch") return { ...p, [k]: { ...c, closed: !c.closed } };
     if (c.type === "button") { pressed.current = k; return { ...p, [k]: { ...c, closed: true } }; }
     if (c.type === "spdt") return { ...p, [k]: { ...c, pos: c.pos ? 0 : 1 } };
+    /* ausgelöste Sicherung wieder einschalten – hält die Ursache noch an,
+       löst sie sofort wieder aus */
+    if (c.type === "fuse") return c.open ? { ...p, [k]: { ...c, open: false } } : p;
     if (c.values) {
       const i = (c.values.indexOf(c.r) + 1) % c.values.length;
       return { ...p, [k]: { ...c, r: c.values[i] } };
@@ -1190,7 +1211,7 @@ export default function App() {
     if (c.type === "ammeter") label(k, fmtA(sim.cur[k] || 0));
     else if (c.type === "voltmeter") label(k, fmtV(sim.volt[k] || 0));
     else if (c.type === "resistor") label(k, fmtR(P(c, "r")) + (c.values ? " ⟳" : ""));
-    else if (c.type === "fuse") label(k, sim.tripped.has(k) ? "ausgelöst" : fmtA(P(c, "imax")));
+    else if (c.type === "fuse") label(k, sim.tripped.has(k) ? "ausgelöst ⟳" : fmtA(P(c, "imax")));
     else if (cfg.showValues) {
       if (c.type === "battery") label(k, `${fmtV(P(c, "u"))} · ${fmtA(sim.cur[k] || 0)}`);
       else if (CONSUMER.has(c.type)) label(k, sim.blocked.has(k) ? "sperrt" : fmtA(sim.cur[k] || 0));
@@ -1199,8 +1220,9 @@ export default function App() {
 
   const status = !sim.hasBattery ? "Keine Quelle vorhanden"
     : sim.short ? "Kurzschluss!"
-      : sim.closed ? `Strom fließt · ${fmtA(sim.ibatt)}`
-        : "Kein geschlossener Stromkreis";
+      : sim.tripped.size ? "Sicherung ausgelöst"
+        : sim.closed ? `Strom fließt · ${fmtA(sim.ibatt)}`
+          : "Kein geschlossener Stromkreis";
   const chapter = mode === "level" ? CHAPTERS[cfg.ch] : null;
 
   return (
