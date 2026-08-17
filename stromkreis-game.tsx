@@ -321,6 +321,14 @@ const fmtR = (r) => (r >= 1000 ? `${de((r / 1000).toFixed(r % 1000 ? 1 : 0))} k�
 /* ================= Symbole ================= */
 const box = (cx, cy) => <rect x={cx - 17} y={cy - 17} width={34} height={34} rx={8} fill="#fff" stroke={INK} strokeWidth={2} />;
 
+/* Anschlusspunkte: zeigen, an welchen zwei Seiten das Bauteil leitet.
+   r = Umriss des Symbols (Kreis 15, Box 17), col = dessen Umrissfarbe –
+   der Punkt sitzt auf der Kante und ragt ein Stück heraus. */
+const PORT = { N: [0, -1], S: [0, 1], W: [-1, 0], E: [1, 0] };
+const ports = (cx, cy, c, col = INK, r = 15) => sidesOf(c).map((s) => (
+  <circle key={s} cx={cx + PORT[s][0] * r} cy={cy + PORT[s][1] * r} r={3} fill={col} />
+));
+
 function batteryEl(x, y, c, active, hot) {
   const cx = center(x), cy = center(y), v = c.orient === "v";
   const rev = !!c.rev;
@@ -338,6 +346,7 @@ function batteryEl(x, y, c, active, hot) {
         <text x={cx + 9} y={cy + 5} textAnchor="middle" fontSize={15} fontWeight="700" fill={rev ? INK : BATT_PLUS}>{rev ? "−" : "+"}</text>
         <text x={cx - 9} y={cy + 5} textAnchor="middle" fontSize={15} fontWeight="700" fill={rev ? BATT_PLUS : INK}>{rev ? "+" : "−"}</text>
       </>)}
+      {ports(cx, cy, c, INK, 17)}
     </g>
   );
 }
@@ -351,8 +360,7 @@ function switchEl(x, y, c, glow) {
   return (
     <g key={`s${x},${y}`}>
       {box(cx, cy)}
-      <circle cx={t1[0]} cy={t1[1]} r={3} fill={INK} />
-      <circle cx={t2[0]} cy={t2[1]} r={3} fill={INK} />
+      {ports(cx, cy, c)}
       <line x1={t1[0]} y1={t1[1]} x2={on ? t2[0] : open[0]} y2={on ? t2[1] : open[1]}
         stroke={col} strokeWidth={5} strokeLinecap="round" />
     </g>
@@ -369,9 +377,8 @@ function buttonEl(x, y, c, glow) {
   return (
     <g key={`bt${x},${y}`}>
       {box(cx, cy)}
-      <circle cx={t1[0]} cy={t1[1]} r={3} fill={INK} />
-      <circle cx={t2[0]} cy={t2[1]} r={3} fill={INK} />
       <line x1={t1[0]} y1={t1[1]} x2={t2[0]} y2={t2[1]} stroke={SWITCH_OFF} strokeWidth={2} opacity={0.4} />
+      {ports(cx, cy, c)}
       {v ? (<>
         <line x1={cx - 9} y1={cy - off} x2={cx + 9} y2={cy - off} stroke={col} strokeWidth={4} strokeLinecap="round" />
         <line x1={cx} y1={cy - off} x2={cx} y2={cy - off - 8} stroke={col} strokeWidth={3} strokeLinecap="round" />
@@ -420,6 +427,7 @@ function lampEl(x, y, c, on, bright, over) {
           x2={cx + Math.cos(a) * (20 + 4 * b)} y2={cy + Math.sin(a) * (20 + 4 * b)}
           stroke={over ? HOT : LAMP_ON} strokeWidth={2.5} strokeLinecap="round" opacity={0.75} />;
       })}
+      {ports(cx, cy, c, over ? HOT : forbid ? FORBID : LAMP_STROKE)}
     </g>
   );
 }
@@ -441,6 +449,7 @@ function ledEl(x, y, c, on, over) {
           <line x1={cx + 13} y1={cy - 7} x2={cx + 19} y2={cy - 13} stroke={LAMP_ON} strokeWidth={2.5} strokeLinecap="round" />
         </>}
       </g>
+      {ports(cx, cy, c, over ? HOT : INK)}
     </g>
   );
 }
@@ -453,6 +462,7 @@ function resistorEl(x, y, c, glow) {
       <rect x={v ? cx - 8 : cx - 12} y={v ? cy - 12 : cy - 8}
         width={v ? 16 : 24} height={v ? 24 : 16} rx={2}
         fill="#fff" stroke={glow ? LIVE : INK} strokeWidth={2.5} />
+      {ports(cx, cy, c, INK, 17)}
     </g>
   );
 }
@@ -470,6 +480,7 @@ function fuseEl(x, y, c, glow, tripped) {
           : <><line x1={cx - 12} y1={cy} x2={cx - 3} y2={cy} stroke={col} strokeWidth={2.5} /><line x1={cx + 3} y1={cy} x2={cx + 12} y2={cy} stroke={col} strokeWidth={2.5} /></>)
         : (v ? <line x1={cx} y1={cy - 12} x2={cx} y2={cy + 12} stroke={col} strokeWidth={2.5} />
           : <line x1={cx - 12} y1={cy} x2={cx + 12} y2={cy} stroke={col} strokeWidth={2.5} />)}
+      {ports(cx, cy, c, tripped ? HOT : INK, 17)}
     </g>
   );
 }
@@ -484,8 +495,15 @@ function roundEl(x, y, label, glow, on) {
     </g>
   );
 }
-const motorEl = (x, y, c, glow, on) => <g key={`m${x},${y}`}>{roundEl(x, y, "M", glow, on)}</g>;
-const meterEl = (x, y, c, glow, kind) => <g key={`g${x},${y}`}>{roundEl(x, y, kind === "ammeter" ? "A" : "V", glow, false)}</g>;
+const motorEl = (x, y, c, glow, on) => (
+  <g key={`m${x},${y}`}>{roundEl(x, y, "M", glow, on)}{ports(center(x), center(y), c, glow ? LIVE : INK)}</g>
+);
+const meterEl = (x, y, c, glow, kind) => (
+  <g key={`g${x},${y}`}>
+    {roundEl(x, y, kind === "ammeter" ? "A" : "V", glow, false)}
+    {ports(center(x), center(y), c, glow ? LIVE : INK)}
+  </g>
+);
 
 function buzzerEl(x, y, c, glow, on) {
   const cx = center(x), cy = center(y);
@@ -495,6 +513,7 @@ function buzzerEl(x, y, c, glow, on) {
       <path d={`M ${cx - 14} ${cy + 8} A 14 14 0 0 1 ${cx + 14} ${cy + 8} Z`}
         fill="#fff" stroke={glow ? LIVE : INK} strokeWidth={2} strokeLinejoin="round" />
       <line x1={cx - 14} y1={cy + 8} x2={cx + 14} y2={cy + 8} stroke={glow ? LIVE : INK} strokeWidth={2} />
+      {ports(cx, cy, c, glow ? LIVE : INK)}
     </g>
   );
 }
