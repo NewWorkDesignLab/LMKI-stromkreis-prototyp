@@ -18,7 +18,7 @@ const EPS = 1e-5;
 const DEF = {
   battery: { u: 9, ri: 0.5, imax: 1.0 },
   lamp: { r: 90, un: 9, in: 0.1 },
-  resistor: { r: 220 },
+  resistor: { r: 220, values: [100, 220, 470, 1000] },   // Level dürfen eigene Reihen setzen
   led: { vf: 2, rs: 25, in: 0.015, imax: 0.03 },
   motor: { r: 60, imin: 0.04 },
   buzzer: { r: 120, imin: 0.03 },
@@ -463,7 +463,6 @@ function ledEl(x, y, c, on, over) {
           <line x1={cx + 13} y1={cy - 7} x2={cx + 19} y2={cy - 13} stroke={LAMP_ON} strokeWidth={2.5} strokeLinecap="round" />
         </>}
       </g>
-      {ports(cx, cy, c, over ? HOT : INK)}
     </g>
   );
 }
@@ -1108,9 +1107,12 @@ export default function App() {
     /* ausgelöste Sicherung wieder einschalten – hält die Ursache noch an,
        löst sie sofort wieder aus */
     if (c.type === "fuse") return c.open ? { ...p, [k]: { ...c, open: false } } : p;
-    if (c.values) {
-      const i = (c.values.indexOf(c.r) + 1) % c.values.length;
-      return { ...p, [k]: { ...c, r: c.values[i] } };
+    const vals = P(c, "values");
+    if (vals) {
+      /* liegt der aktuelle Wert nicht in der Reihe, weiter zum nächstgrößeren */
+      const r = P(c, "r"), i = vals.indexOf(r);
+      const next = i >= 0 ? vals[(i + 1) % vals.length] : (vals.find((v) => v > r) ?? vals[0]);
+      return { ...p, [k]: { ...c, r: next } };
     }
     if (c.flip) return { ...p, [k]: { ...c, rev: !c.rev } };
     return p;
@@ -1210,7 +1212,7 @@ export default function App() {
     /* Messwerte und Bauteilwerte */
     if (c.type === "ammeter") label(k, fmtA(sim.cur[k] || 0));
     else if (c.type === "voltmeter") label(k, fmtV(sim.volt[k] || 0));
-    else if (c.type === "resistor") label(k, fmtR(P(c, "r")) + (c.values ? " ⟳" : ""));
+    else if (c.type === "resistor") label(k, fmtR(P(c, "r")) + " ⟳");
     else if (c.type === "fuse") label(k, sim.tripped.has(k) ? "ausgelöst ⟳" : fmtA(P(c, "imax")));
     else if (cfg.showValues) {
       if (c.type === "battery") label(k, `${fmtV(P(c, "u"))} · ${fmtA(sim.cur[k] || 0)}`);
@@ -1268,6 +1270,10 @@ export default function App() {
           </div>
         )}
 
+        {mode === "level" && (
+          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Aufgabe</div>
+        )}
+
         <p className="mb-2 text-sm text-stone-500 leading-relaxed">
           {mode === "sandbox"
             ? "Baue frei: Bauteile platzieren, Leitungen ziehen und mit „Schalten“ Schalter umlegen, Widerstände ändern, LEDs drehen. Mehrere Quellen sind erlaubt."
@@ -1276,17 +1282,14 @@ export default function App() {
 
         {/* Ziele */}
         {mode === "level" && (
-          <div className="mb-2">
-            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Aufgabe</div>
-            <ul className="space-y-1">
-              {check.items.map((it, i) => (
-                <li key={i} className={`text-sm flex items-start gap-1.5 ${it.ok ? "text-emerald-600" : "text-stone-500"}`}>
-                  {it.ok ? <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> : <Circle size={15} className="mt-0.5 shrink-0 text-stone-300" />}
-                  <span>{it.t}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="mb-2 space-y-1">
+            {check.items.map((it, i) => (
+              <li key={i} className={`text-sm flex items-start gap-1.5 ${it.ok ? "text-emerald-600" : "text-stone-500"}`}>
+                {it.ok ? <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> : <Circle size={15} className="mt-0.5 shrink-0 text-stone-300" />}
+                <span>{it.t}</span>
+              </li>
+            ))}
+          </ul>
         )}
 
         <div className="rounded-2xl p-2 shadow-inner" style={{ background: BG }}>
