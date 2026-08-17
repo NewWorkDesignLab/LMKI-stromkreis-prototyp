@@ -682,7 +682,7 @@ const CHAPTERS = [
         cells: {
           "0,1": { type: "battery", orient: "v" },
           "2,0": { type: "resistor", orient: "h", r: 470 },
-          "5,1": { type: "led", orient: "v", rev: true, flip: true },
+          "5,1": { type: "led", orient: "v", rev: true },
           ...wall("1,1 2,1 3,1 4,1"),
         },
       },
@@ -1040,6 +1040,7 @@ export default function App() {
   const [levelIndex, setLevelIndex] = useState(0);
   const [grid, setGrid] = useState(() => JSON.parse(JSON.stringify(LEVELS[0].cells)));
   const [tool, setTool] = useState("wire");
+  const [build, setBuild] = useState("wire");   // belegt den linken Modus-Knopf
   const [orient, setOrient] = useState("h");
   const [completed, setCompleted] = useState(new Set());
   const [overlay, setOverlay] = useState(null);   // "levels" | "legend" | null
@@ -1050,6 +1051,18 @@ export default function App() {
   const cfg = mode === "sandbox" ? SANDBOX : LEVELS[levelIndex];
   const { W, H } = cfg;
   const palette = mode === "sandbox" ? SANDBOX_PALETTE : cfg.palette;
+  /* Werkzeuge nach Bedeutung getrennt: bauen/schalten und löschen als Modus,
+     Bauteile setzen, und alles Übrige (drehen, zurücksetzen, leeren).
+     „Leitung“ und „Schalten“ teilen sich einen Platz – build merkt sich, welches
+     davon der Knopf gerade anbietet. */
+  const buildOpts = palette.filter((t) => t === "wire" || t === "select");
+  const buildTool = buildOpts.includes(build) ? build : buildOpts[0];
+  const partTools = palette.filter((t) => PLACEABLE.has(t));
+  const onBuild = () => {
+    if (tool !== buildTool || buildOpts.length < 2) return setTool(buildTool);
+    const next = buildOpts[(buildOpts.indexOf(buildTool) + 1) % buildOpts.length];
+    setBuild(next); setTool(next);
+  };
 
   const sim = useMemo(() => simulate(grid), [grid]);
   const check = useMemo(
@@ -1114,7 +1127,8 @@ export default function App() {
       const next = i >= 0 ? vals[(i + 1) % vals.length] : (vals.find((v) => v > r) ?? vals[0]);
       return { ...p, [k]: { ...c, r: next } };
     }
-    if (c.flip) return { ...p, [k]: { ...c, rev: !c.rev } };
+    /* LEDs sind immer drehbar, Quellen nur wo das Level es vorsieht */
+    if (c.type === "led" || c.flip) return { ...p, [k]: { ...c, rev: !c.rev } };
     return p;
   });
   const release = () => {
@@ -1159,6 +1173,7 @@ export default function App() {
   const loadBoard = (cells) => {
     setGrid(JSON.parse(JSON.stringify(cells)));
     setTool("wire");
+    setBuild("wire");
     setOrient("h");
     drawing.current = false;
     pressed.current = null;
@@ -1328,31 +1343,64 @@ export default function App() {
           </div>
         )}
 
-        {/* Werkzeuge */}
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {palette.map((t) => {
-            const I = TOOLS[t].icon, active = tool === t;
+        {/* Werkzeuge in drei Gruppen: was ein Tippen tut, was man setzt,
+            und was nichts hinzufügt. Alle setzen dasselbe tool – die aktive
+            Markierung wandert deshalb zwischen den Gruppen. */}
+        <div className="mt-3 flex gap-1 bg-stone-200 p-1 rounded-xl text-sm">
+          {buildTool && (() => {
+            const I = TOOLS[buildTool].icon, active = tool === buildTool;
             return (
-              <button key={t} onClick={() => setTool(t)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition border ${active ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-700 border-stone-200 hover:border-stone-300"}`}>
-                <I size={16} />{TOOLS[t].label}
+              <button onClick={onBuild}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-medium transition ${active ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>
+                <I size={16} />{TOOLS[buildTool].label}
+                {/* erst wenn der Knopf aktiv ist, schaltet ein Tippen die Funktion um */}
+                {active && buildOpts.length > 1 && <span className="text-stone-400">⇄</span>}
               </button>
             );
-          })}
-          {palette.some((t) => PLACEABLE.has(t) && t !== "cross") && (
-            <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-white text-stone-700 border border-stone-200">
-              <RotateCw size={16} />{orient === "h" ? "Quer ↔" : "Hoch ↕"}
+          })()}
+          {palette.includes("erase") && (
+            <button onClick={() => setTool("erase")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-medium transition ${tool === "erase" ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>
+              <Eraser size={16} />{TOOLS.erase.label}
             </button>
           )}
-          <button onClick={resetGrid}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-white text-stone-700 border border-stone-200">
-            <RotateCcw size={16} />Zurücksetzen</button>
-          {mode === "sandbox" && (
-            <button onClick={clearGrid}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-white text-stone-700 border border-stone-200">
-              <Trash2 size={16} />Leeren</button>
-          )}
+        </div>
+
+        {partTools.length > 0 && (
+          <div className="mt-3">
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Bauteile</div>
+            <div className="flex flex-wrap gap-1.5">
+              {partTools.map((t) => {
+                const I = TOOLS[t].icon, active = tool === t;
+                return (
+                  <button key={t} onClick={() => setTool(t)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition border ${active ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-700 border-stone-200 hover:border-stone-300"}`}>
+                    <I size={16} />{TOOLS[t].label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-3 pt-3 border-t border-stone-200">
+          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Bearbeiten</div>
+          <div className="flex flex-wrap gap-1.5">
+            {partTools.some((t) => t !== "cross") && (
+              <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-stone-600 border border-transparent hover:border-stone-300">
+                <RotateCw size={16} />{orient === "h" ? "Quer ↔" : "Hoch ↕"}
+              </button>
+            )}
+            <button onClick={resetGrid}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-stone-600 border border-transparent hover:border-stone-300">
+              <RotateCcw size={16} />Zurücksetzen</button>
+            {mode === "sandbox" && (
+              <button onClick={clearGrid}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-red-600 border border-transparent hover:border-red-200">
+                <Trash2 size={16} />Leeren</button>
+            )}
+          </div>
         </div>
 
       </div>
