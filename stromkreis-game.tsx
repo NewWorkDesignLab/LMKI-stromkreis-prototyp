@@ -725,7 +725,7 @@ const CHAPTERS = [
           "3,1": { type: "switch", orient: "h", closed: false },
           ...wall("1,2 2,2 3,2 4,2 5,2"),
         },
-        goals: [{ k: "logic", at: "6,2", expr: "or", inputs: ["3,0", "3,1"], label: "Lampe leuchtet, wenn MINDESTENS EIN Schalter geschlossen ist" }],
+        goals: [{ k: "logic", at: "6,2", expr: "or", inputs: ["3,0", "3,1"], live: true, label: "Lampe leuchtet, wenn MINDESTENS EIN Schalter geschlossen ist" }],
       },
       {
         name: "Der Wechselschalter", W: 5, H: 5, palette: BASE,
