@@ -1151,11 +1151,13 @@ export default function App() {
     e.preventDefault();
     const c = eventCell(e); if (!c) return;
     if (tool === "erase") { drawing.current = true; return eraseCell(c[0], c[1]); }
-    if (PLACEABLE.has(tool)) return placeComp(c[0], c[1], tool);
-    /* Leitungsmodus: auf einem Bauteil wird geschaltet, sonst gezeichnet. drawing
-       bleibt dabei aus – nach dem Schalten soll ein Wischen keine Leitung ziehen. */
+    /* Auf einem Bauteil wird immer geschaltet, egal welches Werkzeug aktiv ist –
+       sonst müsste man zum Umstellen jedes Mal das Werkzeug wechseln. Setzen und
+       Zeichnen betrifft ohnehin nur freie Zellen und Leitungen. drawing bleibt
+       dabei aus: nach dem Schalten soll ein Wischen keine Leitung ziehen. */
     const cell = grid[`${c[0]},${c[1]}`];
     if (cell && cell.type !== "wire") return interact(c[0], c[1]);
+    if (PLACEABLE.has(tool)) return placeComp(c[0], c[1], tool);
     drawing.current = true;
     setWire(c[0], c[1]);
   };
