@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
-  Cable, ToggleRight, Lightbulb, Battery, Eraser, RotateCw, RotateCcw,
+  Pencil, Cable, ToggleRight, Lightbulb, Battery, Eraser, RotateCw, RotateCcw,
   Trash2, ArrowLeft, ArrowRight, Zap, CheckCircle2, Circle, AlertTriangle,
   LayoutGrid, BookOpen, X, Gauge, Activity, CircleDot, GitFork, Fan, Bell, Shield,
 } from "lucide-react";
@@ -65,7 +65,8 @@ function nodeId(c, side, key) {
 /* ================= Simulation =================
    Zwei Sichten auf dieselbe Schaltung:
    – ein Gleichstrom-Löser (Knotenpotentialverfahren) für echte Ströme und Spannungen
-   – der topologische Erreichbarkeitstest von + nach − für Glühen und Flussanimation   */
+   – der topologische Erreichbarkeitstest von + nach − dafür, was überhaupt Strom führt
+   – die Flussrichtung der Animation folgt den gerechneten Strömen, also immer + nach −   */
 function simulate(grid) {
   const keys = Object.keys(grid);
   const res = {
@@ -267,6 +268,73 @@ function simulate(grid) {
     } else if (I >= P(c, "imin")) res.lit.add(e.key);
   }
 
+  /* --- Stromrichtung in den Leitungen ---
+     Die Bauteilströme stehen fest, die Leitungen dazwischen sind aber zu einem
+     Knoten verschmolzen und haben deshalb keine eigene Spannung. Also wird das
+     Leitungsnetz noch einmal für sich gerechnet: jede Strecke bekommt denselben
+     Leitwert, an den Bauteilanschlüssen werden die bekannten Ströme eingespeist.
+     Das erfüllt die Knotenregel und gibt jeder Strecke eine eindeutige Richtung –
+     auch in Parallelzweigen, wo die reine Erreichbarkeit von + und − beide
+     Richtungen zulässt und die Animation deshalb falsch herum lief. */
+  const segCur = (() => {
+    const idOf = new Map(), edges = [];
+    let n = 0;
+    const nid = (k) => { if (!idOf.has(k)) idOf.set(k, n++); return idOf.get(k); };
+    segs.forEach((s, i) => edges.push([nid(s.na), nid(s.nb), i]));
+    for (const e of els)                       // geschlossene Schalter leiten mit
+      if (e.type === "spdt" || ((e.type === "switch" || e.type === "button") && e.cell.closed))
+        edges.push([nid(e.a), nid(e.b), -1]);
+    const inj = new Float64Array(n);
+    for (const s of sol.st) {
+      const e = s.el;
+      const I = s.g * ((sol.V.get(s.a) ?? 0) - (sol.V.get(s.b) ?? 0)) - s.i;   // von a nach b im Bauteil
+      if (idOf.has(e.a)) inj[idOf.get(e.a)] -= I;   // dort verlässt der Strom das Leitungsnetz
+      if (idOf.has(e.b)) inj[idOf.get(e.b)] += I;   // und dort kommt er zurück
+    }
+    const nbr = Array.from({ length: n }, () => []);
+    for (const [u, v] of edges) if (u !== v) { nbr[u].push(v); nbr[v].push(u); }
+    const compOf = new Int32Array(n).fill(-1), comps = [];
+    for (let s0 = 0; s0 < n; s0++) {
+      if (compOf[s0] >= 0) continue;
+      const ci = comps.length, comp = [s0];
+      compOf[s0] = ci;
+      for (let q = 0; q < comp.length; q++)
+        for (const m of nbr[comp[q]]) if (compOf[m] < 0) { compOf[m] = ci; comp.push(m); }
+      comps.push(comp);
+    }
+    const V = new Float64Array(n);
+    comps.forEach((comp, ci) => {
+      const idx = new Map();
+      let m = 0;
+      for (let j = 1; j < comp.length; j++) idx.set(comp[j], m++);   // comp[0] ist Bezugsknoten
+      if (!m) return;
+      const A = Array.from({ length: m }, () => new Float64Array(m + 1));
+      for (const [u, v] of edges) {
+        if (u === v || compOf[u] !== ci) continue;
+        const iu = idx.has(u) ? idx.get(u) : -1, iv = idx.has(v) ? idx.get(v) : -1;
+        if (iu >= 0) { A[iu][iu] += 1; if (iv >= 0) A[iu][iv] -= 1; }
+        if (iv >= 0) { A[iv][iv] += 1; if (iu >= 0) A[iv][iu] -= 1; }
+      }
+      for (const [nd, i] of idx) A[i][m] = inj[nd];
+      for (let col = 0; col < m; col++) {        /* Gauß-Jordan mit Spaltenpivot */
+        let piv = col;
+        for (let r = col + 1; r < m; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
+        if (Math.abs(A[piv][col]) < 1e-14) continue;
+        if (piv !== col) { const t = A[piv]; A[piv] = A[col]; A[col] = t; }
+        for (let r = 0; r < m; r++) {
+          if (r === col) continue;
+          const f = A[r][col] / A[col][col];
+          if (!f) continue;
+          for (let cc = col; cc <= m; cc++) A[r][cc] -= f * A[col][cc];
+        }
+      }
+      for (const [nd, i] of idx) V[nd] = Math.abs(A[i][i]) < 1e-14 ? 0 : A[i][m] / A[i][i];
+    });
+    const out = new Float64Array(segs.length);   // Leitwert 1: Strom = Spannungsdifferenz
+    for (const [u, v, si] of edges) if (si >= 0) out[si] = V[u] - V[v];
+    return out;
+  })();
+
   /* --- topologische Sicht für Glühen und Flussanimation --- */
   const te = segs.map((s, i) => ({ a: s.na, b: s.nb, seg: i }));
   for (const e of els) {
@@ -313,8 +381,9 @@ function simulate(grid) {
   te.forEach((e, i) => {
     const d = flowDir(i);
     if (e.seg !== undefined) {
+      const ic = segCur[e.seg];                 /* allein der gerechnete Strom gibt die Richtung */
       res.lines[e.seg].live = d !== 0;
-      res.lines[e.seg].dir = d;
+      res.lines[e.seg].dir = Math.abs(ic) > 1e-9 ? (ic > 0 ? 1 : -1) : 0;
       if (d) {
         res.liveNode.add(e.a); res.liveNode.add(e.b);
         res.glow.add(segs[e.seg].ka); res.glow.add(segs[e.seg].kb);
@@ -815,7 +884,7 @@ const CHAPTERS = [
       },
       {
         name: "Parallel teilt den Strom", W: 7, H: 3, palette: ["wire", "ammeter", "erase"], showValues: true,
-        hint: "Der Kreis ist fertig verdrahtet. Miss den Gesamtstrom: lösche eine Leitung in der Hauptleitung und setze dort das Amperemeter ein.",
+        hint: "Der Kreis ist fertig verdrahtet. Miss den Gesamtstrom: setze das Amperemeter in die Hauptleitung.",
         lesson: "In der Parallelschaltung teilt sich der Strom auf die Zweige auf – der Gesamtstrom ist die Summe.",
         cells: {
           "0,1": { type: "battery", orient: "v" },
@@ -995,7 +1064,7 @@ function checkLevel(level, grid, sim) {
 }
 /* ================= Werkzeuge ================= */
 const TOOLS = {
-  wire: { icon: Cable, label: "Leitung" },
+  wire: { icon: Pencil, label: "Bauen" },
   cross: { icon: X, label: "Kreuzung" },
   switch: { icon: ToggleRight, label: "Schalter" },
   button: { icon: CircleDot, label: "Taster" },
@@ -1011,6 +1080,10 @@ const TOOLS = {
   battery: { icon: Battery, label: "Quelle" },
   erase: { icon: Eraser, label: "Löschen" },
 };
+/* Bauen und Löschen stehen fest im Kopf der Werkzeugleiste und brauchen ihr
+   Symbol direkt als Komponente. Cable bleibt importiert – falls das Kabel
+   irgendwann doch wieder das treffendere Bild ist, reicht ein Wort hier. */
+const WireIcon = TOOLS.wire.icon;
 const SANDBOX_PALETTE = ["wire", "cross", "battery", "lamp", "led", "resistor", "switch",
   "button", "spdt", "motor", "buzzer", "fuse", "ammeter", "voltmeter", "erase"];
 const PLACEABLE = new Set(["cross", "battery", "lamp", "led", "resistor", "switch",
@@ -1204,7 +1277,9 @@ export default function App() {
     const x1 = center(p[0]), y1 = center(p[1]), x2 = center(q[0]), y2 = center(q[1]);
     lineEls.push(<line key={`ln${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
       stroke={ln.live ? (sim.short ? HOT : LIVE) : WIRE} strokeWidth={8} strokeLinecap="round" />);
-    if (ln.live) flowEls.push(<line key={`fl${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
+    /* Ohne Strom keine laufenden Striche: die Leitung steht unter Spannung,
+       aber ein Zweig ohne Strom bekäme sonst eine erfundene Richtung. */
+    if (ln.live && ln.dir) flowEls.push(<line key={`fl${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
       stroke={FLOW} strokeWidth={3.5} strokeLinecap="round" className={sim.short ? "flow fast" : "flow"} />);
   });
 
@@ -1354,7 +1429,7 @@ export default function App() {
         <div className="mt-3 flex gap-1 bg-stone-200 p-1 rounded-xl text-sm">
           <button onClick={() => setTool("wire")}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-medium transition ${tool === "wire" ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>
-            <Cable size={16} />{TOOLS.wire.label}
+            <WireIcon size={16} />{TOOLS.wire.label}
           </button>
           {palette.includes("erase") && (
             <button onClick={() => setTool("erase")}
