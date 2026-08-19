@@ -1352,7 +1352,19 @@ export default function App() {
 
         {partTools.length > 0 && (
           <div className="mt-3">
-            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Bauteile</div>
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-1">
+              <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Bauteile</div>
+              {/* gilt für jedes Bauteil, das gleich gesetzt wird – dreht nichts Bestehendes */}
+              {partTools.some((t) => t !== "cross") && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-stone-500">Orientierung setzen:</span>
+                  <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:border-emerald-400">
+                    <RotateCw size={13} />{orient === "h" ? "Quer ↔" : "Hoch ↕"}
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {partTools.map((t) => {
                 const I = TOOLS[t].icon, active = tool === t;
@@ -1370,12 +1382,6 @@ export default function App() {
         <div className="mt-3 pt-3 border-t border-stone-200">
           <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Bearbeiten</div>
           <div className="flex flex-wrap gap-1.5">
-            {partTools.some((t) => t !== "cross") && (
-              <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-stone-600 border border-transparent hover:border-stone-300">
-                <RotateCw size={16} />{orient === "h" ? "Quer ↔" : "Hoch ↕"}
-              </button>
-            )}
             <button onClick={resetGrid}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-stone-600 border border-transparent hover:border-stone-300">
               <RotateCcw size={16} />Zurücksetzen</button>
