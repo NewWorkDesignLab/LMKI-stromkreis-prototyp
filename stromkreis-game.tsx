@@ -32,6 +32,8 @@ const TWO = new Set(["battery", "lamp", "resistor", "led", "motor", "buzzer",
   "fuse", "ammeter", "voltmeter", "switch", "button"]);
 const CONSUMER = new Set(["lamp", "led", "motor", "buzzer"]);
 const IDEAL = new Set(["switch", "button", "spdt"]);   // widerstandslos, per Union verschmolzen
+/* Bauteile ohne eigene Tippfunktion – dort dreht ein Tippen die Lage */
+const ROTATABLE = new Set(["lamp", "motor", "buzzer", "ammeter", "voltmeter"]);
 
 const sidesOf = (c) => (c.orient === "h" ? ["W", "E"] : ["N", "S"]);
 const spdtOuts = (c) => (c.dir === "N" || c.dir === "S" ? ["W", "E"] : ["N", "S"]);
@@ -1114,6 +1116,11 @@ export default function App() {
     /* ausgelöste Sicherung wieder einschalten – hält die Ursache noch an,
        löst sie sofort wieder aus */
     if (c.type === "fuse") return c.open ? { ...p, [k]: { ...c, open: false } } : p;
+    /* Drehen per Tippen: beim Frei bauen immer, im Level nur bei selbst gesetzten
+       Bauteilen. Was das Level vorgibt, bleibt liegen – dort ist die Lage Teil
+       der Aufgabe (etwa das fest verbaute Amperemeter in „Der Vorwiderstand“). */
+    if (ROTATABLE.has(c.type) && (mode === "sandbox" || c.user))
+      return { ...p, [k]: { ...c, orient: c.orient === "h" ? "v" : "h" } };
     const vals = P(c, "values");
     if (vals) {
       /* liegt der aktuelle Wert nicht in der Reihe, weiter zum nächstgrößeren */
