@@ -43,12 +43,12 @@ function hasPort(c, side) {
   if (TWO.has(c.type)) return sidesOf(c).includes(side);
   return false;
 }
-/* Richtung einer Leitungszelle: nach welcher Achse laufen die Nachbarn?
-   Wird ein Bauteil auf die Leitung gesetzt, übernimmt es diese Lage. */
-function wireAxis(grid, x, y) {
+/* Wie viele Anschlüsse hat eine Leitungszelle je Achse? Entscheidet, ob ein
+   Bauteil in der eingestellten Orientierung dort überhaupt passt. */
+function wireLinks(grid, x, y) {
   const h = (hasPort(grid[`${x - 1},${y}`], "E") ? 1 : 0) + (hasPort(grid[`${x + 1},${y}`], "W") ? 1 : 0);
   const v = (hasPort(grid[`${x},${y - 1}`], "S") ? 1 : 0) + (hasPort(grid[`${x},${y + 1}`], "N") ? 1 : 0);
-  return h > v ? "h" : v > h ? "v" : null;   // gleichstark (Ecke, Knoten) = nicht eindeutig
+  return { h, v };
 }
 
 /* Knotenname eines Anschlusses. Leitungszellen fassen alle 4 Seiten zusammen,
@@ -1092,10 +1092,15 @@ export default function App() {
     /* Ein Bauteil darf eine gezogene Leitung ersetzen – sonst müsste man sie erst
        löschen. Fest verlegte Leitungen und andere Bauteile bleiben geschützt. */
     if (old && !(old.type === "wire" && !old.lock)) return p;
+    /* Die Orientierung wird nicht automatisch übernommen: das Bauteil passt nur
+       auf eine Leitung, die in der eingestellten Richtung angeschlossen ist.
+       Eine Leitung ohne Anschluss nimmt jede Richtung an. */
+    if (old && type !== "cross") {
+      const l = wireLinks(p, x, y);
+      if ((l.h || l.v) && !(orient === "h" ? l.h : l.v)) return p;
+    }
     const cell = { type, user: true };
-    /* auf einer geraden Leitung übernimmt das Bauteil deren Richtung, sonst
-       gilt die Einstellung „Quer/Hoch“ */
-    if (type !== "cross") cell.orient = (old && wireAxis(p, x, y)) || orient;
+    if (type !== "cross") cell.orient = orient;
     if (type === "switch" || type === "button") cell.closed = false;
     if (type === "spdt") { cell.dir = orient === "h" ? "W" : "N"; cell.pos = 0; }
     return { ...p, [k]: cell };
