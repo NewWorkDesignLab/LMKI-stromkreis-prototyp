@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
-  Cable, ToggleRight, Lightbulb, Battery, Eraser, MousePointer2, RotateCw, RotateCcw,
+  Cable, ToggleRight, Lightbulb, Battery, Eraser, RotateCw, RotateCcw,
   Trash2, ArrowLeft, ArrowRight, Zap, CheckCircle2, Circle, AlertTriangle,
   LayoutGrid, BookOpen, X, Gauge, Activity, CircleDot, GitFork, Fan, Bell, Shield,
 } from "lucide-react";
@@ -594,7 +594,7 @@ const spread = (str, obj) => {
 const wall = (s) => spread(s, { type: "wall" });
 const wire = (s) => spread(s, { type: "wire" });
 const lockw = (s) => spread(s, { type: "wire", lock: true });
-const BASE = ["wire", "select", "erase"];
+const BASE = ["wire", "erase"];
 
 const CHAPTERS = [
   {
@@ -608,7 +608,7 @@ const CHAPTERS = [
       },
       {
         name: "Der Schalter", W: 5, H: 3, palette: BASE,
-        hint: "Ein Schalter unterbricht den Kreis. Verdrahte ihn und tippe ihn mit „Schalten“ an.",
+        hint: "Ein Schalter unterbricht den Kreis. Verdrahte ihn und tippe ihn an.",
         lesson: "Ein Schalter ist eine gewollte Unterbrechung des Stromkreises.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "4,1": { type: "lamp", orient: "v" },
@@ -665,7 +665,7 @@ const CHAPTERS = [
       },
       {
         name: "Die Sicherung", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Die Sicherung hat ausgelöst und trennt den Kreis. Beseitige die Ursache und schalte sie mit „Schalten“ wieder ein.",
+        hint: "Die Sicherung hat ausgelöst und trennt den Kreis. Beseitige die Ursache und tippe sie an, um sie wieder einzuschalten.",
         lesson: "Eine Sicherung trennt den Kreis, wenn der Strom zu groß wird – sie schützt Leitung und Quelle. Einschalten hilft erst, wenn die Ursache weg ist.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
@@ -677,7 +677,7 @@ const CHAPTERS = [
       },
       {
         name: "Die LED hat eine Polung", W: 6, H: 3, palette: BASE, showValues: true,
-        hint: "Verdrahte den Kreis. Eine LED leitet nur in eine Richtung – tippe sie mit „Schalten“ an, um sie zu drehen.",
+        hint: "Verdrahte den Kreis. Eine LED leitet nur in eine Richtung – tippe sie an, um sie zu drehen.",
         lesson: "Die LED leitet nur von Anode zur Kathode (Balken). Falsch gepolt sperrt sie vollständig.",
         cells: {
           "0,1": { type: "battery", orient: "v" },
@@ -706,7 +706,7 @@ const CHAPTERS = [
     levels: [
       {
         name: "Der Taster", W: 6, H: 3, palette: BASE,
-        hint: "Ein Taster ist ein Schließer: er leitet nur, solange du ihn gedrückt hältst. Halte ihn mit „Schalten“ gedrückt.",
+        hint: "Ein Taster ist ein Schließer: er leitet nur, solange du ihn gedrückt hältst. Halte ihn auf dem Feld gedrückt.",
         lesson: "Taster (Schließer) leiten nur während der Betätigung – z. B. eine Klingel.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "5,1": { type: "lamp", orient: "v" },
@@ -787,21 +787,21 @@ const CHAPTERS = [
         goals: [{ k: "read", type: "ammeter", min: 0.04, max: 0.055, label: "Das Amperemeter zeigt etwa 47 mA" }],
       },
       {
-        name: "Amperemeter in Reihe", W: 6, H: 3, palette: ["wire", "ammeter", "select", "erase"], showValues: true,
+        name: "Amperemeter in Reihe", W: 6, H: 3, palette: ["wire", "ammeter", "erase"], showValues: true,
         hint: "Setze das Amperemeter so ein, dass es den Lampenstrom misst – und die Lampe weiter leuchtet.",
         lesson: "Ein Amperemeter wird IN REIHE eingebaut. Parallel geschaltet würde es den Verbraucher kurzschließen.",
         cells: { "0,1": { type: "battery", orient: "v" }, "4,1": { type: "lamp", orient: "v" } },
         goals: [{ k: "read", type: "ammeter", min: 0.09, max: 0.11, label: "Das Amperemeter zeigt etwa 100 mA" }],
       },
       {
-        name: "Voltmeter parallel", W: 6, H: 4, palette: ["wire", "voltmeter", "select", "erase"], showValues: true,
+        name: "Voltmeter parallel", W: 6, H: 4, palette: ["wire", "voltmeter", "erase"], showValues: true,
         hint: "Miss die Spannung an der Lampe. Das Voltmeter braucht einen eigenen Zweig neben der Lampe.",
         lesson: "Ein Voltmeter wird PARALLEL zum Bauteil geschaltet. In Reihe würde es den Kreis praktisch sperren.",
         cells: { "0,1": { type: "battery", orient: "v" }, "4,1": { type: "lamp", orient: "v" } },
         goals: [{ k: "read", type: "voltmeter", min: 8.4, max: 9.05, label: "Das Voltmeter zeigt die Lampenspannung (≈ 9 V)" }],
       },
       {
-        name: "Reihe teilt die Spannung", W: 5, H: 4, palette: ["wire", "voltmeter", "select", "erase"], showValues: true,
+        name: "Reihe teilt die Spannung", W: 5, H: 4, palette: ["wire", "voltmeter", "erase"], showValues: true,
         hint: "Zwei gleiche Lampen liegen in Reihe. Miss mit dem Voltmeter die Spannung an der linken Lampe.",
         lesson: "In Reihe teilt sich die Spannung auf die Verbraucher auf – bei zwei gleichen Lampen je die Hälfte.",
         cells: {
@@ -812,7 +812,7 @@ const CHAPTERS = [
         goals: [{ k: "read", type: "voltmeter", min: 3.9, max: 4.9, label: "Das Voltmeter zeigt etwa 4,5 V – die halbe Quellenspannung" }],
       },
       {
-        name: "Parallel teilt den Strom", W: 7, H: 3, palette: ["wire", "ammeter", "select", "erase"], showValues: true,
+        name: "Parallel teilt den Strom", W: 7, H: 3, palette: ["wire", "ammeter", "erase"], showValues: true,
         hint: "Der Kreis ist fertig verdrahtet. Miss den Gesamtstrom: lösche eine Leitung in der Hauptleitung und setze dort das Amperemeter ein.",
         lesson: "In der Parallelschaltung teilt sich der Strom auf die Zweige auf – der Gesamtstrom ist die Summe.",
         cells: {
@@ -1007,11 +1007,10 @@ const TOOLS = {
   ammeter: { icon: Activity, label: "Amperemeter" },
   voltmeter: { icon: Gauge, label: "Voltmeter" },
   battery: { icon: Battery, label: "Quelle" },
-  select: { icon: MousePointer2, label: "Schalten" },
   erase: { icon: Eraser, label: "Löschen" },
 };
 const SANDBOX_PALETTE = ["wire", "cross", "battery", "lamp", "led", "resistor", "switch",
-  "button", "spdt", "motor", "buzzer", "fuse", "ammeter", "voltmeter", "select", "erase"];
+  "button", "spdt", "motor", "buzzer", "fuse", "ammeter", "voltmeter", "erase"];
 const PLACEABLE = new Set(["cross", "battery", "lamp", "led", "resistor", "switch",
   "button", "spdt", "motor", "buzzer", "fuse", "ammeter", "voltmeter"]);
 
@@ -1040,7 +1039,6 @@ export default function App() {
   const [levelIndex, setLevelIndex] = useState(0);
   const [grid, setGrid] = useState(() => JSON.parse(JSON.stringify(LEVELS[0].cells)));
   const [tool, setTool] = useState("wire");
-  const [build, setBuild] = useState("wire");   // belegt den linken Modus-Knopf
   const [orient, setOrient] = useState("h");
   const [completed, setCompleted] = useState(new Set());
   const [overlay, setOverlay] = useState(null);   // "levels" | "legend" | null
@@ -1051,18 +1049,9 @@ export default function App() {
   const cfg = mode === "sandbox" ? SANDBOX : LEVELS[levelIndex];
   const { W, H } = cfg;
   const palette = mode === "sandbox" ? SANDBOX_PALETTE : cfg.palette;
-  /* Werkzeuge nach Bedeutung getrennt: bauen/schalten und löschen als Modus,
-     Bauteile setzen, und alles Übrige (drehen, zurücksetzen, leeren).
-     „Leitung“ und „Schalten“ teilen sich einen Platz – build merkt sich, welches
-     davon der Knopf gerade anbietet. */
-  const buildOpts = palette.filter((t) => t === "wire" || t === "select");
-  const buildTool = buildOpts.includes(build) ? build : buildOpts[0];
+  /* Werkzeuge nach Bedeutung getrennt: Leitung und Löschen als Modus,
+     Bauteile setzen, und alles Übrige (drehen, zurücksetzen, leeren) */
   const partTools = palette.filter((t) => PLACEABLE.has(t));
-  const onBuild = () => {
-    if (tool !== buildTool || buildOpts.length < 2) return setTool(buildTool);
-    const next = buildOpts[(buildOpts.indexOf(buildTool) + 1) % buildOpts.length];
-    setBuild(next); setTool(next);
-  };
 
   const sim = useMemo(() => simulate(grid), [grid]);
   const check = useMemo(
@@ -1076,7 +1065,7 @@ export default function App() {
   }, [won, levelIndex]);
 
   /* Auslösen wird ins Feld übernommen: die Sicherung bleibt offen, bis sie mit
-     „Schalten“ wieder eingeschaltet wird. */
+     Antippen wieder eingeschaltet wird. */
   useEffect(() => {
     setGrid((p) => {
       const blown = [...sim.tripped].filter((k) => p[k] && !p[k].open);
@@ -1149,11 +1138,14 @@ export default function App() {
   const onDown = (e) => {
     e.preventDefault();
     const c = eventCell(e); if (!c) return;
+    if (tool === "erase") { drawing.current = true; return eraseCell(c[0], c[1]); }
+    if (PLACEABLE.has(tool)) return placeComp(c[0], c[1], tool);
+    /* Leitungsmodus: auf einem Bauteil wird geschaltet, sonst gezeichnet. drawing
+       bleibt dabei aus – nach dem Schalten soll ein Wischen keine Leitung ziehen. */
+    const cell = grid[`${c[0]},${c[1]}`];
+    if (cell && cell.type !== "wire") return interact(c[0], c[1]);
     drawing.current = true;
-    if (tool === "wire") setWire(c[0], c[1]);
-    else if (tool === "erase") eraseCell(c[0], c[1]);
-    else if (tool === "select") interact(c[0], c[1]);
-    else placeComp(c[0], c[1], tool);
+    setWire(c[0], c[1]);
   };
   const onMove = (e) => {
     if (!drawing.current) return;
@@ -1173,7 +1165,6 @@ export default function App() {
   const loadBoard = (cells) => {
     setGrid(JSON.parse(JSON.stringify(cells)));
     setTool("wire");
-    setBuild("wire");
     setOrient("h");
     drawing.current = false;
     pressed.current = null;
@@ -1291,7 +1282,7 @@ export default function App() {
 
         <p className="mb-2 text-sm text-stone-500 leading-relaxed">
           {mode === "sandbox"
-            ? "Baue frei: Bauteile platzieren, Leitungen ziehen und mit „Schalten“ Schalter umlegen, Widerstände ändern, LEDs drehen. Mehrere Quellen sind erlaubt."
+            ? "Baue frei: Bauteile platzieren, Leitungen ziehen und Bauteile antippen: Schalter umlegen, Widerstände ändern, LEDs drehen. Mehrere Quellen sind erlaubt."
             : cfg.hint}
         </p>
 
@@ -1347,17 +1338,10 @@ export default function App() {
             und was nichts hinzufügt. Alle setzen dasselbe tool – die aktive
             Markierung wandert deshalb zwischen den Gruppen. */}
         <div className="mt-3 flex gap-1 bg-stone-200 p-1 rounded-xl text-sm">
-          {buildTool && (() => {
-            const I = TOOLS[buildTool].icon, active = tool === buildTool;
-            return (
-              <button onClick={onBuild}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-medium transition ${active ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>
-                <I size={16} />{TOOLS[buildTool].label}
-                {/* erst wenn der Knopf aktiv ist, schaltet ein Tippen die Funktion um */}
-                {active && buildOpts.length > 1 && <span className="text-stone-400">⇄</span>}
-              </button>
-            );
-          })()}
+          <button onClick={() => setTool("wire")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-medium transition ${tool === "wire" ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>
+            <Cable size={16} />{TOOLS.wire.label}
+          </button>
           {palette.includes("erase") && (
             <button onClick={() => setTool("erase")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-medium transition ${tool === "erase" ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>
