@@ -727,7 +727,7 @@ const CHAPTERS = [
       {
         name: "Der Kurzschluss", W: 6, H: 3, palette: BASE, showValues: true,
         hint: "Die Lampe bleibt dunkel, obwohl der Stromkreis geschlossen ist. Eine Leitung überbrückt sie – finde und lösche sie.",
-        lesson: "Ein Kurzschluss verbindet + und − ohne Verbraucher. Der Strom teilt sich nach Widerstand auf: über die Brücke fließt fast alles, durch die Lampe fast nichts.",
+        lesson: "Ein Kurzschluss verbindet + und − ohne Verbraucher. Die Brücke hat keinen Widerstand: an der Lampe liegt keine Spannung mehr, also fließt durch sie kein Strom.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "5,1": { type: "lamp", orient: "v" },
           ...wire("0,0 1,0 2,0 3,0 4,0 5,0 0,2 1,2 2,2 3,2 4,2 5,2 3,1"),
@@ -1469,7 +1469,12 @@ export default function App() {
         )}
 
         <div className="mt-3 pt-3 border-t border-stone-200">
-          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Bearbeiten</div>
+          {/* Überschrift nur beim Frei bauen: dort stehen zwei Aktionen nebeneinander
+              und brauchen einen gemeinsamen Namen. Im Level ist Zurücksetzen der
+              einzige Button – die Trennlinie grenzt ihn ausreichend ab. */}
+          {mode === "sandbox" && (
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Schaltung</div>
+          )}
           <div className="flex flex-wrap gap-1.5">
             <button onClick={resetGrid}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-stone-600 border border-transparent hover:border-stone-300">
