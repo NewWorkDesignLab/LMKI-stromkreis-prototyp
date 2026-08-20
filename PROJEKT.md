@@ -142,26 +142,26 @@ einem Knoten zusammen (`w:x,y`), eine **Kreuzung** hält waagerecht und senkrech
 | `wall` | gesperrte Zelle | — |
 
 Ein Voltmeter gilt in der topologischen Sicht bewusst als **nicht leitend** — es schließt
-keinen Stromkreis. In Reihe geschaltet sperrt es den Kreis praktisch, genau wie in echt.
+keinen Stromkreis. In Reihe geschaltet sperrt es den Stromkreis praktisch, genau wie in echt.
 
 ## 7. Level
 
 | # | Kapitel / Level | Konzept |
 |---|---|---|
 | | **Der Stromkreis** | |
-| 1 | Schließe den Kreis | geschlossener Kreis |
+| 1 | Schließe den Stromkreis | geschlossener Stromkreis |
 | 2 | Der Schalter | gewollte Unterbrechung |
 | 3 | Reihenschaltung = UND | Reihe, UND-Logik |
-| 4 | Parallel – beide Lampen | Parallelzweige |
-| 5 | Wähle den Pfad | eine Lampe muss aus bleiben |
+| 4 | Parallelschaltung – beide Lampen | Parallelzweige |
+| 5 | Wähle den Stromweg | eine Lampe muss aus bleiben |
 | | **Kurzschluss & Schutz** | |
 | 6 | Der Kurzschluss | überbrückte Lampe finden und löschen |
 | 7 | Die Sicherung | Überstromschutz |
-| 8 | Die LED hat eine Polung | Durchlass- und Sperrrichtung |
+| 8 | Durchlass- und Sperrrichtung der LED | Durchlass- und Sperrrichtung |
 | 9 | Der Vorwiderstand | R = (Uq − UF) / I |
 | | **Schalter & Logik** | |
 | 10 | Der Taster | Schließer |
-| 11 | Parallel = ODER | ODER-Logik |
+| 11 | Parallelschaltung = ODER | ODER-Logik |
 | 12 | Der Wechselschalter | Umschalten statt Ein/Aus |
 | 13 | Die Wechselschaltung | Flurlicht, zwei korrespondierende Leitungen |
 | 14 | Motor und Summer | eigener Schalter je Zweig |
@@ -169,14 +169,14 @@ keinen Stromkreis. In Reihe geschaltet sperrt es den Kreis praktisch, genau wie 
 | 15 | Der Widerstand | Strombegrenzung |
 | 16 | Amperemeter in Reihe | richtige Einbauart |
 | 17 | Voltmeter parallel | richtige Einbauart |
-| 18 | Reihe teilt die Spannung | Spannungsteilung |
-| 19 | Parallel teilt den Strom | Stromteilung |
+| 18 | Reihenschaltung teilt die Spannung | Spannungsteilung |
+| 19 | Parallelschaltung teilt den Strom | Stromteilung |
 | 20 | Ohmsches Gesetz | R = U / I rechnen |
 | | **Schaltplan lesen** | |
-| 21 | Der Knotenpunkt | drei Leitungen treffen zusammen, Knotenregel |
-| 22 | Kreuzung ohne Verbindung | zwei getrennte Kreise, Kreuzungssymbol |
+| 21 | Knotenpunkt oder Kreuzung? | Knotenpunkt verbindet, Kreuzung nicht |
+| 22 | Am Knotenpunkt teilt sich der Strom | Knotenregel, Zweig- und Gesamtstrom |
 | 23 | Anders gezeichnet – UND | Topologie statt Geometrie |
-| 24 | Zwei Quellen in Reihe | Spannungen addieren sich bei richtiger Polung |
+| 24 | Zwei Spannungsquellen in Reihe | Spannungen addieren sich bei richtiger Polung |
 
 Level bestehen nur aus Daten (`CHAPTERS`): Name, Feldgröße, Startzellen, Werkzeugpalette,
 Hinweis, Merksatz und optionale Ziele. `showValues: true` blendet Spannungen und Ströme ein.
@@ -211,7 +211,7 @@ Wechselschaltung je nach Verdrahtung XOR *oder* XNOR ergibt — beides ist richt
 gemeinsame Merkmal ist das Umschalten.
 
 Messgeräte-Level brauchen keine Sonderregel: wer ein Amperemeter parallel schaltet, macht
-den Verbraucher dunkel; wer ein Voltmeter in Reihe schaltet, sperrt den Kreis. Die Physik
+den Verbraucher dunkel; wer ein Voltmeter in Reihe schaltet, sperrt den Stromkreis. Die Physik
 erzwingt die richtige Einbauart selbst.
 
 Kurzschluss und Überlastung lassen ein Level immer scheitern.

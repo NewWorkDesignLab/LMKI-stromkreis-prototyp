@@ -672,14 +672,14 @@ const CHAPTERS = [
     name: "Der Stromkreis",
     levels: [
       {
-        name: "Schließe den Kreis", W: 5, H: 3, palette: BASE,
-        hint: "Ziehe Leitungen, sodass ein geschlossener Kreis von + über die Lampe zurück zu − entsteht. Nur dann fließt Strom.",
-        lesson: "Strom fließt nur im geschlossenen Kreis.",
+        name: "Schließe den Stromkreis", W: 5, H: 3, palette: BASE,
+        hint: "Ziehe Leitungen, sodass ein geschlossener Stromkreis von + über die Lampe zurück zu − entsteht. Nur dann fließt Strom.",
+        lesson: "Strom fließt nur im geschlossenen Stromkreis.",
         cells: { "0,1": { type: "battery", orient: "v" }, "4,1": { type: "lamp", orient: "v" } },
       },
       {
         name: "Der Schalter", W: 5, H: 3, palette: BASE,
-        hint: "Ein Schalter unterbricht den Kreis. Verdrahte ihn und tippe ihn an.",
+        hint: "Ein Schalter unterbricht den Stromkreis. Verdrahte ihn und tippe ihn an.",
         lesson: "Ein Schalter ist eine gewollte Unterbrechung des Stromkreises.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "4,1": { type: "lamp", orient: "v" },
@@ -688,7 +688,7 @@ const CHAPTERS = [
       },
       {
         name: "Reihenschaltung = UND", W: 7, H: 3, palette: BASE,
-        hint: "Zwei Schalter hintereinander. Verdrahte sie und prüfe alle vier Schalterstellungen.",
+        hint: "Zwei Schalter in Reihe. Verdrahte sie und prüfe alle vier Schalterstellungen.",
         lesson: "In Reihe geschaltete Schalter wirken wie UND: nur wenn alle geschlossen sind, fließt Strom.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
@@ -699,8 +699,8 @@ const CHAPTERS = [
         goals: [{ k: "logic", at: "6,1", expr: "and", inputs: ["2,0", "4,0"], live: true, label: "Lampe leuchtet nur, wenn BEIDE Schalter geschlossen sind" }],
       },
       {
-        name: "Parallel – beide Lampen", W: 7, H: 3, palette: BASE,
-        hint: "Beide Lampen hängen an denselben zwei Schienen. Verbinde die obere (+) und die untere (−) Schiene.",
+        name: "Parallelschaltung – beide Lampen", W: 7, H: 3, palette: BASE,
+        hint: "Beide Lampen liegen an derselben Plus- und derselben Minusleitung. Verbinde die obere (+) und die untere (−) Leitung.",
         lesson: "Parallele Verbraucher liegen an derselben Spannung und sind voneinander unabhängig.",
         cells: {
           "0,1": { type: "battery", orient: "v" },
@@ -709,9 +709,9 @@ const CHAPTERS = [
         },
       },
       {
-        name: "Wähle den Pfad", W: 7, H: 4, palette: BASE,
+        name: "Wähle den Stromweg", W: 7, H: 4, palette: BASE,
         hint: "Die grüne Lampe soll leuchten, die rot gestrichelte muss AUS bleiben.",
-        lesson: "Der Strom fließt nur über geschlossene Pfade – du entscheidest, welcher das ist.",
+        lesson: "Strom fließt nur über geschlossene Stromwege – du entscheidest, welcher das ist.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "0,2": { type: "wire" },
           "2,1": { type: "switch", orient: "v", closed: false }, "2,2": { type: "lamp", orient: "v", goal: "on" },
@@ -726,8 +726,8 @@ const CHAPTERS = [
     levels: [
       {
         name: "Der Kurzschluss", W: 6, H: 3, palette: BASE, showValues: true,
-        hint: "Die Lampe bleibt dunkel, obwohl der Kreis geschlossen ist. Eine Leitung überbrückt sie – finde und lösche sie.",
-        lesson: "Ein Kurzschluss ist eine Verbindung von + nach − ohne Verbraucher. Der Strom nimmt den widerstandsärmsten Weg, der Rest bleibt dunkel.",
+        hint: "Die Lampe bleibt dunkel, obwohl der Stromkreis geschlossen ist. Eine Leitung überbrückt sie – finde und lösche sie.",
+        lesson: "Ein Kurzschluss verbindet + und − ohne Verbraucher. Der Strom teilt sich nach Widerstand auf: über die Brücke fließt fast alles, durch die Lampe fast nichts.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "5,1": { type: "lamp", orient: "v" },
           ...wire("0,0 1,0 2,0 3,0 4,0 5,0 0,2 1,2 2,2 3,2 4,2 5,2 3,1"),
@@ -736,8 +736,8 @@ const CHAPTERS = [
       },
       {
         name: "Die Sicherung", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Die Sicherung hat ausgelöst und trennt den Kreis. Beseitige die Ursache und tippe sie an, um sie wieder einzuschalten.",
-        lesson: "Eine Sicherung trennt den Kreis, wenn der Strom zu groß wird – sie schützt Leitung und Quelle. Einschalten hilft erst, wenn die Ursache weg ist.",
+        hint: "Die Sicherung hat ausgelöst und trennt den Stromkreis. Beseitige die Ursache und tippe sie an, um sie wieder einzuschalten.",
+        lesson: "Eine Sicherung trennt den Stromkreis bei Überstrom – sie schützt Leitung und Spannungsquelle. Einschalten hilft erst, wenn die Ursache weg ist.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
           "2,0": { type: "fuse", orient: "h", imax: 0.5, open: true },
@@ -747,8 +747,8 @@ const CHAPTERS = [
         goals: [{ k: "fuse" }],
       },
       {
-        name: "Die LED hat eine Polung", W: 6, H: 3, palette: BASE, showValues: true,
-        hint: "Verdrahte den Kreis. Eine LED leitet nur in eine Richtung – tippe sie an, um sie zu drehen.",
+        name: "Durchlass- und Sperrrichtung der LED", W: 6, H: 3, palette: BASE, showValues: true,
+        hint: "Verdrahte den Stromkreis. Eine LED leitet nur in Durchlassrichtung – tippe sie an, um sie zu drehen.",
         lesson: "Die LED leitet nur von Anode zur Kathode (Balken). Falsch gepolt sperrt sie vollständig.",
         cells: {
           "0,1": { type: "battery", orient: "v" },
@@ -759,7 +759,7 @@ const CHAPTERS = [
       },
       {
         name: "Der Vorwiderstand", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Die LED verträgt höchstens 30 mA. Verdrahte den Kreis und tippe den Widerstand an, um seinen Wert zu wechseln – gesucht sind 12–18 mA.",
+        hint: "Der Durchlassstrom der LED darf höchstens 30 mA betragen. Verdrahte den Stromkreis und tippe den Widerstand an, um seinen Wert zu wechseln – gesucht sind 12–18 mA.",
         lesson: "Eine LED braucht immer einen Vorwiderstand: R = (Uq − UF) / I.",
         cells: {
           "0,1": { type: "battery", orient: "v" },
@@ -787,8 +787,8 @@ const CHAPTERS = [
         goals: [{ k: "logic", at: "5,1", expr: "id", inputs: ["2,0"], label: "Lampe leuchtet genau dann, wenn der Taster gedrückt ist" }],
       },
       {
-        name: "Parallel = ODER", W: 7, H: 4, palette: BASE,
-        hint: "Führe zwei Wege zwischen linker und rechter Schiene – über jeden Schalter einen. Die Rückleitung läuft unten.",
+        name: "Parallelschaltung = ODER", W: 7, H: 4, palette: BASE,
+        hint: "Führe zwei Stromwege zwischen linker und rechter Leitung – über jeden Schalter einen. Die Rückleitung läuft unten.",
         lesson: "Parallel geschaltete Schalter wirken wie ODER: einer genügt.",
         cells: {
           "0,2": { type: "battery", orient: "v" }, "6,2": { type: "lamp", orient: "v" },
@@ -800,7 +800,7 @@ const CHAPTERS = [
       },
       {
         name: "Der Wechselschalter", W: 5, H: 5, palette: BASE,
-        hint: "Der Wechselschalter verbindet seinen Wurzelanschluss mit einem von zwei Ausgängen – an jedem hängt eine Lampe. Führe von den äußeren Lampenanschlüssen eine gemeinsame Rückleitung zur Quelle.",
+        hint: "Der Wechselschalter verbindet seinen Wurzelkontakt mit einem von zwei Ausgängen – an jedem hängt eine Lampe. Führe von den äußeren Lampenanschlüssen eine gemeinsame Rückleitung zur Spannungsquelle.",
         lesson: "Der Wechselschalter (Umschalter) schaltet nicht ein und aus, sondern um.",
         cells: {
           "1,2": { type: "battery", orient: "h" },
@@ -815,7 +815,7 @@ const CHAPTERS = [
       },
       {
         name: "Die Wechselschaltung", W: 7, H: 6, palette: BASE,
-        hint: "Flurlicht: Quelle, Lampe und Rückleitung sind fest verlegt. Verbinde die beiden Wechselschalter mit zwei getrennten Korrespondierenden Leitungen (oben und unten).",
+        hint: "Flurlicht: Spannungsquelle, Lampe und Rückleitung sind fest verlegt. Verbinde die beiden Wechselschalter mit zwei getrennten korrespondierenden Leitungen (oben und unten).",
         lesson: "Wechselschaltung: zwei Wechselschalter, zwei korrespondierende Leitungen – jeder Schalter schaltet das Licht um.",
         cells: {
           "0,3": { type: "battery", orient: "v" }, "6,3": { type: "lamp", orient: "v" },
@@ -827,7 +827,7 @@ const CHAPTERS = [
       },
       {
         name: "Motor und Summer", W: 7, H: 4, palette: BASE,
-        hint: "Zwei Verbraucher, jeder mit eigenem Schalter – parallel an einer gemeinsamen Plus- und Minusschiene.",
+        hint: "Zwei Verbraucher, jeder mit eigenem Schalter – parallel an einer gemeinsamen Plus- und Minusleitung.",
         lesson: "Jeder Verbraucher bekommt seinen eigenen Schalter in seinem eigenen Zweig.",
         cells: {
           "0,2": { type: "battery", orient: "v" },
@@ -848,8 +848,8 @@ const CHAPTERS = [
     levels: [
       {
         name: "Der Widerstand", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Verdrahte den Kreis. Der Widerstand begrenzt den Strom – beobachte Amperemeter und Helligkeit.",
-        lesson: "Ein Widerstand begrenzt den Strom. Mehr Widerstand im Kreis heißt weniger Strom.",
+        hint: "Verdrahte den Stromkreis. Der Widerstand begrenzt den Strom – beobachte Amperemeter und Helligkeit.",
+        lesson: "Ein Widerstand begrenzt den Strom. Mehr Widerstand im Stromkreis heißt weniger Strom.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
           "2,0": { type: "ammeter", orient: "h" }, "4,0": { type: "resistor", orient: "h", r: 100 },
@@ -860,21 +860,21 @@ const CHAPTERS = [
       {
         name: "Amperemeter in Reihe", W: 6, H: 3, palette: ["wire", "ammeter", "erase"], showValues: true,
         hint: "Setze das Amperemeter so ein, dass es den Lampenstrom misst – und die Lampe weiter leuchtet.",
-        lesson: "Ein Amperemeter wird IN REIHE eingebaut. Parallel geschaltet würde es den Verbraucher kurzschließen.",
+        lesson: "Ein Amperemeter wird IN REIHE eingebaut. Parallel geschaltet würde sein sehr kleiner Innenwiderstand den Verbraucher kurzschließen.",
         cells: { "0,1": { type: "battery", orient: "v" }, "4,1": { type: "lamp", orient: "v" } },
         goals: [{ k: "read", type: "ammeter", min: 0.09, max: 0.11, label: "Das Amperemeter zeigt etwa 100 mA" }],
       },
       {
         name: "Voltmeter parallel", W: 6, H: 4, palette: ["wire", "voltmeter", "erase"], showValues: true,
         hint: "Miss die Spannung an der Lampe. Das Voltmeter braucht einen eigenen Zweig neben der Lampe.",
-        lesson: "Ein Voltmeter wird PARALLEL zum Bauteil geschaltet. In Reihe würde es den Kreis praktisch sperren.",
+        lesson: "Ein Voltmeter wird PARALLEL zum Bauteil geschaltet. In Reihe sperrt sein hoher Innenwiderstand den Stromkreis nahezu.",
         cells: { "0,1": { type: "battery", orient: "v" }, "4,1": { type: "lamp", orient: "v" } },
         goals: [{ k: "read", type: "voltmeter", min: 8.4, max: 9.05, label: "Das Voltmeter zeigt die Lampenspannung (≈ 9 V)" }],
       },
       {
-        name: "Reihe teilt die Spannung", W: 5, H: 4, palette: ["wire", "voltmeter", "erase"], showValues: true,
+        name: "Reihenschaltung teilt die Spannung", W: 5, H: 4, palette: ["wire", "voltmeter", "erase"], showValues: true,
         hint: "Zwei gleiche Lampen liegen in Reihe. Miss mit dem Voltmeter die Spannung an der linken Lampe.",
-        lesson: "In Reihe teilt sich die Spannung auf die Verbraucher auf – bei zwei gleichen Lampen je die Hälfte.",
+        lesson: "In der Reihenschaltung teilt sich die Spannung auf die Verbraucher auf – bei zwei gleichen Lampen je die Hälfte.",
         cells: {
           "1,1": { type: "lamp", orient: "h" }, "3,1": { type: "lamp", orient: "h" },
           "2,3": { type: "battery", orient: "h" },
@@ -883,8 +883,8 @@ const CHAPTERS = [
         goals: [{ k: "read", type: "voltmeter", min: 3.9, max: 4.9, label: "Das Voltmeter zeigt etwa 4,5 V – die halbe Quellenspannung" }],
       },
       {
-        name: "Parallel teilt den Strom", W: 7, H: 3, palette: ["wire", "ammeter", "erase"], showValues: true,
-        hint: "Der Kreis ist fertig verdrahtet. Miss den Gesamtstrom: setze das Amperemeter in die Hauptleitung.",
+        name: "Parallelschaltung teilt den Strom", W: 7, H: 3, palette: ["wire", "ammeter", "erase"], showValues: true,
+        hint: "Der Stromkreis ist fertig verdrahtet. Miss den Gesamtstrom: setze das Amperemeter in die Hauptleitung.",
         lesson: "In der Parallelschaltung teilt sich der Strom auf die Zweige auf – der Gesamtstrom ist die Summe.",
         cells: {
           "0,1": { type: "battery", orient: "v" },
@@ -896,7 +896,7 @@ const CHAPTERS = [
       },
       {
         name: "Ohmsches Gesetz", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Die Quelle liefert 9 V, die Lampe hat 90 Ω. Der Strom soll 30 mA betragen. Rechne R = U / I − 90 Ω und tippe den Widerstand an, bis der Wert passt.",
+        hint: "Die Spannungsquelle liefert 9 V, die Lampe hat 90 Ω. Der Strom soll 30 mA betragen. Rechne R = U / I − 90 Ω und tippe den Widerstand an, bis der Wert passt.",
         lesson: "R = U / I. Der Gesamtwiderstand einer Reihenschaltung ist die Summe aller Widerstände.",
         cells: {
           "0,1": { type: "battery", orient: "v" }, "6,1": { type: "lamp", orient: "v" },
@@ -936,7 +936,7 @@ const CHAPTERS = [
         name: "Am Knotenpunkt teilt sich der Strom", W: 7, H: 5,
         palette: ["wire", "ammeter", "erase"], showValues: true,
         hint: "Die Knotenpunkte aus dem letzten Level – hier sind sie gewollt. Setze das Amperemeter so ein, dass es nur den Strom durch die Lampe misst.",
-        lesson: "Am Knotenpunkt gilt: was hineinfließt, fließt wieder heraus. 99 mA + 148 mA = 247 mA.",
+        lesson: "Knotenregel: Am Knotenpunkt fließt so viel heraus, wie hineinfließt. 99 mA + 148 mA = 247 mA.",
         cells: {
           "3,1": { type: "battery", orient: "v" },
           "0,1": { type: "lamp", orient: "v" }, "6,1": { type: "motor", orient: "v" },
@@ -947,7 +947,7 @@ const CHAPTERS = [
       },
       {
         name: "Anders gezeichnet – UND", W: 7, H: 5, palette: BASE,
-        hint: "Zwei Schalter in Reihe – dieselbe UND-Schaltung wie in Level 3 „Reihenschaltung = UND“. Nur läuft der Kreis diesmal außen um das Feld herum statt auf einer Linie.",
+        hint: "Zwei Schalter in Reihe – dieselbe UND-Schaltung wie in Level 3 „Reihenschaltung = UND“. Nur läuft der Stromkreis diesmal außen um das Feld herum statt auf einer Linie.",
         lesson: "Ein Schaltplan zeigt die elektrische Verschaltung, nicht die räumliche Anordnung der Bauteile. Dieselbe Schaltung kann daher auf unterschiedliche Weise gezeichnet werden, solange die elektrischen Verbindungen unverändert bleiben.",
         cells: {
           "0,2": { type: "battery", orient: "v" }, "6,2": { type: "lamp", orient: "v" },
@@ -958,8 +958,8 @@ const CHAPTERS = [
         goals: [{ k: "logic", at: "6,2", expr: "and", inputs: ["3,0", "3,4"], live: true, label: "Die Lampe leuchtet nur, wenn beide Schalter geschlossen sind" }],
       },
       {
-        name: "Zwei Quellen in Reihe", W: 7, H: 3, palette: BASE, showValues: true,
-        hint: "Die Lampe braucht 18 V. Verdrahte beide Quellen in Reihe – tippe die zweite Quelle an, um ihre Polung zu drehen.",
+        name: "Zwei Spannungsquellen in Reihe", W: 7, H: 3, palette: BASE, showValues: true,
+        hint: "Die Lampe braucht 18 V. Verdrahte beide Spannungsquellen in Reihe – tippe die zweite an, um ihre Polung zu drehen.",
         lesson: "In Reihe addieren sich die Spannungen – aber nur, wenn Plus an Minus liegt. Gegeneinander gepolt heben sie sich auf.",
         cells: {
           "0,1": { type: "battery", orient: "v" },
@@ -1064,7 +1064,7 @@ function checkLevel(level, grid, sim) {
 }
 /* ================= Werkzeuge ================= */
 const TOOLS = {
-  wire: { icon: Pencil, label: "Bauen" },
+  wire: { icon: Cable, label: "Verdrahten" },
   cross: { icon: X, label: "Kreuzung" },
   switch: { icon: ToggleRight, label: "Schalter" },
   button: { icon: CircleDot, label: "Taster" },
@@ -1077,11 +1077,11 @@ const TOOLS = {
   fuse: { icon: Shield, label: "Sicherung" },
   ammeter: { icon: Activity, label: "Amperemeter" },
   voltmeter: { icon: Gauge, label: "Voltmeter" },
-  battery: { icon: Battery, label: "Quelle" },
+  battery: { icon: Battery, label: "Spannungsquelle" },
   erase: { icon: Eraser, label: "Löschen" },
 };
-/* Bauen und Löschen stehen fest im Kopf der Werkzeugleiste und brauchen ihr
-   Symbol direkt als Komponente. Cable bleibt importiert – falls das Kabel
+/* Verdrahten und Löschen stehen fest im Kopf der Werkzeugleiste und brauchen ihr
+   Symbol direkt als Komponente. Pencil bleibt importiert – falls der Stift
    irgendwann doch wieder das treffendere Bild ist, reicht ein Wort hier. */
 const WireIcon = TOOLS.wire.icon;
 const SANDBOX_PALETTE = ["wire", "cross", "battery", "lamp", "led", "resistor", "switch",
@@ -1095,9 +1095,9 @@ const EMPTY_SIM = {
 };
 const LEGEND = [
   [{ type: "battery", orient: "h" }, "Spannungsquelle", "9 V, mit kleinem Innenwiderstand"],
-  [{ type: "lamp", orient: "h" }, "Lampe", "Verbraucher; im Normplan ein Kreis mit Kreuz"],
+  [{ type: "lamp", orient: "h" }, "Lampe", "Verbraucher; Schaltzeichen: Kreis mit Kreuz"],
   [{ type: "resistor", orient: "h" }, "Widerstand", "begrenzt den Strom"],
-  [{ type: "led", orient: "h" }, "LED", "leitet nur in Pfeilrichtung, braucht Vorwiderstand"],
+  [{ type: "led", orient: "h" }, "LED", "leitet nur in Durchlassrichtung (Pfeil), braucht Vorwiderstand"],
   [{ type: "switch", orient: "h", closed: false }, "Schalter", "bleibt in seiner Stellung"],
   [{ type: "button", orient: "h", closed: false }, "Taster", "leitet nur während der Betätigung"],
   [{ type: "spdt", dir: "W", pos: 0 }, "Wechselschalter", "schaltet zwischen zwei Ausgängen um"],
@@ -1315,7 +1315,7 @@ export default function App() {
     }
   }
 
-  const status = !sim.hasBattery ? "Keine Quelle vorhanden"
+  const status = !sim.hasBattery ? "Keine Spannungsquelle vorhanden"
     : sim.short ? "Kurzschluss!"
       : sim.tripped.size ? "Sicherung ausgelöst"
         : sim.closed ? `Strom fließt · ${fmtA(sim.ibatt)}`
@@ -1371,7 +1371,7 @@ export default function App() {
 
         <p className="mb-2 text-sm text-stone-500 leading-relaxed">
           {mode === "sandbox"
-            ? "Baue frei: Bauteile platzieren, Leitungen ziehen und Bauteile antippen: Schalter umlegen, Widerstände ändern, LEDs drehen. Mehrere Quellen sind erlaubt."
+            ? "Baue frei: Bauteile platzieren, Leitungen ziehen und Bauteile antippen: Schalter umlegen, Widerstände ändern, LEDs drehen. Mehrere Spannungsquellen sind erlaubt."
             : cfg.hint}
         </p>
 
@@ -1405,7 +1405,7 @@ export default function App() {
         </div>
         {sim.short && (
           <div className="mt-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">
-            + und − sind ohne Verbraucher verbunden. Der Strom umgeht die Bauteile – in der Realität würden Leitung und Quelle heiß.
+            + und − sind ohne Verbraucher verbunden. Der Strom umgeht die Bauteile – in der Realität würden Leitung und Spannungsquelle heiß.
           </div>
         )}
 
@@ -1449,7 +1449,7 @@ export default function App() {
                   <span className="text-xs text-stone-500">Orientierung setzen:</span>
                   <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
                     className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:border-emerald-400">
-                    <RotateCw size={13} />{orient === "h" ? "Quer ↔" : "Hoch ↕"}
+                    <RotateCw size={13} />{orient === "h" ? "Waagerecht ↔" : "Senkrecht ↕"}
                   </button>
                 </div>
               )}
