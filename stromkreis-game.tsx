@@ -1088,6 +1088,26 @@ const SANDBOX_PALETTE = ["wire", "cross", "battery", "lamp", "led", "resistor", 
   "button", "spdt", "motor", "buzzer", "fuse", "ammeter", "voltmeter", "erase"];
 const PLACEABLE = new Set(["cross", "battery", "lamp", "led", "resistor", "switch",
   "button", "spdt", "motor", "buzzer", "fuse", "ammeter", "voltmeter"]);
+/* Messgeräte setzt man im Level genau einmal ein und verdrahtet sie dann –
+   siehe den Werkzeugwechsel in onDown. */
+const METER = new Set(["ammeter", "voltmeter"]);
+/* Ob an dieser Stelle überhaupt gesetzt werden darf. Steht außerhalb von
+   placeComp, weil onDown die Antwort schon vor dem setGrid braucht: nur eine
+   wirklich gelungene Platzierung darf das Werkzeug umschalten. */
+function canPlace(grid, x, y, type, orient) {
+  const old = grid[`${x},${y}`];
+  /* Ein Bauteil darf eine gezogene Leitung ersetzen – sonst müsste man sie erst
+     löschen. Fest verlegte Leitungen und andere Bauteile bleiben geschützt. */
+  if (old && !(old.type === "wire" && !old.lock)) return false;
+  /* Die Orientierung wird nicht automatisch übernommen: das Bauteil passt nur
+     auf eine Leitung, die in der eingestellten Richtung angeschlossen ist.
+     Eine Leitung ohne Anschluss nimmt jede Richtung an. */
+  if (old && type !== "cross") {
+    const l = wireLinks(grid, x, y);
+    if ((l.h || l.v) && !(orient === "h" ? l.h : l.v)) return false;
+  }
+  return true;
+}
 
 const EMPTY_SIM = {
   glow: new Set(), liveNode: new Set(), lit: new Set(), bright: {},
@@ -1163,17 +1183,8 @@ export default function App() {
     const n = { ...p }; delete n[k]; return n;
   });
   const placeComp = (x, y, type) => setGrid((p) => {
-    const k = `${x},${y}`, old = p[k];
-    /* Ein Bauteil darf eine gezogene Leitung ersetzen – sonst müsste man sie erst
-       löschen. Fest verlegte Leitungen und andere Bauteile bleiben geschützt. */
-    if (old && !(old.type === "wire" && !old.lock)) return p;
-    /* Die Orientierung wird nicht automatisch übernommen: das Bauteil passt nur
-       auf eine Leitung, die in der eingestellten Richtung angeschlossen ist.
-       Eine Leitung ohne Anschluss nimmt jede Richtung an. */
-    if (old && type !== "cross") {
-      const l = wireLinks(p, x, y);
-      if ((l.h || l.v) && !(orient === "h" ? l.h : l.v)) return p;
-    }
+    const k = `${x},${y}`;
+    if (!canPlace(p, x, y, type, orient)) return p;
     const cell = { type, user: true };
     if (type !== "cross") cell.orient = orient;
     if (type === "switch" || type === "button") cell.closed = false;
@@ -1230,7 +1241,16 @@ export default function App() {
        dabei aus: nach dem Schalten soll ein Wischen keine Leitung ziehen. */
     const cell = grid[`${c[0]},${c[1]}`];
     if (cell && cell.type !== "wire") return interact(c[0], c[1]);
-    if (PLACEABLE.has(tool)) return placeComp(c[0], c[1], tool);
+    if (PLACEABLE.has(tool)) {
+      /* Im Level wird ein Messgerät genau einmal eingesetzt und danach verdrahtet;
+         das Werkzeug springt deshalb gleich auf Verdrahten zurück. Nur bei
+         gelungener Platzierung – sonst zöge der zweite Versuch eine Leitung,
+         statt das falsch gedrehte Gerät noch einmal zu setzen. Beim Frei bauen
+         bleibt das Werkzeug stehen: dort setzt man mehrere gleiche Bauteile. */
+      if (mode === "level" && METER.has(tool) && canPlace(grid, c[0], c[1], tool, orient))
+        setTool("wire");
+      return placeComp(c[0], c[1], tool);
+    }
     drawing.current = true;
     setWire(c[0], c[1]);
   };
