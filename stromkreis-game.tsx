@@ -502,11 +502,18 @@ function spdtEl(x, y, c, glow) {
 function lampEl(x, y, c, on, bright, over) {
   const cx = center(x), cy = center(y), forbid = c.goal === "off";
   const b = Math.max(0, Math.min(1, bright || 0));
-  const fill = on ? LAMP_ON : "#fff";
+  // Niedrige Leistungen deutlicher spreizen: bei 100 / 220 Ohm etwa 65 / 38 %.
+  // Nur die Darstellung anpassen; Leistung und Leuchtschwelle bleiben physikalisch berechnet.
+  const light = on ? (1.18 * b) / (b + 0.18) : 0;
+  const lightColor = over ? HOT : LAMP_ON;
   return (
     <g key={`l${x},${y}`}>
-      {on && <circle cx={cx} cy={cy} r={20 + 6 * b} fill={over ? HOT : LAMP_ON} className="lamp-on-glow" />}
-      <circle cx={cx} cy={cy} r={15} fill={fill} fillOpacity={on ? 0.35 + 0.65 * b : 1}
+      {on && <g fill={lightColor} pointerEvents="none">
+        <circle cx={cx} cy={cy} r={17 + 11 * light} opacity={0.3 * light * light} />
+        <circle cx={cx} cy={cy} r={16 + 6 * light} opacity={0.35 * light} />
+      </g>}
+      <circle cx={cx} cy={cy} r={15} fill="#fff" />
+      <circle cx={cx} cy={cy} r={15} fill={lightColor} fillOpacity={light}
         stroke={over ? HOT : forbid ? FORBID : LAMP_STROKE} strokeWidth={forbid || over ? 2.5 : 2}
         strokeDasharray={forbid ? "4 3" : "none"} />
       <path d={`M ${cx - 5} ${cy + 4} Q ${cx} ${cy - 8} ${cx + 5} ${cy + 4}`} fill="none"
@@ -514,8 +521,8 @@ function lampEl(x, y, c, on, bright, over) {
       {on && [0, 1, 2, 3, 4, 5].map((i) => {
         const a = (Math.PI * 2 * i) / 6 - Math.PI / 2;
         return <line key={i} x1={cx + Math.cos(a) * 18} y1={cy + Math.sin(a) * 18}
-          x2={cx + Math.cos(a) * (20 + 4 * b)} y2={cy + Math.sin(a) * (20 + 4 * b)}
-          stroke={over ? HOT : LAMP_ON} strokeWidth={2.5} strokeLinecap="round" opacity={0.75} />;
+          x2={cx + Math.cos(a) * (19 + 9 * light)} y2={cy + Math.sin(a) * (19 + 9 * light)}
+          stroke={lightColor} strokeWidth={1 + 2 * light} strokeLinecap="round" opacity={light} />;
       })}
       {ports(cx, cy, c, over ? HOT : forbid ? FORBID : LAMP_STROKE)}
     </g>
