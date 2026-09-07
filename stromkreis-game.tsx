@@ -506,14 +506,19 @@ function lampEl(x, y, c, on, bright, over) {
   // Nur die Darstellung anpassen; Leistung und Leuchtschwelle bleiben physikalisch berechnet.
   const light = on ? (1.18 * b) / (b + 0.18) : 0;
   const lightColor = over ? HOT : LAMP_ON;
+  // Beim Dimmen wird die warme Farbe transparenter; der Schein wird enger.
+  const spread = Math.pow(light, 1.35);
+  const bulbOpacity = on && !over ? 0.5 + 0.5 * light : 1;
+  const bulbColor = !on ? "#fff" : over ? HOT
+    : `rgb(255, ${Math.round(148 + 46 * light)}, ${Math.round(20 + 40 * light)})`;
   return (
     <g key={`l${x},${y}`}>
       {on && <g fill={lightColor} pointerEvents="none">
-        <circle cx={cx} cy={cy} r={17 + 11 * light} opacity={0.3 * light * light} />
-        <circle cx={cx} cy={cy} r={16 + 6 * light} opacity={0.35 * light} />
+        <circle cx={cx} cy={cy} r={16 + 12 * spread} opacity={0.24 + 0.06 * light} />
+        <circle cx={cx} cy={cy} r={16 + 6 * spread} opacity={0.29 + 0.06 * light} />
       </g>}
       <circle cx={cx} cy={cy} r={15} fill="#fff" />
-      <circle cx={cx} cy={cy} r={15} fill={lightColor} fillOpacity={light}
+      <circle cx={cx} cy={cy} r={15} fill={bulbColor} fillOpacity={bulbOpacity}
         stroke={over ? HOT : forbid ? FORBID : LAMP_STROKE} strokeWidth={forbid || over ? 2.5 : 2}
         strokeDasharray={forbid ? "4 3" : "none"} />
       <path d={`M ${cx - 5} ${cy + 4} Q ${cx} ${cy - 8} ${cx + 5} ${cy + 4}`} fill="none"
@@ -521,8 +526,8 @@ function lampEl(x, y, c, on, bright, over) {
       {on && [0, 1, 2, 3, 4, 5].map((i) => {
         const a = (Math.PI * 2 * i) / 6 - Math.PI / 2;
         return <line key={i} x1={cx + Math.cos(a) * 18} y1={cy + Math.sin(a) * 18}
-          x2={cx + Math.cos(a) * (19 + 9 * light)} y2={cy + Math.sin(a) * (19 + 9 * light)}
-          stroke={lightColor} strokeWidth={1 + 2 * light} strokeLinecap="round" opacity={light} />;
+          x2={cx + Math.cos(a) * (18 + 10 * spread)} y2={cy + Math.sin(a) * (18 + 10 * spread)}
+          stroke={lightColor} strokeWidth={3} strokeLinecap="round" />;
       })}
       {ports(cx, cy, c, over ? HOT : forbid ? FORBID : LAMP_STROKE)}
     </g>
