@@ -1501,7 +1501,8 @@ export default function App() {
 
         {/* Ziele */}
         {mode === "level" && (
-          <ul className="mb-2 space-y-1">
+          <div className="mb-2 flex items-start gap-3">
+          <ul className="min-w-0 flex-1 space-y-1">
             {check.items.map((it, i) => (
               <li key={i} className={`text-sm flex items-start gap-1.5 ${it.ok ? "text-emerald-600" : "text-stone-500"}`}>
                 {it.ok ? <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> : <Circle size={15} className="mt-0.5 shrink-0 text-stone-300" />}
@@ -1509,6 +1510,38 @@ export default function App() {
               </li>
             ))}
           </ul>
+          {partTools.length > 0 && (
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <div className="flex w-14 flex-col items-end gap-1 sm:w-20">
+                <h3 id="level-parts-heading" className="text-right text-[11px] font-semibold leading-tight text-stone-500">Zum Einsetzen</h3>
+                {partTools.includes(tool) && tool !== "cross" && (
+                  <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
+                    aria-label={`Ausrichtung: ${orient === "h" ? "Waagerecht" : "Senkrecht"}. Zum Drehen antippen.`}
+                    title={orient === "h" ? "Waagerecht – drehen" : "Senkrecht – drehen"}
+                    className="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100">
+                    <RotateCw size={14} /><span aria-hidden="true">{orient === "h" ? "↔" : "↕"}</span>
+                  </button>
+                )}
+              </div>
+              <div role="group" aria-labelledby="level-parts-heading" className="flex flex-col gap-1.5">
+                {partTools.map((t) => {
+                  const active = tool === t;
+                  const previewOrient = active ? orient : "h";
+                  const preview = { type: t, orient: previewOrient, dir: previewOrient === "h" ? "W" : "N", pos: 0, closed: false };
+                  return (
+                    <button key={t} onClick={() => setTool(t)} aria-pressed={active}
+                      className={`flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border p-1 text-[10px] font-medium transition ${toolStyle(active)}`}>
+                      <svg viewBox="0 0 60 60" width={36} height={36} aria-hidden="true" className="shrink-0">
+                        {cellGlyph("0,0", preview, EMPTY_SIM)}
+                      </svg>
+                      <span className="w-full break-words text-center leading-tight">{TOOLS[t].label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          </div>
         )}
 
         <div className="mt-3 mb-1 flex flex-wrap items-center justify-between gap-x-3">
@@ -1552,7 +1585,7 @@ export default function App() {
           )}
         </div>
 
-        {partTools.length > 0 && (
+        {mode === "sandbox" && partTools.length > 0 && (
           <div className="mt-4">
             <h3 id="parts-heading" className="mb-2 text-sm font-semibold text-stone-600">Zum Einsetzen</h3>
             <div role="group" aria-labelledby="parts-heading" className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(128px, 1fr))" }}>
