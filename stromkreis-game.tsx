@@ -1502,31 +1502,49 @@ export default function App() {
           </p>
         )}
 
-        {/* Ziele */}
-        {mode === "level" && (
-          <div className="mb-2 flex items-start gap-3">
-          <ul className="min-w-0 flex-1 space-y-1">
-            {check.items.map((it, i) => (
-              <li key={i} className={`text-sm flex items-start gap-1.5 ${it.ok ? "text-emerald-600" : "text-stone-500"}`}>
-                {it.ok ? <CheckCircle2 size={15} className="mt-0.5 shrink-0" /> : <Circle size={15} className="mt-0.5 shrink-0 text-stone-300" />}
-                <span>{it.t}</span>
-              </li>
-            ))}
-          </ul>
-          {partTools.length > 0 && (
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              <div className="flex w-14 flex-col items-end gap-1 sm:w-20">
-                <h3 id="level-parts-heading" className="text-right text-[11px] font-semibold leading-tight text-stone-500">Zum Einsetzen</h3>
+        {/* Werkzeug und Bauteile bilden unter der Aufgabe einen Bereich aus zwei
+            Spalten, jede mit ihrer Überschrift darüber. Beide zeigen dieselbe
+            Kachelform, denn tool ist EINE Auswahl: die aktive Markierung wandert
+            zwischen den Spalten. Der Drehen-Knopf erscheint erst, wenn ein
+            Bauteil gewählt ist – ohne Auswahl gibt es nichts zu drehen. */}
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+          {/* Die beiden Modi bleiben ein Segment-Umschalter im grauen Trog: sie
+              schließen einander aus, anders als die Bauteil-Kacheln daneben.
+              Etwa halbe Spaltenbreite, damit die Trennung zu den Bauteilen
+              deutlich bleibt – auch in Leveln ganz ohne Bauteile. */}
+          <div className="w-full min-w-[14rem] max-w-[19rem] flex-1">
+            <h3 id="tools-heading" className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400">Werkzeug</h3>
+            {/* h-20 wie eine Bauteil-Kachel, damit beide Spalten auf derselben
+                Linie enden. Bei der Höhe steht das Symbol über der Schrift wie
+                in den Kacheln – nebeneinander bliebe die Fläche leer. */}
+            <div role="group" aria-labelledby="tools-heading" className="flex h-20 gap-1 rounded-xl bg-stone-200 p-1 text-xs">
+              <button onClick={() => setTool("wire")} aria-pressed={tool === "wire"}
+                className={`flex-1 flex flex-col items-center justify-center gap-1 px-2 rounded-lg font-medium transition ${tool === "wire" ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-700"}`}>
+                <WireIcon size={22} />Leitung ziehen
+              </button>
+              {palette.includes("erase") && (
+                <button onClick={() => setTool("erase")} aria-pressed={tool === "erase"}
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 px-2 rounded-lg font-medium transition ${tool === "erase" ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-700"}`}>
+                  <Eraser size={22} />{TOOLS.erase.label}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {mode === "level" && partTools.length > 0 && (
+            <div>
+              <div className="mb-1 flex items-center gap-2">
+                <h3 id="level-parts-heading" className="text-xs font-semibold uppercase tracking-wide text-stone-400">Bauteile</h3>
                 {partTools.includes(tool) && tool !== "cross" && (
                   <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
                     aria-label={`Ausrichtung: ${orient === "h" ? "Waagerecht" : "Senkrecht"}. Zum Drehen antippen.`}
                     title={orient === "h" ? "Waagerecht – drehen" : "Senkrecht – drehen"}
-                    className="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100">
-                    <RotateCw size={14} /><span aria-hidden="true">{orient === "h" ? "↔" : "↕"}</span>
+                    className="flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-xs font-medium text-stone-600 hover:bg-stone-100">
+                    <RotateCw size={13} /><span aria-hidden="true">{orient === "h" ? "↔" : "↕"}</span>
                   </button>
                 )}
               </div>
-              <div role="group" aria-labelledby="level-parts-heading" className="flex flex-col gap-1.5">
+              <div role="group" aria-labelledby="level-parts-heading" className="flex max-w-[15.75rem] flex-wrap gap-1.5">
                 {partTools.map((t) => {
                   const active = tool === t;
                   const previewOrient = active ? orient : "h";
@@ -1544,23 +1562,6 @@ export default function App() {
               </div>
             </div>
           )}
-          </div>
-        )}
-
-        <div className="mt-3 mb-1 flex flex-wrap items-center justify-between gap-x-3">
-          <h2 className="text-sm font-semibold text-stone-600">Schaltung</h2>
-          <div className="flex items-center gap-1">
-            <button onClick={resetGrid}
-              className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800">
-              <RotateCcw size={15} />Zurücksetzen
-            </button>
-            {mode === "sandbox" && (
-              <button onClick={clearGrid}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-red-600 hover:bg-red-50">
-                <Trash2 size={15} />Leeren
-              </button>
-            )}
-          </div>
         </div>
 
         <div className="relative rounded-2xl p-2 shadow-inner" style={{ background: BG }}>
@@ -1574,25 +1575,9 @@ export default function App() {
           </svg>
         </div>
 
-        {/* Leitung ziehen und Löschen sind ein Modus-Paar, kein Bauteil: der
-            Segment-Umschalter im grauen Trog trennt sie von den Setz-Kacheln,
-            wie in der ursprünglichen Darstellung. */}
-        <div role="group" aria-label="Werkzeuge" className="mt-2 flex gap-1 rounded-xl bg-stone-200 p-1 text-sm">
-          <button onClick={() => setTool("wire")} aria-pressed={tool === "wire"}
-            className={`flex-1 flex min-h-11 items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg font-medium transition ${tool === "wire" ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-700"}`}>
-            <WireIcon size={16} />Leitung ziehen
-          </button>
-          {palette.includes("erase") && (
-            <button onClick={() => setTool("erase")} aria-pressed={tool === "erase"}
-              className={`flex-1 flex min-h-11 items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg font-medium transition ${tool === "erase" ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-700"}`}>
-              <Eraser size={16} />{TOOLS.erase.label}
-            </button>
-          )}
-        </div>
-
         {mode === "sandbox" && partTools.length > 0 && (
           <div className="mt-4">
-            <h3 id="parts-heading" className="mb-2 text-sm font-semibold text-stone-600">Zum Einsetzen</h3>
+            <h3 id="parts-heading" className="mb-2 text-sm font-semibold text-stone-600">Bauteile</h3>
             <div role="group" aria-labelledby="parts-heading" className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(128px, 1fr))" }}>
               {partTools.map((t) => {
                 const active = tool === t;
@@ -1624,28 +1609,70 @@ export default function App() {
           </div>
         )}
 
-        {/* Feedback follows the complete workbench, never separating its controls. */}
-        <div role="status" className={`mt-4 text-sm font-medium flex flex-wrap items-center gap-1.5 ${sim.short ? "text-red-600" : sim.closed ? "text-amber-600" : "text-stone-400"}`}>
-          {sim.short && <AlertTriangle size={15} />}{status}
-          {mode === "sandbox" && sim.lit.size > 0 && <span className="text-stone-400">· {sim.lit.size} Verbraucher aktiv</span>}
+        {/* Infoanzeigen unter dem Brett: links untereinander, was die Schaltung
+            gerade tut – Checkliste und Stromzustand. Rechts daneben die einzige
+            Aktion, die das Brett zurücknimmt. */}
+        <div className="mt-3 flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-1">
+            {mode === "level" && (
+              <ul className="space-y-1">
+                {check.items.map((it, i) => (
+                  <li key={i} className={`text-sm flex items-center gap-1.5 ${it.ok ? "text-emerald-600" : "text-stone-500"}`}>
+                    {it.ok ? <CheckCircle2 size={15} className="shrink-0" /> : <Circle size={15} className="shrink-0 text-stone-300" />}
+                    <span>{it.t}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div role="status" className={`text-sm font-medium flex flex-wrap items-center gap-1.5 ${sim.short ? "text-red-600" : sim.closed ? "text-amber-600" : "text-stone-400"}`}>
+              {sim.short && <AlertTriangle size={15} />}{status}
+              {mode === "sandbox" && sim.lit.size > 0 && <span className="text-stone-400">· {sim.lit.size} Verbraucher aktiv</span>}
+            </div>
+            {sim.short && (
+              <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">
+                + und − sind ohne Verbraucher verbunden. Der Strom umgeht die Bauteile – in der Realität würden Leitung und Spannungsquelle heiß.
+              </div>
+            )}
+          </div>
+          {/* -mt-3 hebt die 44px hohe Tastfläche so an, dass ihre Beschriftung
+              auf der Mittellinie der ersten Checklistenzeile sitzt: (44 − 20)/2.
+              Damit ist der Abstand unter dem Spielfeld über die volle Breite
+              gleich, statt rechts um eine halbe Buttonhöhe größer zu wirken. */}
+          <div className="-mt-3 flex shrink-0 items-center gap-1">
+            <button onClick={resetGrid}
+              className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800">
+              <RotateCcw size={15} />Zurücksetzen
+            </button>
+            {mode === "sandbox" && (
+              <button onClick={clearGrid}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-red-600 hover:bg-red-50">
+                <Trash2 size={15} />Leeren
+              </button>
+            )}
+          </div>
         </div>
-        {sim.short && (
-          <div className="mt-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">
-            + und − sind ohne Verbraucher verbunden. Der Strom umgeht die Bauteile – in der Realität würden Leitung und Spannungsquelle heiß.
+
+        {mode === "level" && won && (
+          <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <span className="flex items-center gap-1 font-semibold text-emerald-700"><CheckCircle2 size={18} /> Geschafft!</span>
+            {cfg.lesson && <p className="mt-1.5 text-sm text-emerald-800 leading-snug">💡 {cfg.lesson}</p>}
           </div>
         )}
 
-        {mode === "level" && won && (
-          <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-emerald-700 flex items-center gap-1"><CheckCircle2 size={18} /> Geschafft!</span>
-              {levelIndex < LEVELS.length - 1
-                ? <button onClick={() => goLevel(levelIndex + 1)}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center gap-1">Weiter <ArrowRight size={15} /></button>
-                : <span className="text-sm text-emerald-700 font-medium">Alle Level gelöst!</span>}
-            </div>
-            {cfg.lesson && <p className="mt-1.5 text-sm text-emerald-800 leading-snug">💡 {cfg.lesson}</p>}
-          </div>
+        {/* Weiter schließt den Level ab und steht deshalb ganz unten: zentriert
+            und breit, aber nicht über die volle Spaltenbreite. Er bleibt stehen
+            und wird erst scharf, wenn alle Ziele erfüllt sind – so springt das
+            Layout beim Lösen nicht. */}
+        {mode === "level" && (
+          <button onClick={() => goLevel(levelIndex + 1)}
+            disabled={!won || levelIndex === LEVELS.length - 1}
+            className={`mt-4 mx-auto flex w-full max-w-sm min-h-11 items-center justify-center gap-1.5 rounded-xl px-4 font-medium transition ${won && levelIndex < LEVELS.length - 1
+              ? "bg-emerald-600 text-white hover:bg-emerald-700"
+              : "bg-stone-200 text-stone-400"}`}>
+            {won && levelIndex === LEVELS.length - 1
+              ? "Alle Level gelöst!"
+              : <>Weiter <ArrowRight size={17} /></>}
+          </button>
         )}
 
       </div>
