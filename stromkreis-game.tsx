@@ -1012,6 +1012,19 @@ const TUTORIALS = {
 };
 const tutPath = (pts) =>
   pts.map(([x, y], i) => `${i ? "L" : "M"} ${center(x)} ${center(y)}`).join(" ");
+function TutorialClick({ x, y }) {
+  return <g transform={`translate(${center(x)} ${center(y)})`} pointerEvents="none" aria-hidden="true">
+    <circle r={15} fill="none" stroke={TUT} strokeWidth={2} strokeDasharray="2 5" opacity={0.6} />
+    <g className="tutorial-demo">
+      <circle className="tutorial-click-ring" r={12} fill="none" stroke={TUT} strokeWidth={2} />
+      <g transform="translate(12 12)">
+        <g className="tutorial-click-cursor">
+          <path d="M 0 0 L 7 22 L 11 15 L 21 25 L 25 21 L 15 11 L 22 7 Z" fill="white" stroke="#087e8b" strokeWidth={1.4} />
+        </g>
+      </g>
+    </g>
+  </g>;
+}
 // A self-contained CSS timeline: remounting a step restarts only its demonstration.
 function TutorialRoute({ step, moving }) {
   const d = tutPath(step.path);
@@ -1457,10 +1470,18 @@ export default function App() {
   const tutorialAvailable = mode === "level" && levelIndex === 0 && !won;
   const tutorialStep = TUTORIALS[0].findIndex(step => !step.need.every(k => grid[k]?.type === "wire"));
   const tut = tutorialAvailable && tutorialStep >= 0 ? TUTORIALS[0][tutorialStep] : null;
+  const switchTutorial = useMemo(() => {
+    if (mode !== "level" || levelIndex !== 1 || won
+      || grid["2,0"]?.type !== "switch" || grid["2,0"].closed) return false;
+    // Preview closing the switch without changing the player's board.
+    const connected = simulate({ ...grid, "2,0": { ...grid["2,0"], closed: true } });
+    return !connected.short && connected.lit.has("4,1");
+  }, [mode, levelIndex, won, grid]);
   // While the player is tracing, clear the guide completely so their own wire
   // is the only animated/active mark on the board.
-  const tutEls = tut && tool === "wire" && !overlay && !isDrawing
-    ? <TutorialRoute key={tutorialStep} step={tut} moving /> : null;
+  const tutEls = tool === "wire" && !overlay && !isDrawing
+    ? (switchTutorial ? <TutorialClick x={2} y={0} />
+      : tut ? <TutorialRoute key={tutorialStep} step={tut} moving /> : null) : null;
 
   return (
     <div className="w-full min-h-screen bg-stone-50 text-stone-800 p-3 sm:p-5 flex flex-col items-center font-sans">
@@ -1471,6 +1492,10 @@ export default function App() {
         .tutorial-demo{animation:tutorial-fade 4.8s linear infinite}
         .tutorial-trace{stroke-dasharray:1;animation:tutorial-draw 4.8s linear infinite}
         .tutorial-cursor{animation:tutorial-drag 4.8s linear infinite}
+        .tutorial-click-cursor{animation:tutorial-click 4.8s ease-in-out infinite}
+        .tutorial-click-ring{animation:tutorial-click-ring 4.8s ease-out infinite}
+        @keyframes tutorial-click{0%,25%,55%,100%{transform:scale(1)}35%,45%{transform:scale(.8)}}
+        @keyframes tutorial-click-ring{0%,35%{transform:scale(.6);opacity:0}40%{opacity:.8}65%,100%{transform:scale(1.8);opacity:0}}
         @keyframes tutorial-draw{0%,15%{stroke-dashoffset:1}75%,100%{stroke-dashoffset:0}}
         @keyframes tutorial-drag{0%,15%{offset-distance:0%}75%,100%{offset-distance:100%}}
         @keyframes tutorial-fade{0%,100%{opacity:0}8%,85%{opacity:1}}
