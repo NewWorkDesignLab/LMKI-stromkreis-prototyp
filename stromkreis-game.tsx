@@ -10,7 +10,7 @@ const CELL = 60;
 const BG = "#f3f0e9", DOT = "#dcd6c8", WIRE = "#3a3a3a", LIVE = "#f4a522",
   FLOW = "#fff4d6", BATT_PLUS = "#e25555", SWITCH_ON = "#2f9e8f", SWITCH_OFF = "#b9b3a4",
   LAMP_ON = "#ffc23c", LAMP_STROKE = "#9a9484", WALL = "#d8d2c4", FORBID = "#e25555",
-  INK = "#2b2b2b", MUTE = "#b9b3a4", HOT = "#d63b3b";
+  INK = "#2b2b2b", MUTE = "#b9b3a4", HOT = "#d63b3b", TUT = "#06b6d4";
 const center = (i) => i * CELL + CELL / 2;
 const EPS = 1e-5;
 
@@ -973,6 +973,47 @@ const CHAPTERS = [
 ];
 
 const LEVELS = CHAPTERS.flatMap((ch, ci) => ch.levels.map((l) => ({ ...l, ch: ci })));
+/* ================= Tutorial ================= */
+/* Zeigt einmal vor, wie eine Leitung gezogen wird. Reine Anzeige: die
+   Animation liest nur das Feld, sie setzt nichts und nimmt keine Zeiger an.
+   Ein Schritt verschwindet, sobald sein Weg verdrahtet ist.
+   path = Stützpunkte in Feldkoordinaten, Bruchteile treffen die Anschlüsse.
+   need = Zellen, die dafür Leitung sein müssen. */
+const TUTORIALS = {
+  0: [
+    {
+      text: "Halte auf dem + Pol gedrückt und ziehe die Leitung zur Lampe.",
+      path: [[0, 0.72], [0, 0], [4, 0], [4, 0.75]],
+      need: ["0,0", "1,0", "2,0", "3,0", "4,0"],
+    },
+    {
+      text: "Jetzt genauso von der Lampe zurück zum − Pol ziehen.",
+      path: [[4, 1.25], [4, 2], [0, 2], [0, 1.28]],
+      need: ["0,2", "1,2", "2,2", "3,2", "4,2"],
+    },
+  ],
+};
+const tutPath = (pts) =>
+  pts.map(([x, y], i) => `${i ? "L" : "M"} ${center(x)} ${center(y)}`).join(" ");
+// A self-contained CSS timeline: remounting a step restarts only its demonstration.
+function TutorialRoute({ step, moving }) {
+  const d = tutPath(step.path);
+  const [x, y] = step.path[0];
+  return <g pointerEvents="none" aria-hidden="true">
+    <path d={d} fill="none" stroke={TUT} strokeWidth={3} strokeDasharray="2 7" opacity={0.4} />
+    <circle cx={center(x)} cy={center(y)} r={9} fill="white" stroke={TUT} strokeWidth={2} />
+    {moving && <g className="tutorial-demo">
+      <path className="tutorial-trace" d={d} pathLength={1} fill="none" stroke={TUT}
+        strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+      <g className="tutorial-cursor" style={{ offsetPath: `path("${d}")`, offsetRotate: "0deg" }}>
+        <circle r={12} fill={TUT} opacity={0.18} />
+        <circle r={5} fill={TUT} stroke="white" strokeWidth={2} />
+        <path d="M 3 3 L 3 20 L 7 16 L 11 23 L 15 21 L 11 14 L 17 14 Z" fill="white" stroke="#087e8b" strokeWidth={1.4} />
+      </g>
+    </g>}
+  </g>;
+}
+
 const SANDBOX = {
   name: "Frei bauen", W: 9, H: 6, showValues: true,
   cells: { "1,2": { type: "battery", orient: "v" }, "7,2": { type: "lamp", orient: "v" } },
@@ -1137,9 +1178,12 @@ export default function App() {
   const [orient, setOrient] = useState("h");
   const [completed, setCompleted] = useState(new Set());
   const [overlay, setOverlay] = useState(null);   // "levels" | "legend" | null
+  const [isDrawing, setIsDrawing] = useState(false);
   const svgRef = useRef(null);
   const drawing = useRef(false);
+  const lastCell = useRef(null);
   const pressed = useRef(null);
+  const tap = useRef(null);   // Bauteil unter dem Zeiger, solange offen ist ob Tippen oder Zug
 
   const cfg = mode === "sandbox" ? SANDBOX : LEVELS[levelIndex];
   const { W, H } = cfg;
@@ -1232,15 +1276,27 @@ export default function App() {
     return [x, y];
   };
   const onDown = (e) => {
+    if (!e.isPrimary || e.button !== 0) return;
     e.preventDefault();
     const c = eventCell(e); if (!c) return;
+    setIsDrawing(true);
+    lastCell.current = c;
     if (tool === "erase") { drawing.current = true; return eraseCell(c[0], c[1]); }
-    /* Auf einem Bauteil wird immer geschaltet, egal welches Werkzeug aktiv ist –
-       sonst müsste man zum Umstellen jedes Mal das Werkzeug wechseln. Setzen und
-       Zeichnen betrifft ohnehin nur freie Zellen und Leitungen. drawing bleibt
-       dabei aus: nach dem Schalten soll ein Wischen keine Leitung ziehen. */
+    /* Ein Bauteil reagiert immer, egal welches Werkzeug aktiv ist – sonst
+       müsste man zum Umstellen jedes Mal das Werkzeug wechseln. Setzen und
+       Zeichnen betrifft ohnehin nur freie Zellen und Leitungen. */
     const cell = grid[`${c[0]},${c[1]}`];
-    if (cell && cell.type !== "wire") return interact(c[0], c[1]);
+    if (cell && cell.type !== "wire") {
+      /* Auf einem Bauteil steckt beides: ein Tippen schaltet es, ein Zug davon
+         weg beginnt eine Leitung – sonst müsste man die Nachbarzelle treffen,
+         statt einfach an der Quelle anzusetzen. Was gemeint war, entscheidet
+         sich erst beim Loslassen, das Tippen wartet deshalb.
+         Der Taster ist die Ausnahme: er leitet nur, solange er gedrückt ist. */
+      drawing.current = true;
+      if (cell.type === "button") { drawing.current = false; interact(c[0], c[1]); }
+      else tap.current = c;
+      return;
+    }
     if (PLACEABLE.has(tool)) {
       /* Im Level wird ein Messgerät genau einmal eingesetzt und danach verdrahtet;
          das Werkzeug springt deshalb gleich auf Verdrahten zurück. Nur bei
@@ -1257,12 +1313,36 @@ export default function App() {
   const onMove = (e) => {
     if (!drawing.current) return;
     const c = eventCell(e); if (!c) return;
-    if (tool === "wire") setWire(c[0], c[1]);
-    else if (tool === "erase") eraseCell(c[0], c[1]);
+    /* verlässt der Zeiger die Startzelle, ist es ein Zug und kein Tippen */
+    if (tap.current && (c[0] !== tap.current[0] || c[1] !== tap.current[1])) tap.current = null;
+    // Fast straight drags may skip pointer events, but should never leave holes.
+    const prev = lastCell.current;
+    const cells = [c];
+    if (prev && (prev[0] === c[0] || prev[1] === c[1])) {
+      const dx = Math.sign(c[0] - prev[0]), dy = Math.sign(c[1] - prev[1]);
+      const distance = Math.max(Math.abs(c[0] - prev[0]), Math.abs(c[1] - prev[1]));
+      for (let i = 1; i < distance; i++) cells.push([prev[0] + dx * i, prev[1] + dy * i]);
+    }
+    lastCell.current = c;
+    for (const [x, y] of cells) {
+      if (tool === "wire") setWire(x, y);
+      else if (tool === "erase") eraseCell(x, y);
+    }
   };
-  const stop = () => { drawing.current = false; release(); };
+  /* Loslassen über dem Feld schaltet das Bauteil, auf dem der Zug begann.
+     Beim Verlassen des Feldes gilt die Geste als abgebrochen – ein Bauteil am
+     Rand soll nicht schalten, nur weil man darüber hinausgezogen hat. */
+  const stop = (keep) => {
+    setIsDrawing(false);
+    lastCell.current = null;
+    drawing.current = false;
+    const t = tap.current;
+    tap.current = null;
+    if (keep && t) interact(t[0], t[1]);
+    release();
+  };
 
-  const resetGrid = () => setGrid(JSON.parse(JSON.stringify(cfg.cells)));
+  const resetGrid = () => { stop(false); setGrid(JSON.parse(JSON.stringify(cfg.cells))); };
   const clearGrid = () => setGrid({});
 
   /* Level und Feld werden immer zusammen gesetzt. Beide Updates liegen im selben
@@ -1270,11 +1350,13 @@ export default function App() {
      Leveln gehören: weder bleibt die alte Schaltung stehen, noch sieht die
      Zielprüfung ein fremdes Feld und trägt das neue Level sofort als gelöst ein. */
   const loadBoard = (cells) => {
+    setIsDrawing(false);
     setGrid(JSON.parse(JSON.stringify(cells)));
     setTool("wire");
     setOrient("h");
     drawing.current = false;
     pressed.current = null;
+    tap.current = null;
   };
   const goLevel = (i) => {
     const n = Math.max(0, Math.min(LEVELS.length - 1, i));
@@ -1342,12 +1424,29 @@ export default function App() {
           : "Kein geschlossener Stromkreis";
   const chapter = mode === "level" ? CHAPTERS[cfg.ch] : null;
 
+  /* Progress comes from the board, so reverse-order drawing and erasing work too. */
+  const tutorialAvailable = mode === "level" && levelIndex === 0 && !won;
+  const tutorialStep = TUTORIALS[0].findIndex(step => !step.need.every(k => grid[k]?.type === "wire"));
+  const tut = tutorialAvailable && tutorialStep >= 0 ? TUTORIALS[0][tutorialStep] : null;
+  // While the player is tracing, clear the guide completely so their own wire
+  // is the only animated/active mark on the board.
+  const tutEls = tut && tool === "wire" && !overlay && !isDrawing
+    ? <TutorialRoute key={tutorialStep} step={tut} moving /> : null;
+
   return (
     <div className="w-full min-h-screen bg-stone-50 text-stone-800 p-3 sm:p-5 flex flex-col items-center font-sans">
       <style>{`
         .flow{stroke-dasharray:7 17;animation:flowmove .7s linear infinite}
         .flow.fast{animation-duration:.22s}
         @keyframes flowmove{to{stroke-dashoffset:-24}}
+        .tutorial-demo{animation:tutorial-fade 4.8s linear infinite}
+        .tutorial-trace{stroke-dasharray:1;animation:tutorial-draw 4.8s linear infinite}
+        .tutorial-cursor{animation:tutorial-drag 4.8s linear infinite}
+        @keyframes tutorial-draw{0%,15%{stroke-dashoffset:1}75%,100%{stroke-dashoffset:0}}
+        @keyframes tutorial-drag{0%,15%{offset-distance:0%}75%,100%{offset-distance:100%}}
+        @keyframes tutorial-fade{0%,100%{opacity:0}8%,85%{opacity:1}}
+        @media(prefers-reduced-motion:reduce){.tutorial-demo{display:none}.flow,.lamp-on-glow{animation:none}}
+        button:focus-visible{outline:3px solid #0891b2;outline-offset:3px}
         .lamp-on-glow{opacity:.28;animation:lampp 1.5s ease-in-out infinite}
         @keyframes lampp{0%,100%{opacity:.2}50%{opacity:.42}}
       `}</style>
@@ -1389,11 +1488,13 @@ export default function App() {
           <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Aufgabe</div>
         )}
 
-        <p className="mb-2 text-sm text-stone-500 leading-relaxed">
-          {mode === "sandbox"
-            ? "Baue frei: Bauteile platzieren, Leitungen ziehen und Bauteile antippen: Schalter umlegen, Widerstände ändern, LEDs drehen. Mehrere Spannungsquellen sind erlaubt."
-            : cfg.hint}
-        </p>
+        {mode === "sandbox" ? (
+          <p className="mb-3 text-sm text-stone-500 leading-relaxed">Baue frei: Bauteile platzieren, Leitungen ziehen und Bauteile antippen, um sie umzuschalten.</p>
+        ) : (
+          <p className="mb-3 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm leading-relaxed text-stone-600">
+            {cfg.hint}
+          </p>
+        )}
 
         {/* Ziele */}
         {mode === "level" && (
@@ -1407,14 +1508,14 @@ export default function App() {
           </ul>
         )}
 
-        <div className="rounded-2xl p-2 shadow-inner" style={{ background: BG }}>
+        <div className="relative rounded-2xl p-2 shadow-inner" style={{ background: BG }}>
           <svg ref={svgRef} viewBox={`0 0 ${W * CELL} ${H * CELL}`}
             className="block mx-auto select-none"
             style={{ width: "100%", maxWidth: Math.min(W * CELL, 560), height: "auto", touchAction: "none", cursor: tool === "erase" ? "cell" : "pointer" }}
-            onPointerDown={onDown} onPointerMove={onMove} onPointerUp={stop}
-            onPointerLeave={stop} onPointerCancel={stop}>
+            onPointerDown={onDown} onPointerMove={onMove} onPointerUp={() => stop(true)}
+            onPointerLeave={() => stop(false)} onPointerCancel={() => stop(false)}>
             <rect x={0} y={0} width={W * CELL} height={H * CELL} fill={BG} rx={10} />
-            {dotEls}{wallEls}{lineEls}{flowEls}{nodeEls}{compEls}{labelEls}
+            {dotEls}{wallEls}{lineEls}{flowEls}{nodeEls}{compEls}{labelEls}{tutEls}
           </svg>
         </div>
 
