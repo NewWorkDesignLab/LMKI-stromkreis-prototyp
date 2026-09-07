@@ -936,7 +936,7 @@ const CHAPTERS = [
         name: "Knotenpunkt oder Kreuzung?", W: 7, H: 5, palette: ["cross", "wire", "erase"],
         showValues: true,
         hint: "Zwei getrennte Stromkreise – trotzdem Kurzschluss. Die vier Knotenpunkte zeigen, wo die Leitungen elektrisch verbunden sind. Lösche sie und setze dort „Kreuzung“ ein.",
-        lesson: "Ein Knotenpunkt verbindet drei oder mehr Leitungen elektrisch. Ohne ihn kreuzen sich zwei Leitungen nur.",
+        lesson: "Die eingesetzten Kreuzungen führen die waagerechte und die senkrechte Leitung elektrisch getrennt aneinander vorbei. So bleiben die beiden Stromkreise getrennt und die Kurzschlüsse sind behoben.",
         cells: {
           "0,2": { type: "battery", orient: "v" }, "6,2": { type: "lamp", orient: "v" },
           "3,0": { type: "battery", orient: "h" }, "3,4": { type: "lamp", orient: "h" },
@@ -1537,10 +1537,10 @@ export default function App() {
               deutlich bleibt – auch in Leveln ganz ohne Bauteile. */}
           <div className="w-full min-w-[14rem] max-w-[19rem] flex-1">
             <h3 id="tools-heading" className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400">Werkzeug</h3>
-            {/* h-20 wie eine Bauteil-Kachel, damit beide Spalten auf derselben
+            {/* 72 px wie eine Bauteil-Kachel, damit beide Spalten auf derselben
                 Linie enden. Bei der Höhe steht das Symbol über der Schrift wie
                 in den Kacheln – nebeneinander bliebe die Fläche leer. */}
-            <div role="group" aria-labelledby="tools-heading" className="flex h-20 gap-1 rounded-xl bg-stone-200 p-1 text-xs">
+            <div role="group" aria-labelledby="tools-heading" className="flex h-[72px] gap-1 rounded-xl bg-stone-200 p-1 text-xs">
               <button onClick={() => setTool("wire")} aria-pressed={tool === "wire"}
                 className={`flex-1 flex flex-col items-center justify-center gap-1 px-2 rounded-lg font-medium transition ${tool === "wire" ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-700"}`}>
                 <WireIcon size={22} />Leitung ziehen
@@ -1574,7 +1574,7 @@ export default function App() {
                   const preview = { type: t, orient: previewOrient, dir: previewOrient === "h" ? "W" : "N", pos: 0, closed: false };
                   return (
                     <button key={t} onClick={() => setTool(t)} aria-pressed={active}
-                      className={`flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border p-1 text-[10px] font-medium transition ${toolStyle(active)}`}>
+                      className={`flex h-[72px] w-20 flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-0.5 text-[10px] font-medium transition ${toolStyle(active)}`}>
                       <svg viewBox="0 0 60 60" width={36} height={36} aria-hidden="true" className="shrink-0">
                         {cellGlyph("0,0", preview, EMPTY_SIM)}
                       </svg>
@@ -1677,25 +1677,20 @@ export default function App() {
 
         {mode === "level" && won && (
           <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
-            <span className="flex items-center gap-1 font-semibold text-emerald-700"><CheckCircle2 size={18} /> Geschafft!</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="flex items-center gap-1 font-semibold text-emerald-700"><CheckCircle2 size={18} /> Geschafft!</span>
+              <button onClick={() => goLevel(levelIndex + 1)}
+                disabled={levelIndex === LEVELS.length - 1}
+                className={`ml-auto flex min-h-9 shrink-0 items-center justify-center gap-1 rounded-lg px-3 text-sm font-medium transition ${levelIndex < LEVELS.length - 1
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                  : "bg-stone-200 text-stone-400"}`}>
+                {levelIndex === LEVELS.length - 1
+                  ? "Alle Level gelöst!"
+                  : <>Weiter <ArrowRight size={17} /></>}
+              </button>
+            </div>
             {cfg.lesson && <p className="mt-1.5 text-sm text-emerald-800 leading-snug">💡 {cfg.lesson}</p>}
           </div>
-        )}
-
-        {/* Weiter schließt den Level ab und steht deshalb ganz unten: zentriert
-            und breit, aber nicht über die volle Spaltenbreite. Er bleibt stehen
-            und wird erst scharf, wenn alle Ziele erfüllt sind – so springt das
-            Layout beim Lösen nicht. */}
-        {mode === "level" && (
-          <button onClick={() => goLevel(levelIndex + 1)}
-            disabled={!won || levelIndex === LEVELS.length - 1}
-            className={`mt-4 mx-auto flex w-full max-w-sm min-h-11 items-center justify-center gap-1.5 rounded-xl px-4 font-medium transition ${won && levelIndex < LEVELS.length - 1
-              ? "bg-emerald-600 text-white hover:bg-emerald-700"
-              : "bg-stone-200 text-stone-400"}`}>
-            {won && levelIndex === LEVELS.length - 1
-              ? "Alle Level gelöst!"
-              : <>Weiter <ArrowRight size={17} /></>}
-          </button>
         )}
 
       </div>
