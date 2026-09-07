@@ -7,6 +7,11 @@ import {
 
 /* ================= constants ================= */
 const CELL = 60;
+/* Rand um das Spielfeld, der nur die Beschriftungen aufnimmt. Ohne ihn schneidet
+   die viewBox einen Messwert unter einem Bauteil am Brettrand ab. Seitlich so
+   breit, dass auch der längste Wert danebenpasst, unten nur so viel, dass
+   Unterlängen und Konturrand hineinreichen. */
+const PAD_X = 20, PAD_B = 6;
 const BG = "#f3f0e9", DOT = "#dcd6c8", WIRE = "#3a3a3a", LIVE = "#f4a522",
   FLOW = "#fff4d6", BATT_PLUS = "#e25555", SWITCH_ON = "#2f9e8f", SWITCH_OFF = "#b9b3a4",
   LAMP_ON = "#ffc23c", LAMP_STROKE = "#9a9484", WALL = "#d8d2c4", FORBID = "#e25555",
@@ -1187,6 +1192,7 @@ export default function App() {
 
   const cfg = mode === "sandbox" ? SANDBOX : LEVELS[levelIndex];
   const { W, H } = cfg;
+  const vbW = W * CELL + PAD_X * 2, vbH = H * CELL + PAD_B;
   const palette = mode === "sandbox" ? SANDBOX_PALETTE : cfg.palette;
   /* Werkzeuge nach Bedeutung getrennt: Leitung und Löschen als Modus,
      Bauteile setzen, und alles Übrige (drehen, zurücksetzen, leeren) */
@@ -1273,11 +1279,14 @@ export default function App() {
     setGrid((p) => (p[k] ? { ...p, [k]: { ...p[k], closed: false } } : p));
   };
 
+  /* Die viewBox ist um den Beschriftungsrand größer als das Spielfeld und fängt
+     links bei −PAD_X an – beides muss hier mitgerechnet werden, sonst liegt der
+     getroffene Zellindex daneben. */
   const eventCell = (e) => {
     const svg = svgRef.current; if (!svg) return null;
     const r = svg.getBoundingClientRect();
-    const x = Math.floor(((e.clientX - r.left) / r.width * (W * CELL)) / CELL);
-    const y = Math.floor(((e.clientY - r.top) / r.height * (H * CELL)) / CELL);
+    const x = Math.floor((((e.clientX - r.left) / r.width) * vbW - PAD_X) / CELL);
+    const y = Math.floor((((e.clientY - r.top) / r.height) * vbH) / CELL);
     if (x < 0 || y < 0 || x >= W || y >= H) return null;
     return [x, y];
   };
@@ -1391,6 +1400,8 @@ export default function App() {
       stroke={FLOW} strokeWidth={3.5} strokeLinecap="round" className={sim.short ? "flow fast" : "flow"} />);
   });
 
+  /* Beschriftungen stehen immer mittig unter ihrer Zelle – auch am Brettrand,
+     denn die viewBox reicht dort um PAD_X über das Spielfeld hinaus. */
   const label = (k, txt) => {
     const [x, y] = k.split(",").map(Number);
     labelEls.push(
@@ -1565,9 +1576,9 @@ export default function App() {
         </div>
 
         <div className="relative rounded-2xl p-2 shadow-inner" style={{ background: BG }}>
-          <svg ref={svgRef} viewBox={`0 0 ${W * CELL} ${H * CELL}`}
+          <svg ref={svgRef} viewBox={`${-PAD_X} 0 ${vbW} ${vbH}`}
             className="block mx-auto select-none"
-            style={{ width: "100%", maxWidth: Math.min(W * CELL, 560), height: "auto", touchAction: "none", cursor: tool === "erase" ? "cell" : "pointer" }}
+            style={{ width: "100%", maxWidth: Math.min(W * CELL, 560) + PAD_X * 2, height: "auto", touchAction: "none", cursor: tool === "erase" ? "cell" : "pointer" }}
             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={() => stop(true)}
             onPointerLeave={() => stop(false)} onPointerCancel={() => stop(false)}>
             <rect x={0} y={0} width={W * CELL} height={H * CELL} fill={BG} rx={10} />
