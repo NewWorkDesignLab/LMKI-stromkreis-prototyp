@@ -1191,8 +1191,11 @@ export default function App() {
   /* Werkzeuge nach Bedeutung getrennt: Leitung und Löschen als Modus,
      Bauteile setzen, und alles Übrige (drehen, zurücksetzen, leeren) */
   const partTools = palette.filter((t) => PLACEABLE.has(t));
+  /* Ausgewähltes Werkzeug: dunkle Tinten-Umrandung wie in der ursprünglichen
+     Darstellung (bg-stone-800). Heller Grund bleibt, damit die Symbol-Vorschau
+     lesbar ist; kein Cyan, das gehört der Tutorial-Animation. */
   const toolStyle = (active) => active
-    ? "bg-cyan-50 border-cyan-500 text-stone-800 ring-1 ring-cyan-500"
+    ? "bg-white border-stone-800 text-stone-900 ring-1 ring-stone-800"
     : "bg-white border-stone-200 text-stone-600 hover:border-stone-400";
 
   const sim = useMemo(() => simulate(grid), [grid]);
@@ -1571,15 +1574,17 @@ export default function App() {
           </svg>
         </div>
 
-        {/* Tools stay next to the board; every selection uses the same treatment. */}
-        <div role="group" aria-label="Werkzeuge" className="mt-2 flex gap-2 text-sm">
+        {/* Leitung ziehen und Löschen sind ein Modus-Paar, kein Bauteil: der
+            Segment-Umschalter im grauen Trog trennt sie von den Setz-Kacheln,
+            wie in der ursprünglichen Darstellung. */}
+        <div role="group" aria-label="Werkzeuge" className="mt-2 flex gap-1 rounded-xl bg-stone-200 p-1 text-sm">
           <button onClick={() => setTool("wire")} aria-pressed={tool === "wire"}
-            className={`flex-1 flex min-h-11 items-center justify-center gap-1.5 px-2 py-2 rounded-xl border font-medium transition ${toolStyle(tool === "wire")}`}>
+            className={`flex-1 flex min-h-11 items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg font-medium transition ${tool === "wire" ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-700"}`}>
             <WireIcon size={16} />Leitung ziehen
           </button>
           {palette.includes("erase") && (
             <button onClick={() => setTool("erase")} aria-pressed={tool === "erase"}
-              className={`flex-1 flex min-h-11 items-center justify-center gap-1.5 px-2 py-2 rounded-xl border font-medium transition ${toolStyle(tool === "erase")}`}>
+              className={`flex-1 flex min-h-11 items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg font-medium transition ${tool === "erase" ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-700"}`}>
               <Eraser size={16} />{TOOLS.erase.label}
             </button>
           )}
