@@ -1191,6 +1191,9 @@ export default function App() {
   /* Werkzeuge nach Bedeutung getrennt: Leitung und Löschen als Modus,
      Bauteile setzen, und alles Übrige (drehen, zurücksetzen, leeren) */
   const partTools = palette.filter((t) => PLACEABLE.has(t));
+  const toolStyle = (active) => active
+    ? "bg-cyan-50 border-cyan-500 text-stone-800 ring-1 ring-cyan-500"
+    : "bg-white border-stone-200 text-stone-600 hover:border-stone-400";
 
   const sim = useMemo(() => simulate(grid), [grid]);
   const check = useMemo(
@@ -1508,6 +1511,22 @@ export default function App() {
           </ul>
         )}
 
+        <div className="mt-3 mb-1 flex flex-wrap items-center justify-between gap-x-3">
+          <h2 className="text-sm font-semibold text-stone-600">Schaltung</h2>
+          <div className="flex items-center gap-1">
+            <button onClick={resetGrid}
+              className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800">
+              <RotateCcw size={15} />Zurücksetzen
+            </button>
+            {mode === "sandbox" && (
+              <button onClick={clearGrid}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-red-600 hover:bg-red-50">
+                <Trash2 size={15} />Leeren
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="relative rounded-2xl p-2 shadow-inner" style={{ background: BG }}>
           <svg ref={svgRef} viewBox={`0 0 ${W * CELL} ${H * CELL}`}
             className="block mx-auto select-none"
@@ -1519,8 +1538,56 @@ export default function App() {
           </svg>
         </div>
 
-        {/* Status */}
-        <div className={`mt-2 text-sm font-medium flex items-center gap-1.5 ${sim.short ? "text-red-600" : sim.closed ? "text-amber-600" : "text-stone-400"}`}>
+        {/* Tools stay next to the board; every selection uses the same treatment. */}
+        <div role="group" aria-label="Werkzeuge" className="mt-2 flex gap-2 text-sm">
+          <button onClick={() => setTool("wire")} aria-pressed={tool === "wire"}
+            className={`flex-1 flex min-h-11 items-center justify-center gap-1.5 px-2 py-2 rounded-xl border font-medium transition ${toolStyle(tool === "wire")}`}>
+            <WireIcon size={16} />Leitung ziehen
+          </button>
+          {palette.includes("erase") && (
+            <button onClick={() => setTool("erase")} aria-pressed={tool === "erase"}
+              className={`flex-1 flex min-h-11 items-center justify-center gap-1.5 px-2 py-2 rounded-xl border font-medium transition ${toolStyle(tool === "erase")}`}>
+              <Eraser size={16} />{TOOLS.erase.label}
+            </button>
+          )}
+        </div>
+
+        {partTools.length > 0 && (
+          <div className="mt-4">
+            <h3 id="parts-heading" className="mb-2 text-sm font-semibold text-stone-600">Zum Einsetzen</h3>
+            <div role="group" aria-labelledby="parts-heading" className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(128px, 1fr))" }}>
+              {partTools.map((t) => {
+                const active = tool === t;
+                const previewOrient = active ? orient : "h";
+                const preview = { type: t, orient: previewOrient, dir: previewOrient === "h" ? "W" : "N", pos: 0, closed: false };
+                return (
+                  <button key={t} onClick={() => setTool(t)} aria-pressed={active}
+                    className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 text-xs font-medium transition ${toolStyle(active)}`}>
+                    <svg viewBox="0 0 60 60" width={48} height={48} aria-hidden="true" className="shrink-0">
+                      {cellGlyph("0,0", preview, EMPTY_SIM)}
+                    </svg>
+                    <span className="w-full break-words text-center leading-snug">{TOOLS[t].label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {partTools.includes(tool) && (
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-stone-600">
+                <span>{TOOLS[tool].label} setzen · Tippe auf das Feld</span>
+                {tool !== "cross" && (
+                  <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
+                    aria-label={`Ausrichtung: ${orient === "h" ? "Waagerecht" : "Senkrecht"}. Zum Drehen antippen.`}
+                    className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 font-medium hover:bg-stone-100">
+                    <RotateCw size={14} />{orient === "h" ? "Waagerecht ↔" : "Senkrecht ↕"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Feedback follows the complete workbench, never separating its controls. */}
+        <div role="status" className={`mt-4 text-sm font-medium flex flex-wrap items-center gap-1.5 ${sim.short ? "text-red-600" : sim.closed ? "text-amber-600" : "text-stone-400"}`}>
           {sim.short && <AlertTriangle size={15} />}{status}
           {mode === "sandbox" && sim.lit.size > 0 && <span className="text-stone-400">· {sim.lit.size} Verbraucher aktiv</span>}
         </div>
@@ -1530,7 +1597,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Geschafft */}
         {mode === "level" && won && (
           <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
             <div className="flex items-center justify-between gap-2">
@@ -1543,70 +1609,6 @@ export default function App() {
             {cfg.lesson && <p className="mt-1.5 text-sm text-emerald-800 leading-snug">💡 {cfg.lesson}</p>}
           </div>
         )}
-
-        {/* Werkzeuge in drei Gruppen: was ein Tippen tut, was man setzt,
-            und was nichts hinzufügt. Alle setzen dasselbe tool – die aktive
-            Markierung wandert deshalb zwischen den Gruppen. */}
-        <div className="mt-3 flex gap-1 bg-stone-200 p-1 rounded-xl text-sm">
-          <button onClick={() => setTool("wire")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-medium transition ${tool === "wire" ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>
-            <WireIcon size={16} />{TOOLS.wire.label}
-          </button>
-          {palette.includes("erase") && (
-            <button onClick={() => setTool("erase")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg font-medium transition ${tool === "erase" ? "bg-white shadow text-stone-900" : "text-stone-500"}`}>
-              <Eraser size={16} />{TOOLS.erase.label}
-            </button>
-          )}
-        </div>
-
-        {partTools.length > 0 && (
-          <div className="mt-3">
-            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-1">
-              <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide">Bauteile</div>
-              {/* gilt für jedes Bauteil, das gleich gesetzt wird – dreht nichts Bestehendes */}
-              {partTools.some((t) => t !== "cross") && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-stone-500">Orientierung setzen:</span>
-                  <button onClick={() => setOrient((o) => (o === "h" ? "v" : "h"))}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:border-emerald-400">
-                    <RotateCw size={13} />{orient === "h" ? "Waagerecht ↔" : "Senkrecht ↕"}
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {partTools.map((t) => {
-                const I = TOOLS[t].icon, active = tool === t;
-                return (
-                  <button key={t} onClick={() => setTool(t)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition border ${active ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-700 border-stone-200 hover:border-stone-300"}`}>
-                    <I size={16} />{TOOLS[t].label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-3 pt-3 border-t border-stone-200">
-          {/* Überschrift nur beim Frei bauen: dort stehen zwei Aktionen nebeneinander
-              und brauchen einen gemeinsamen Namen. Im Level ist Zurücksetzen der
-              einzige Button – die Trennlinie grenzt ihn ausreichend ab. */}
-          {mode === "sandbox" && (
-            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Schaltung</div>
-          )}
-          <div className="flex flex-wrap gap-1.5">
-            <button onClick={resetGrid}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-stone-600 border border-transparent hover:border-stone-300">
-              <RotateCcw size={16} />Zurücksetzen</button>
-            {mode === "sandbox" && (
-              <button onClick={clearGrid}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-stone-100 text-red-600 border border-transparent hover:border-red-200">
-                <Trash2 size={16} />Leeren</button>
-            )}
-          </div>
-        </div>
 
       </div>
 
