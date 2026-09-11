@@ -13,7 +13,8 @@ Bauteilen und baut so Stromkreise. Jedes Level hat ein Ziel (z. B. „die Lampe 
 
 - **Zielgruppe:** Sek II / Ausbildung. Zahlen und Messgrößen sind erwünscht, bis Ohmsches Gesetz.
 - **Sprache:** durchgehend Deutsch, auch im Code (Kommentare) und in Commit-Nachrichten.
-- **Umfang:** 24 Level in 5 Kapiteln, dazu ein freier Baumodus.
+- **Umfang:** 24 Level in 5 Kapiteln, dazu ein Testkapitel mit 6 noch nicht
+  einsortierten Leveln und ein freier Baumodus.
 
 ## 2. Woher es kommt
 
@@ -35,7 +36,7 @@ SPICE-Nachbau — nur so viel Physik, wie die Lernziele brauchen.
 ## 3. Projektaufbau
 
 ```
-stromkreis-game.tsx   das gesamte Spiel: Simulation, Symbole, Level, UI (~1300 Zeilen)
+stromkreis-game.tsx   das gesamte Spiel: Simulation, Symbole, Level, UI (~1900 Zeilen)
 main.jsx              React-Einstiegspunkt
 index.html            lädt Tailwind über das Play-CDN
 vite.config.js        Dev-Server auf Port 5180
@@ -112,7 +113,25 @@ Das Spielfeld ist ein Objekt `{"x,y": zelle}`. Fehlt ein Schlüssel, ist die Zel
   Ausgänge liegen senkrecht dazu. `pos` (0/1) wählt den aktiven Ausgang.
 - `rev` — dreht die Polung um (LED, Quelle).
 - `flip` — erlaubt dem Spieler, `rev` per Antippen zu ändern.
-- `values` — Werteliste; Antippen schaltet `r` durch die Liste.
+- `values` — Werteliste; Antippen schaltet `r` durch die Liste. Eine Liste mit nur
+  einem Wert friert das Bauteil ein (und blendet das ⟳ aus).
+- `nc` — macht aus einem `switch` oder `button` einen **Öffner**. Achtung: `closed` heißt auch dort
+  „leitet“, nicht „betätigt“ — ein Öffner startet deshalb mit `closed: true`. Dadurch
+  bleiben Löser, Zielprüfung und Schalterkombinationen unverändert; `nc` ändert nur
+  das Symbol (Querstrich am festen Kontakt) und die Beschriftung.
+- `name` — überschreibt die Beschriftung unter der Zelle (z. B. „Not-Aus“, „Schließer“).
+- `danger` — zeichnet Umriss und Ruhekontakt rot (Not-Aus).
+
+Eine Zelle vom Typ **`door`** ist kein Bauteil, sondern ein Betätiger: sie hat keine
+Anschlüsse, taucht in der Simulation nicht auf, und ein Antippen schaltet den Kontakt,
+auf den ihr `at` zeigt. Sie löst das eigentliche Verständnisproblem am Öffner — dass
+nämlich die *Tür* drückt, und zwar wenn sie **zu** ist. Gezeichnet wird sie im Grundriss
+(Angelpunkt, Türblatt, gestrichelter Schwenkbogen, Anschlag) und dreht sich zur
+Kontaktzelle hin; liegt sie an, wird der Anschlag mitmarkiert. Der Platz für den Kontakt
+ist in Level 30 mit einer gewöhnlichen, ersetzbaren Leitung markiert — so ist sichtbar,
+wohin er gehört, und die Orientierungsprüfung in `canPlace` greift.
+- `link` — koppelt mehrere Wechselschalter: sie springen gemeinsam um. Gedacht für
+  einen Kreuzschalter aus zwei Umschaltern; bisher von keinem Level benutzt.
 - `lock` — vorverlegte Leitung, die nicht gelöscht werden darf.
 - `user` — vom Spieler platziert, darf auch im Level-Modus gelöscht werden.
 - `goal: "off"` — dieser Verbraucher muss aus bleiben (wird rot gestrichelt gezeichnet).
@@ -140,6 +159,18 @@ einem Knoten zusammen (`w:x,y`), eine **Kreuzung** hält waagerecht und senkrech
 | `ammeter` | Kreis mit A | 5 mΩ, **in Reihe** |
 | `voltmeter` | Kreis mit V | 1 MΩ, **parallel** |
 | `wall` | gesperrte Zelle | — |
+
+Ein `switch` oder `button` mit `nc: true` ist ein **Öffner** (Ruhekontakt): im
+Ruhezustand leitet er, betätigt trennt er. Elektrisch bleibt er ein gewöhnlicher idealer
+Kontakt — der Unterschied liegt allein im Startzustand und im Symbol. Beim Taster dreht
+`nc` zusätzlich Drücken und Loslassen um.
+
+Ein einzelner Öffner ist von einem Schließer kaum zu unterscheiden — Level 28 stellt sie
+deshalb nebeneinander an dieselbe Quelle, statt den Öffner allein zu zeigen.
+
+„sperrt“ steht nur an einer wirklich **verpolten** LED — also wenn eine deutliche
+Gegenspannung an ihr liegt. Eine LED, die bloß überbrückt oder stromlos ist, zeigt 0 mA;
+sonst stünde in Level 27 „sperrt“ an einer richtig gepolten LED.
 
 Ein Voltmeter gilt in der topologischen Sicht bewusst als **nicht leitend** — es schließt
 keinen Stromkreis. In Reihe geschaltet sperrt es den Stromkreis praktisch, genau wie in echt.
@@ -177,9 +208,25 @@ keinen Stromkreis. In Reihe geschaltet sperrt es den Stromkreis praktisch, genau
 | 22 | Am Knotenpunkt teilt sich der Strom | Knotenregel, Zweig- und Gesamtstrom |
 | 23 | Anders gezeichnet – UND | Topologie statt Geometrie |
 | 24 | Zwei Spannungsquellen in Reihe | Spannungen addieren sich bei richtiger Polung |
+| | **Neue Level (Test)** | *noch nicht einsortiert* |
+| 25 | Der Dimmer | Widerstand in Reihe regelt die Helligkeit |
+| 26 | Fehlersuche: Die Wechselschaltung | korrespondierende Leitungen gebrückt |
+| 27 | Das Licht im Schalter | LED parallel zum Schalter |
+| 28 | Schließer und Öffner | beide Kontaktarten im direkten Vergleich |
+| 29 | Der Not-Aus | Öffner in der Hauptleitung, Reihenfolge erzwungen |
+| 30 | Der Kühlschrank | die Tür betätigt den Kontakt; Kontaktart wählen |
+
+Kapitel 6 ist eine **Ablage**: die Level liegen hinter den 24 bestehenden, damit sie
+sich durchspielen lassen, ohne die vorhandene Reihenfolge zu verschieben. Welches
+davon welchen Platz bekommt — und welches bestehende dafür weicht — ist offen.
 
 Level bestehen nur aus Daten (`CHAPTERS`): Name, Feldgröße, Startzellen, Werkzeugpalette,
-Hinweis, Merksatz und optionale Ziele. `showValues: true` blendet Spannungen und Ströme ein.
+Hinweis, Merksatz und optionale Ziele. `showValues: true` blendet Spannungen und Ströme ein. `labelSwitches: true` schreibt
+unter jeden Kontakt „Schließer“ bzw. „Öffner“ — gedacht für Level, in denen der Spieler
+die Kontaktart selbst wählt. `latch` siehe Zielsystem. `frames` zeichnet gestrichelte
+**Gerätegrenzen** (Rechtecke in Feldkoordinaten) — die Konvention „das ist ein Bauteil“
+aus dem Installationsplan, reines Dekor ohne Wirkung auf die Simulation. Level 27 fasst
+damit Schalter und Orientierungslicht zu einem Gerät zusammen.
 
 ### Level bauen: die Falle
 
@@ -203,10 +250,23 @@ Ziele stehen pro Level in `goals`; für Verbraucher ohne eigenes Ziel wird autom
 | `read` | Messgerät zeigt einen Wert im Bereich `min`–`max` |
 | `logic` | Lampe folgt `and` / `or` / `xor` / `id` / `not` über die genannten Schalter |
 | `toggle` | jeder einzelne Schalter kehrt den Zustand um (Wechselschaltung) |
+| `state` | die genannten Kontakte sind **jetzt** betätigt bzw. nicht betätigt |
+| `seen` | die in `latch` genannten Verbraucher liefen im Verlauf schon einmal gemeinsam |
 | `fuse` | die Sicherung hält |
 
 `logic` und `toggle` **simulieren alle Schalterkombinationen durch**, nicht nur den aktuellen
-Zustand. Dadurch wird wirklich die Verdrahtung geprüft. `toggle` gibt es, weil eine
+Zustand. Dadurch wird wirklich die Verdrahtung geprüft.
+
+Ihre Eingänge bedeuten dabei **„betätigt“, nicht „leitet“** — beim Öffner ist das
+gegenläufig. Ein vorangestelltes `!` dreht einen Eingang um: `inputs: ["!1,0", "3,1"]`
+heißt „Not-Aus nicht gedrückt UND Schalter zu“. Bei gewöhnlichen Kontakten fallen beide
+Lesarten zusammen, dort ändert das nichts.
+
+`state` und `seen` gibt es, weil manche Aufgaben eine **Reihenfolge** verlangen. Level 29
+ließe sich sonst lösen, indem man erst den Not-Aus drückt und dann die Schalter umlegt —
+die Anlage hätte nie gelaufen. `latch: { lit: [...] }` am Level merkt sich, dass die
+genannten Verbraucher einmal gemeinsam liefen; der Merker wird beim Levelwechsel **und**
+beim Zurücksetzen gelöscht. `toggle` gibt es, weil eine
 Wechselschaltung je nach Verdrahtung XOR *oder* XNOR ergibt — beides ist richtig, das
 gemeinsame Merkmal ist das Umschalten.
 
@@ -223,9 +283,19 @@ Kurzschluss und Überlastung lassen ein Level immer scheitern.
   parallele Lampen fälschlich als Kurzschluss gelten.
 - **Keine Kreuzschaltung.** Ein Kreuzschalter braucht vier Anschlüsse mit zwei
   Anschlusspaaren — auf einem Raster mit vier Zellseiten wird das Symbol unleserlich.
+  Der Ausweg wäre, ihn aus **zwei gekoppelten Wechselschaltern** zu bauen (dafür gibt
+  es `link`); daran scheitert es auch nicht. Es scheitert am Platz: der Kreuzschalter
+  allein braucht einen Block von rund 5 × 5 Zellen samt einer `cross`-Zelle, dazu
+  kommen die zwei korrespondierenden Leitungen auf jeder Seite und die beiden
+  Wechselschalter. Das ergibt etwa 10 × 6 Zellen — das Brett wird bei 560 px
+  gedeckelt, die Symbole würden also spürbar schrumpfen. Machbar, aber ein eigener
+  Schritt, kein Beiwerk.
 - **Kein gespeicherter Fortschritt.** Der Zähler „x/24 gelöst" gilt nur für die laufende
   Sitzung und wird bei jedem Neuladen zurückgesetzt. Das bleibt erstmal so festgeschrieben.
-- **Keine automatisierten Tests.** Geprüft wurde durch Durchspielen.
+- **Keine automatisierten Tests.** Geprüft wurde durch Durchspielen. Für einen
+  Prüflauf lassen sich die reinen Blöcke (`constants`…`Symbole`, `Level`…`Tutorial`,
+  `Ziele`…`Werkzeuge`) aber ohne Änderung in ein `.mjs` kopieren und mit Node gegen
+  `simulate`/`checkLevel` fahren — so wurden die Level aus Kapitel 6 verifiziert.
 
 ## 10. Behobene Fehler (und was daraus folgt)
 
@@ -239,6 +309,15 @@ Diese vier Fehler erklären, warum der Code an manchen Stellen so aussieht, wie 
    Daher heute die Lösung je Zusammenhangskomponente.
 4. **Flussanimation lief nicht in Stromrichtung** — sie hing an der Zeichenreihenfolge der
    SVG-Linie, nicht am tatsächlichen Stromweg.
+
+5. **Ein Werkzeug ohne Schaltzeichen blieb leer.** Die Bauteil-Kacheln zeichnen nicht
+   das lucide-Icon aus `TOOLS`, sondern `cellGlyph` mit einer Vorschauzelle. „opener“ ist
+   aber kein Zelltyp, sondern ein `switch` mit `nc` — die Kachel war deshalb leer. Dafür
+   gibt es jetzt `previewCell(t, orient)`, das beide Palettenstellen benutzen. Bei jedem
+   weiteren Pseudo-Werkzeug daran denken.
+6. **Die Beschriftung lag auf dem Türblatt.** `label()` nimmt jetzt einen Abstand als
+   dritten Parameter; die Tür setzt ihn auf 31, weil ihr Blatt in geschlossener Stellung
+   genau dort liegt, wo Messwerte sonst stehen.
 
 Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie**,
 **Sonderfällen der Netzwerktopologie** und **Darstellung**. Dort lohnt das Prüfen am meisten.
@@ -254,6 +333,15 @@ Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie
 
 ## 12. Offene Punkte
 
-- Mögliche nächste Konzepte: Kreuzschaltung (neues Bauteil nötig), Quellen parallel,
+- Kapitel 6 einsortieren: für die neuen Level Plätze in den bestehenden 24 wählen.
+- Formatierung: die Datei wurde am 11.09.2026 von einem Editor-Formatter (Prettier-Stil)
+  umbrochen und ist dadurch von ~1900 auf ~3600 Zeilen gewachsen. Inhaltlich identisch.
+  Wenn der dichte Handsatz zurück soll, bräuchte es eine `.prettierrc` oder ein
+  `.editorconfig` — sonst bricht der nächste Speichervorgang sie wieder um.
+- Mögliche nächste Konzepte: Kreuzschaltung (siehe Grenzen oben), Quellen parallel,
   Spannungsteiler, Relais, Verbraucher mit unterschiedlichen Widerständen an einer Quelle.
+- Zweihandschaltung (zwei Taster gleichzeitig) — geht erst mit Touch, mit der Maus
+  lässt sich nur ein Taster halten.
+- Leistung (P = U · I) wird intern schon gerechnet: die Lampenhelligkeit ist
+  `I²·R / (Un·In)`, also das Verhältnis zur Nennleistung. Angezeigt wird sie nirgends.
 - Echter Tailwind-Build statt CDN, falls das Spiel ausgeliefert wird.
