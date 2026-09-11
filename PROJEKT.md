@@ -13,7 +13,7 @@ Bauteilen und baut so Stromkreise. Jedes Level hat ein Ziel (z. B. „die Lampe 
 
 - **Zielgruppe:** Sek II / Ausbildung. Zahlen und Messgrößen sind erwünscht, bis Ohmsches Gesetz.
 - **Sprache:** durchgehend Deutsch, auch im Code (Kommentare) und in Commit-Nachrichten.
-- **Umfang:** 24 Level in 5 Kapiteln, dazu ein Testkapitel mit 6 noch nicht
+- **Umfang:** 24 Level in 5 Kapiteln, dazu ein Testkapitel mit 5 noch nicht
   einsortierten Leveln und ein freier Baumodus.
 
 ## 2. Woher es kommt
@@ -122,59 +122,6 @@ Das Spielfeld ist ein Objekt `{"x,y": zelle}`. Fehlt ein Schlüssel, ist die Zel
 - `name` — überschreibt die Beschriftung unter der Zelle (z. B. „Not-Aus“, „Schließer“).
 - `danger` — zeichnet Umriss und Ruhekontakt rot (Not-Aus).
 
-Eine Zelle vom Typ **`door`** ist kein Bauteil, sondern ein Betätiger: sie hat keine
-Anschlüsse, taucht in der Simulation nicht auf, und ein Antippen schaltet den Kontakt,
-auf den ihr `at` zeigt. Sie löst das eigentliche Verständnisproblem am Öffner — dass
-nämlich die *Tür* drückt, und zwar wenn sie **zu** ist. Gezeichnet wird sie im Grundriss
-(Angelpunkt, Türblatt, gestrichelter Schwenkbogen, Anschlag) und dreht sich zur
-Kontaktzelle hin; liegt sie an, wird der Anschlag mitmarkiert. Der Platz für den Kontakt
-ist in Level 30 mit einer gewöhnlichen, ersetzbaren Leitung markiert — so ist sichtbar,
-wohin er gehört, und die Orientierungsprüfung in `canPlace` greift.
-- `link` — koppelt mehrere Wechselschalter: sie springen gemeinsam um. Gedacht für
-  einen Kreuzschalter aus zwei Umschaltern; bisher von keinem Level benutzt.
-- `lock` — vorverlegte Leitung, die nicht gelöscht werden darf.
-- `user` — vom Spieler platziert, darf auch im Level-Modus gelöscht werden.
-- `goal: "off"` — dieser Verbraucher muss aus bleiben (wird rot gestrichelt gezeichnet).
-
-**Knotennamen** entstehen aus Zelle und Seite. Eine Leitungszelle fasst alle vier Seiten zu
-einem Knoten zusammen (`w:x,y`), eine **Kreuzung** hält waagerecht und senkrecht getrennt
-(`ch:x,y` / `cv:x,y`) — daher „Kreuzung ohne Verbindung".
-
-## 6. Bauteile
-
-| Typ | Symbol | Kennwerte |
-|---|---|---|
-| `wire` | Linie, Punkt nur bei ≥ 3 Verbindungen (Knotenpunkt) | ideal |
-| `cross` | waagerechte Leitung springt über die senkrechte | zwei getrennte Knoten |
-| `battery` | Kästchen mit + / − | 9 V, ri 0,5 Ω, imax 1 A |
-| `lamp` | Glühlampe, Helligkeit nach Leistung | 90 Ω, 9 V / 100 mA |
-| `led` | Dreieck mit Balken | UF 2 V, rs 25 Ω, imax 30 mA |
-| `resistor` | Rechteck | 220 Ω (oder `values`) |
-| `switch` | Schalter mit Kontakten | ideal |
-| `button` | Taster (Schließer), leitet nur beim Drücken | ideal |
-| `spdt` | Wechselschalter, ein Anschluss auf zwei Ausgänge | ideal |
-| `motor` | Kreis mit M | 60 Ω, läuft ab 40 mA |
-| `buzzer` | Halbkreis | 120 Ω, summt ab 30 mA |
-| `fuse` | Rechteck mit Strich | löst über 500 mA aus |
-| `ammeter` | Kreis mit A | 5 mΩ, **in Reihe** |
-| `voltmeter` | Kreis mit V | 1 MΩ, **parallel** |
-| `wall` | gesperrte Zelle | — |
-
-Ein `switch` oder `button` mit `nc: true` ist ein **Öffner** (Ruhekontakt): im
-Ruhezustand leitet er, betätigt trennt er. Elektrisch bleibt er ein gewöhnlicher idealer
-Kontakt — der Unterschied liegt allein im Startzustand und im Symbol. Beim Taster dreht
-`nc` zusätzlich Drücken und Loslassen um.
-
-Ein einzelner Öffner ist von einem Schließer kaum zu unterscheiden — Level 28 stellt sie
-deshalb nebeneinander an dieselbe Quelle, statt den Öffner allein zu zeigen.
-
-„sperrt“ steht nur an einer wirklich **verpolten** LED — also wenn eine deutliche
-Gegenspannung an ihr liegt. Eine LED, die bloß überbrückt oder stromlos ist, zeigt 0 mA;
-sonst stünde in Level 27 „sperrt“ an einer richtig gepolten LED.
-
-Ein Voltmeter gilt in der topologischen Sicht bewusst als **nicht leitend** — es schließt
-keinen Stromkreis. In Reihe geschaltet sperrt es den Stromkreis praktisch, genau wie in echt.
-
 ## 7. Level
 
 | # | Kapitel / Level | Konzept |
@@ -212,9 +159,8 @@ keinen Stromkreis. In Reihe geschaltet sperrt es den Stromkreis praktisch, genau
 | 25 | Der Dimmer | Widerstand in Reihe regelt die Helligkeit |
 | 26 | Fehlersuche: Die Wechselschaltung | korrespondierende Leitungen gebrückt |
 | 27 | Das Licht im Schalter | LED parallel zum Schalter |
-| 28 | Schließer und Öffner | beide Kontaktarten im direkten Vergleich |
+| 28 | Drücken macht aus? | beide Kontaktarten im Vergleich, mit Funktionsansicht |
 | 29 | Der Not-Aus | Öffner in der Hauptleitung, Reihenfolge erzwungen |
-| 30 | Der Kühlschrank | die Tür betätigt den Kontakt; Kontaktart wählen |
 
 Kapitel 6 ist eine **Ablage**: die Level liegen hinter den 24 bestehenden, damit sie
 sich durchspielen lassen, ohne die vorhandene Reihenfolge zu verschieben. Welches
@@ -222,8 +168,25 @@ davon welchen Platz bekommt — und welches bestehende dafür weicht — ist off
 
 Level bestehen nur aus Daten (`CHAPTERS`): Name, Feldgröße, Startzellen, Werkzeugpalette,
 Hinweis, Merksatz und optionale Ziele. `showValues: true` blendet Spannungen und Ströme ein. `labelSwitches: true` schreibt
-unter jeden Kontakt „Schließer“ bzw. „Öffner“ — gedacht für Level, in denen der Spieler
-die Kontaktart selbst wählt. `latch` siehe Zielsystem. `frames` zeichnet gestrichelte
+unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, weil dort der
+Öffner in der Palette liegt). `latch` siehe Zielsystem.
+
+`contactLab: true` blendet unter dem Brett die **Funktionsansicht** ein: zwei
+aufgeschnittene Taster, in denen Stößel und Kontaktbrücke sich mitbewegen, dazu eine
+Schrittfolge, die zum Ausprobieren beider Kontakte auffordert. Sie zeigt den
+*Mechanismus*, den der Schaltplan grundsätzlich nicht zeigen kann — bewusst **neben**
+dem Brett und als „vereinfachte Funktionsansicht“ beschriftet, damit die Schaltplan-
+Sprache auf dem Brett unberührt bleibt. Das Muster taugt auch für den Wechselschalter
+oder später ein Relais.
+
+Die Schrittfolge ist **reihenfolgefrei**: je Taster merkt sich `lab` 0 (unberührt),
+1 (gedrückt) und 2 (gedrückt und wieder losgelassen); gelöst ist das Level, wenn beide
+auf 2 stehen. Dass es diese Zusatzbedingung gibt, steht im Aufgabentext, nicht in der
+Zielliste — die Ziele bleiben die Verdrahtung.
+
+Offener Punkt: die Zellschlüssel der beiden Taster (`2,1` / `4,1`) stehen fest im
+Bauteil-Code statt im Level. Wird Level 28 verschoben oder umgebaut, bricht die
+Funktionsansicht still. Gehört ins Level, etwa als `contactLab: { closer, opener }`. `frames` zeichnet gestrichelte
 **Gerätegrenzen** (Rechtecke in Feldkoordinaten) — die Konvention „das ist ein Bauteil“
 aus dem Installationsplan, reines Dekor ohne Wirkung auf die Simulation. Level 27 fasst
 damit Schalter und Orientierungslicht zu einem Gerät zusammen.

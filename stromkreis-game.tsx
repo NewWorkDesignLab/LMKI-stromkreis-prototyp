@@ -1238,65 +1238,6 @@ function buzzerEl(x, y, c, glow, on) {
   );
 }
 
-/* Die Tür. Kein Bauteil, sondern der Betätiger daneben: Zugehen heißt, dass sie
-   auf den Kontakt drückt. Gezeichnet wie im Grundriss – Angelpunkt, Türblatt,
-   gestrichelter Schwenkbogen, Anschlag. Die Grundform schwenkt nach Süden,
-   DOOR_ROT dreht sie zur Zelle des Kontakts hin. */
-const DOOR_ROT = { S: 0, W: 90, N: 180, E: 270 };
-const DOOR_OPEN = -68;                       // Grad; 0 = liegt am Anschlag
-function doorEl(x, y, dir, shut) {
-  const cx = center(x),
-    cy = center(y);
-  const hx = cx - 28,                        // Angelpunkt an der Unterkante,
-    hy = cy + 14,                            // also an der Seite des Kontakts
-    L = 46;
-  const at = (deg) => [
-    hx + L * Math.cos((deg * Math.PI) / 180),
-    hy + L * Math.sin((deg * Math.PI) / 180),
-  ];
-  const [tx, ty] = at(shut ? 0 : DOOR_OPEN);
-  const [ox, oy] = at(DOOR_OPEN);
-  const post = (px, col) => (
-    <line
-      x1={px}
-      y1={cy + 2}
-      x2={px}
-      y2={cy + 20}
-      stroke={col}
-      strokeWidth={6}
-      strokeLinecap="round"
-    />
-  );
-  return (
-    <g
-      key={`dr${x},${y}`}
-      transform={`rotate(${DOOR_ROT[dir] || 0} ${cx} ${cy})`}
-    >
-      <path
-        d={`M ${ox} ${oy} A ${L} ${L} 0 0 1 ${hx + L} ${hy}`}
-        fill="none"
-        stroke={LAMP_STROKE}
-        strokeWidth={1.5}
-        strokeDasharray="3 5"
-      />
-      {post(hx, LAMP_STROKE)}
-      {/* Anschlag: dahinter, in der Nachbarzelle, sitzt der Kontakt. Liegt die
-          Tür an, drückt sie ihn ein – deshalb wird er dann mitmarkiert. */}
-      {post(hx + L, shut ? INK : LAMP_STROKE)}
-      <line
-        x1={hx}
-        y1={hy}
-        x2={tx}
-        y2={ty}
-        stroke={INK}
-        strokeWidth={7}
-        strokeLinecap="round"
-      />
-      <circle cx={hx} cy={hy} r={4} fill={INK} />
-    </g>
-  );
-}
-
 /* Kreuzung ohne Verbindung: die waagerechte Leitung springt über die senkrechte */
 function crossEl(x, y, hv, vv) {
   const cx = center(x),
@@ -1363,10 +1304,6 @@ function cellGlyph(k, c, sim) {
   switch (c.type) {
     case "wall":
       return wallEl(x, y);
-    /* Die Tür braucht den Zustand ihres Kontakts, den cellGlyph nicht kennt –
-       sie wird deshalb direkt im Brett gezeichnet. */
-    case "door":
-      return null;
     case "cross":
       return crossEl(
         x,
@@ -2168,13 +2105,14 @@ const CHAPTERS = [
            Arten nebeneinander an derselben Quelle: sobald Strom fließt, brennt
            die eine Lampe und die andere nicht, ohne dass jemand etwas betätigt.
            Als Taster, weil das Halten den Unterschied körperlich macht. */
-        name: "Schließer und Öffner",
+        name: "Drücken macht aus?",
+        contactLab: true,
         W: 6,
         H: 4,
         palette: BASE,
-        hint: "Zwei Taster, zwei Lampen, eine Quelle. Verdrahte beide Zweige – und sieh dir an, was passiert, sobald Strom fließt, obwohl du noch nichts gedrückt hast. Halte danach die beiden Taster nacheinander gedrückt.",
+        hint: "Verbinde beide Lampenzweige mit der Quelle. Untersuche danach beide Taster: Was verbindet sich beim Drücken, was trennt sich? Die Funktionsansicht unter dem Schaltplan zeigt dir die Bewegung im Bauteil – gelöst ist das Level erst, wenn du beide einmal gedrückt und wieder losgelassen hast.",
         lesson:
-          "Ein Schließer leitet nur, solange er gedrückt wird. Ein Öffner (Ruhekontakt) macht es genau andersherum: Er leitet im Ruhezustand und trennt beim Drücken. So arbeitet der Türkontakt im Kühlschrank – die geschlossene Tür drückt ihn ein und macht das Licht aus.",
+          "Der Name beschreibt, was beim Drücken passiert: Der Schließer schließt den Stromkreis. Der Öffner öffnet ihn. Beide sind hier Taster: Beim Loslassen kehren sie zurück. Ein Schalter bleibt dagegen in seiner gewählten Stellung.",
         cells: {
           "0,2": { type: "battery", orient: "v" },
           "2,1": {
@@ -2260,40 +2198,6 @@ const CHAPTERS = [
            Not-Aus drückt und dann die Schalter umlegt – die Anlage hätte nie
            gelaufen, und genau das soll der Not-Aus ja unterbrechen. */
         latch: { lit: ["3,2", "5,2"] },
-      },
-      {
-        /* Die Tür ist der eigentliche Lerngegenstand, nicht der Kontakt: Sie
-           DRÜCKT, wenn sie ZU ist. Deshalb liegt sie als eigene Zelle neben dem
-           Kontakt und wird angetippt – nicht der Kontakt selbst. Und deshalb
-           liegen beide Kontaktarten in der Palette: Wer zum Schließer greift,
-           baut einen Kühlschrank, der nur bei geschlossener Tür leuchtet, und
-           sieht seinen Denkfehler, statt ihn erklärt zu bekommen. */
-        name: "Der Kühlschrank",
-        W: 5,
-        H: 4,
-        palette: ["wire", "switch", "opener", "erase"],
-        labelSwitches: true,
-        hint: "Das Licht im Kühlschrank soll brennen, wenn die Tür offen ist – und aus sein, wenn sie zu ist. Setze den passenden Kontakt ein: Schließer oder Öffner. Tippe die Tür an, um sie auf- und zuzumachen.",
-        lesson:
-          "Die Tür ist der Finger: Zugehen heißt drücken. Ein Öffner leitet, solange niemand drückt – also brennt das Licht bei offener Tür und geht aus, sobald die Tür den Kontakt eindrückt. Mit einem Schließer wäre es genau verkehrt herum.",
-        cells: {
-          "0,2": { type: "battery", orient: "v" },
-          "4,2": { type: "lamp", orient: "v" },
-          "2,0": { type: "door", at: "2,1" },
-          /* Markiert den Platz für den Kontakt: ersetzbar, nicht gesperrt.
-             Bleibt sie liegen, brennt das Licht immer – auch das ist eine Antwort. */
-          "2,1": { type: "wire" },
-          ...wall("1,2 2,2 3,2"),
-        },
-        goals: [
-          {
-            k: "logic",
-            at: "4,2",
-            expr: "not",
-            inputs: ["2,1"],
-            label: "Licht an bei offener Tür – und aus, sobald sie zu ist",
-          },
-        ],
       },
     ],
   },
@@ -2428,6 +2332,7 @@ function TutorialRoute({ step, moving }) {
 
 const SANDBOX = {
   name: "Frei bauen",
+  labelSwitches: true,
   W: 9,
   H: 6,
   showValues: true,
@@ -2625,6 +2530,7 @@ const SANDBOX_PALETTE = [
   "led",
   "resistor",
   "switch",
+  "opener",
   "button",
   "spdt",
   "motor",
@@ -2766,6 +2672,10 @@ export default function App() {
   const [completed, setCompleted] = useState(new Set());
   const [overlay, setOverlay] = useState(null); // "levels" | "legend" | null
   const [isDrawing, setIsDrawing] = useState(false);
+  /* Funktionsansicht: je Taster 0 = noch nicht angefasst, 1 = gerade gedrückt,
+     2 = gedrückt UND wieder losgelassen. Zwei getrennte Zähler, damit die
+     Reihenfolge egal ist – wer mit dem Öffner anfängt, soll nicht ins Leere laufen. */
+  const [lab, setLab] = useState({ closer: 0, opener: 0 });
   const [seen, setSeen] = useState(false);   // siehe `latch` weiter unten
   const svgRef = useRef(null);
   const drawing = useRef(false);
@@ -2805,7 +2715,27 @@ export default function App() {
         : { items: [], won: false },
     [mode, cfg, grid, sim, seen],
   );
-  const won = check.won;
+  // Nur bei richtiger Verdrahtung zählen die beobachteten Betätigungen.
+  useEffect(() => {
+    if (!cfg.contactLab) return;
+    if (!check.won) {
+      if (lab.closer || lab.opener) setLab({ closer: 0, opener: 0 });
+      return;
+    }
+    /* „betätigt“ statt „leitet“ – beim Öffner ist das gegenläufig. */
+    const held = (k) => {
+      const c = grid[k];
+      return c ? (c.nc ? !c.closed : !!c.closed) : false;
+    };
+    const next = (cur, down) => (cur === 2 ? 2 : down ? 1 : cur === 1 ? 2 : 0);
+    const n = {
+      closer: next(lab.closer, held("2,1")),
+      opener: next(lab.opener, held("4,1")),
+    };
+    if (n.closer !== lab.closer || n.opener !== lab.opener) setLab(n);
+  }, [cfg, check.won, grid, lab]);
+  const labDone = lab.closer === 2 && lab.opener === 2;
+  const won = check.won && (!cfg.contactLab || labDone);
 
   useEffect(() => {
     if (won)
@@ -2875,12 +2805,6 @@ export default function App() {
         pressed.current = k;
         return { ...p, [k]: { ...c, closed: !c.nc } };
       }
-      /* Die Tür ist kein Bauteil, sondern der Finger: Antippen betätigt den
-       Kontakt, auf den sie zeigt. Genau diese Übersetzung fehlt sonst. */
-    if (c.type === "door") {
-      const t = p[c.at];
-      return t ? { ...p, [c.at]: { ...t, closed: !t.closed } } : p;
-    }
     /* Gekoppelte Wechselschalter (Kreuzschalter): beide Zellen springen gemeinsam um. */
       if (c.type === "spdt") {
         const pos = c.pos ? 0 : 1;
@@ -3022,6 +2946,7 @@ export default function App() {
 
   const resetGrid = () => {
     stop(false);
+    setLab({ closer: 0, opener: 0 });
     setSeen(false);   // sonst bliebe „lief schon mal“ über das Zurücksetzen hinweg stehen
     setGrid(JSON.parse(JSON.stringify(cfg.cells)));
   };
@@ -3033,6 +2958,7 @@ export default function App() {
      Zielprüfung ein fremdes Feld und trägt das neue Level sofort als gelöst ein. */
   const loadBoard = (cells) => {
     setIsDrawing(false);
+    setLab({ closer: 0, opener: 0 });
     setSeen(false);
     setGrid(JSON.parse(JSON.stringify(cells)));
     setTool("wire");
@@ -3130,13 +3056,13 @@ export default function App() {
 
   /* Beschriftungen stehen immer mittig unter ihrer Zelle – auch am Brettrand,
      denn die viewBox reicht dort um PAD_X über das Spielfeld hinaus. */
-  const label = (k, txt, dy = 27) => {
+  const label = (k, txt) => {
     const [x, y] = k.split(",").map(Number);
     labelEls.push(
       <text
         key={`t${k}`}
         x={center(x)}
-        y={center(y) + dy}
+        y={center(y) + 27}
         textAnchor="middle"
         fontSize={10.5}
         fontWeight="600"
@@ -3174,16 +3100,6 @@ export default function App() {
             strokeWidth={node ? 2.5 : 0}
           />,
         );
-      continue;
-    }
-    if (c.type === "door") {
-      const [dx, dy] = k.split(",").map(Number);
-      const [ax, ay] = c.at.split(",").map(Number);
-      const dir = ay > dy ? "S" : ay < dy ? "N" : ax > dx ? "E" : "W";
-      const t = grid[c.at];
-      const shut = t ? (t.nc ? !t.closed : !!t.closed) : false;
-      compEls.push(doorEl(dx, dy, dir, shut));
-      label(k, shut ? "Tür zu" : "Tür auf", 31);
       continue;
     }
     compEls.push(cellGlyph(k, c, sim));
@@ -3510,6 +3426,64 @@ export default function App() {
             {tutEls}
           </svg>
         </div>
+
+        {cfg.contactLab && (
+          <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">Funktionsansicht</p>
+            <h3 className="font-semibold text-stone-800">Was bewegt sich im Taster?</h3>
+            <p className="mt-1 text-xs text-stone-600">Beide Taster kehren beim Loslassen zurück. Betätige sie hier oder im Schaltplan.</p>
+            <p className="my-3 rounded-lg bg-white p-2 text-sm font-medium" aria-live="polite">
+              {!check.won
+                ? "Verdrahte zuerst beide Lampenzweige."
+                : labDone
+                  ? "Der Schließer schließt beim Drücken. Der Öffner öffnet beim Drücken."
+                  : lab.closer === 1
+                    ? "Lass den Schließer wieder los. Beobachte, wie der Kontakt zurückkehrt."
+                    : lab.opener === 1
+                      ? "Lass den Öffner wieder los. Beobachte, wie der Kontakt zurückkehrt."
+                      : lab.closer === 2
+                        ? "Halte jetzt den Öffner gedrückt. Beobachte die Unterbrechung."
+                        : lab.opener === 2
+                          ? "Halte jetzt den Schließer gedrückt. Beobachte die Kontaktbrücke."
+                          : "Halte einen der beiden Taster gedrückt und beobachte die Kontaktbrücke."}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[{ at: "2,1", lamp: "2,2", name: "Schließerkontakt" }, { at: "4,1", lamp: "4,2", name: "Öffnerkontakt" }].map(({ at, lamp, name }) => {
+                const c = grid[at];
+                /* Beim Levelwechsel rendert die Kachel kurz gegen das alte Feld –
+                   ohne diese Zeile reißt sie die ganze App mit. */
+                if (!c) return null;
+                const down = c.nc ? !c.closed : c.closed;
+                const bridgeY = c.closed ? 105 : c.nc ? 132 : 78;
+                return (
+                  <div key={at} className="rounded-lg border border-stone-200 bg-white p-3">
+                    <h4 className="text-sm font-semibold">Taster mit {name}</h4>
+                    <svg viewBox="0 0 240 160" className="w-full" style={{ maxHeight: 170 }} role="img" aria-label={`${name}: ${down ? "gedrückt" : "losgelassen"}, Kontakt ${c.closed ? "geschlossen" : "offen"}`}>
+                      <path d="M20 135 V105 H80 M160 105 H220 V135" fill="none" stroke="#78716c" strokeWidth="4" />
+                      <circle cx="80" cy="105" r="5" fill="#44403c" />
+                      <circle cx="160" cy="105" r="5" fill="#44403c" />
+                      <g style={{ transform: `translateY(${down ? 27 : 0}px)`, transition: "transform 120ms" }}>
+                        <rect x="96" y="15" width="48" height="13" rx="4" fill="#44403c" />
+                        <path d={`M120 28 V${bridgeY - (down ? 27 : 0)}`} stroke="#a8a29e" strokeWidth="4" />
+                      </g>
+                      <path d={`M75 ${bridgeY} H165`} stroke={c.closed ? "#047857" : "#b45309"} strokeWidth="7" strokeLinecap="round" />
+                      <text x="175" y="46" fontSize="11" fill="#57534e">{down ? "↓ gedrückt" : "losgelassen"}</text>
+                    </svg>
+                    <p className="text-sm font-medium">Kontakt {c.closed ? "geschlossen · verbunden" : "offen · getrennt"}</p>
+                    <p className="mt-1 text-xs text-stone-600">Lampe {sim.lit.has(lamp) ? "an" : "aus"}</p>
+                    <button type="button" className="mt-3 w-full rounded-lg bg-stone-800 px-3 py-2 text-sm font-medium text-white select-none" style={{ touchAction: "none" }}
+                      aria-label={`${name} gedrückt halten`} aria-pressed={down}
+                      onPointerDown={(e) => { if (e.button !== 0 || !e.isPrimary) return; e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); interact(...at.split(",").map(Number)); }}
+                      onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}
+                      onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); interact(...at.split(",").map(Number)); } }}
+                      onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); release(); } }} onBlur={release}
+                    >{down ? "Loslassen zum Zurückkehren" : "Gedrückt halten"}</button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {mode === "sandbox" && partTools.length > 0 && (
           <div className="mt-4">
