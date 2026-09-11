@@ -308,3 +308,13 @@ Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie
 - Leistung (P = U · I) wird intern schon gerechnet: die Lampenhelligkeit ist
   `I²·R / (Un·In)`, also das Verhältnis zur Nennleistung. Angezeigt wird sie nirgends.
 - Echter Tailwind-Build statt CDN, falls das Spiel ausgeliefert wird.
+
+## Testdurchlauf September 2026
+
+Der sichtbare Durchlauf hat 25 Level. `LEVEL_CATALOG` bewahrt die ursprünglichen
+Leveldaten; `CHAPTERS` stellt daraus den Testdurchlauf zusammen. Der bisherige
+Dimmer (25) ersetzt Level 15. Die bisherigen Level 22–24 sind ausgeblendet.
+Die bisherigen Level 26–29 werden als 22–25 angehängt. Das Kühlschrankexperiment
+(30) war bereits vor dieser Umstellung nicht mehr im aktuellen Katalog enthalten.
+Level 20 bleibt „Ohmsches Gesetz“ und ergänzt ein interaktives URI-Dreieck mit
+aktuellen Werten am einstellbaren Widerstand sowie einem aufklappbaren Rechenweg.

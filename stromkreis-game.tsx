@@ -1399,9 +1399,9 @@ const wire = (s) => spread(s, { type: "wire" });
 const lockw = (s) => spread(s, { type: "wire", lock: true });
 const BASE = ["wire", "erase"];
 
-const CHAPTERS = [
+const LEVEL_CATALOG = [
   {
-    name: "Der Stromkreis",
+    name: "Stromkreis-Grundlagen",
     levels: [
       {
         name: "Schließe den Stromkreis",
@@ -1492,7 +1492,7 @@ const CHAPTERS = [
     ],
   },
   {
-    name: "Kurzschluss & Schutz",
+    name: "Stromfluss & Schutz",
     levels: [
       {
         name: "Der Kurzschluss",
@@ -1578,7 +1578,7 @@ const CHAPTERS = [
     ],
   },
   {
-    name: "Schalter & Logik",
+    name: "Schalten & Steuern",
     levels: [
       {
         name: "Der Taster",
@@ -1723,7 +1723,7 @@ const CHAPTERS = [
     ],
   },
   {
-    name: "Größen & Messen",
+    name: "Widerstand, Messen & Rechnen",
     levels: [
       {
         name: "Der Widerstand",
@@ -1850,11 +1850,12 @@ const CHAPTERS = [
       },
       {
         name: "Ohmsches Gesetz",
+        ohmLab: true,
         W: 7,
         H: 3,
         palette: BASE,
         showValues: true,
-        hint: "Die Spannungsquelle liefert 9 V, die Lampe hat 90 Ω. Der Strom soll 30 mA betragen. Rechne R = U / I − 90 Ω und tippe den Widerstand an, bis der Wert passt.",
+        hint: "Welchen zusätzlichen Widerstand brauchst du für etwa 30 mA? Die Quelle liefert 9 V, die Lampe hat 90 Ω. Berechne zuerst deinen Wunschwert mit der Rechenhilfe. Verdrahte dann den Stromkreis, wähle die nächstliegende Widerstandsstufe und prüfe deine Vorhersage am Amperemeter.",
         lesson:
           "R = U / I. Der Gesamtwiderstand einer Reihenschaltung ist die Summe aller Widerstände.",
         cells: {
@@ -1882,7 +1883,7 @@ const CHAPTERS = [
     ],
   },
   {
-    name: "Schaltplan lesen",
+    name: "Verbindungen im Schaltplan",
     levels: [
       {
         /* Fertig verdrahtet ausgeliefert, an den vier Kreuzungsstellen aber mit
@@ -1992,7 +1993,7 @@ const CHAPTERS = [
     /* Neu dazugekommen und noch nicht einsortiert: diese Level stehen vorerst
        hinten, damit sie sich durchspielen lassen, ohne die bestehenden 24 zu
        verschieben. Welches davon welchen Platz bekommt, wird danach entschieden. */
-    name: "Neue Level (Test)",
+    name: "Schaltungen verstehen & ausprobieren",
     levels: [
       {
         name: "Der Dimmer",
@@ -2202,6 +2203,17 @@ const CHAPTERS = [
     ],
   },
 ];
+
+// Testdurchlauf: Die Originallevel bleiben im Katalog erhalten.
+// Alte 25 ersetzt 15; alte 22–24 pausieren; alte 26–29 folgen auf 21.
+const CHAPTERS = LEVEL_CATALOG.map((chapter, index) => ({
+  ...chapter,
+  levels: index === 3
+    ? [LEVEL_CATALOG[5].levels[0], ...chapter.levels.slice(1)]
+    : index === 4 ? chapter.levels.slice(0, 1)
+    : index === 5 ? chapter.levels.slice(1, 5)
+    : chapter.levels,
+}));
 
 const LEVELS = CHAPTERS.flatMap((ch, ci) =>
   ch.levels.map((l) => ({ ...l, ch: ci })),
@@ -2660,6 +2672,59 @@ const LEGEND = [
   [{ type: "buzzer", orient: "h" }, "Summer", "akustischer Verbraucher"],
   [{ type: "cross" }, "Kreuzung", "Leitungen kreuzen sich OHNE Verbindung"],
 ];
+
+function OhmLab({ grid, sim }) {
+  const [wanted, setWanted] = useState("R");
+  const resistor = grid["2,0"];
+  const r = resistor?.r ?? 100;
+  const u = Math.abs(sim.volt["2,0"] || 0);
+  const i = Math.abs(sim.cur["2,0"] || 0);
+  const active = i > EPS && !sim.short;
+  const fmt = (value, digits = 2) => value.toLocaleString("de-DE", { maximumFractionDigits: digits });
+  const formula = { U: "U = R · I", R: "R = U / I", I: "I = U / R" }[wanted];
+  const example = {
+    U: `${fmt(r)} Ω · ${fmt(i, 4)} A ≈ ${fmt(u)} V`,
+    R: `${fmt(u)} V / ${fmt(i, 4)} A ≈ ${fmt(r)} Ω`,
+    I: `${fmt(u)} V / ${fmt(r)} Ω ≈ ${fmt(i, 4)} A = ${fmt(i * 1000)} mA`,
+  }[wanted];
+  return (
+    <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">Rechenhilfe</p>
+      <h3 className="font-semibold text-stone-800">Wie hängen Spannung, Widerstand und Strom zusammen?</h3>
+      <p className="mt-1 text-xs text-stone-600">Wähle die gesuchte Größe. Decke sie im Dreieck gedanklich ab: Nebeneinander heißt multiplizieren, übereinander heißt dividieren.</p>
+      <div className="flex flex-wrap items-center gap-4 mt-3">
+        <svg viewBox="0 0 180 150" width="180" height="150" role="img" aria-label={`URI-Dreieck: U oben, R und I unten. Gesucht: ${wanted}. ${formula}`}>
+          <path d="M90 8 L8 140 H172 Z M49 74 H131 M90 74 V140" fill="none" stroke={WIRE} strokeWidth="2" strokeLinejoin="round" />
+          {[{ symbol: "U", x: 90, y: 53 }, { symbol: "R", x: 61, y: 116 }, { symbol: "I", x: 119, y: 116 }].map(({ symbol, x, y }) => (
+            <g key={symbol}>
+              {wanted === symbol && <rect x={x - 16} y={y - 24} width="32" height="32" rx="6" fill="#fef3c7" />}
+              <text x={x} y={y} textAnchor="middle" fontSize="24" fontWeight="600" fill={INK}>{symbol}</text>
+            </g>
+          ))}
+        </svg>
+        <div className="flex-1 min-w-[180px]">
+          <div className="flex gap-2" role="group" aria-label="Gesuchte Größe">
+            {["U", "R", "I"].map((symbol) => <button key={symbol} type="button" aria-pressed={wanted === symbol} onClick={() => setWanted(symbol)} className={`rounded-lg border px-3 py-2 text-sm font-medium ${wanted === symbol ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-700 border-stone-200"}`}>{symbol}</button>)}
+          </div>
+          <p className="mt-2 text-xs text-stone-600">U: Spannung in Volt · R: Widerstand in Ohm · I: Strom in Ampere</p>
+          <p className="mt-3 text-xl font-semibold" aria-live="polite">{formula}</p>
+          <p className="mt-1 text-xs text-stone-500">Aktuell am einstellbaren Widerstand</p>
+          <p className="mt-1 text-sm" aria-live="polite">{active ? example : "Schließe den Stromkreis, um die aktuellen Werte einzusetzen."}</p>
+        </div>
+      </div>
+      <details className="mt-3 rounded-lg border border-stone-200 bg-white p-3 text-sm">
+        <summary className="cursor-pointer font-medium">Rechenweg für deine Vorhersage anzeigen</summary>
+        <div className="mt-2 space-y-1 text-stone-700">
+          <p>30 mA = 0,03 A</p>
+          <p>R gesamt = 9 V / 0,03 A = 300 Ω</p>
+          <p>Die Lampe bringt bereits 90 Ω mit: 300 Ω − 90 Ω = 210 Ω zusätzlich.</p>
+          <p>Die nächste angebotene Stufe ist 220 Ω. Damit erwarten wir etwa 29 mA.</p>
+          <p className="text-xs text-stone-500">Näherung mit 9 V: Die Simulation berücksichtigt zusätzlich kleine Innen- und Messgerätewiderstände.</p>
+        </div>
+      </details>
+    </section>
+  );
+}
 
 export default function App() {
   const [mode, setMode] = useState("level");
@@ -3426,6 +3491,8 @@ export default function App() {
             {tutEls}
           </svg>
         </div>
+
+        {cfg.ohmLab && <OhmLab key={levelIndex} grid={grid} sim={sim} />}
 
         {cfg.contactLab && (
           <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
