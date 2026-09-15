@@ -2745,11 +2745,35 @@ function OhmLab({ grid }) {
       <h3 className="font-semibold text-stone-800">Wie hängen Spannung, Widerstand und Strom zusammen?</h3>
       <p className="mt-1 text-xs text-stone-600">Das Ohmsche Gesetz beschreibt die proportionalen Zusammenhänge der drei elektrischen Grundgrößen, Strom (I), der Spannung (U) und dem Widerstand (R). Mit seiner Hilfe lässt sich der fehlende Wert berechnen, insofern die beiden anderen bekannt sind.</p>
       <div className="flex flex-wrap items-center gap-4 mt-3">
-        <svg viewBox="0 0 180 150" width="180" height="150" role="img" aria-label={`URI-Dreieck: U oben, R und I unten. Gesucht: ${wanted}. ${formula}`}>
+        <svg viewBox="0 0 180 150" width="180" height="150" role="img" aria-label={`URI-Dreieck: U oben, R und I unten. ${wanted === "U" ? "Malpunkt zwischen R und I." : `Geteiltzeichen zwischen U und ${wanted === "R" ? "I" : "R"}.`} Gesucht: ${wanted}. ${formula}`}>
+          <style>{`
+            .ohm-selection { transition: opacity 280ms ease-in-out; }
+            .ohm-operation { animation: ohm-operation-in 240ms ease-out both; transform-box: fill-box; transform-origin: center; }
+            @keyframes ohm-operation-in {
+              from { opacity: 0; transform: scale(0.75); }
+              to { opacity: 1; transform: scale(1); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .ohm-selection { transition: none; }
+              .ohm-operation { animation: none; }
+            }
+          `}</style>
+          {[
+            { symbol: "U", d: "M90 8 L49 74 H131 Z" },
+            { symbol: "R", d: "M49 74 H90 V140 H8 Z" },
+            { symbol: "I", d: "M90 74 H131 L172 140 H90 Z" },
+          ].map(({ symbol, d }) => (
+            <path key={symbol} className="ohm-selection" d={d} fill="#fef3c7" opacity={wanted === symbol ? 1 : 0} />
+          ))}
           <path d="M90 8 L8 140 H172 Z M49 74 H131 M90 74 V140" fill="none" stroke={WIRE} strokeWidth="2" strokeLinejoin="round" />
+          {[{ wanted: "I", sign: "÷", x: 68, y: 74 }, { wanted: "R", sign: "÷", x: 112, y: 74 }, { wanted: "U", sign: "·", x: 90, y: 108 }].filter((operation) => operation.wanted === wanted).map(({ sign, x, y }) => (
+            <g key={`${x}-${y}`} className="ohm-operation">
+              <rect x={x - 10} y={y - 11} width="20" height="22" rx="5" fill="#fafaf9" />
+              <text x={x} y={y + 1} textAnchor="middle" dominantBaseline="middle" fontSize="24" fontWeight="700" fill={INK}>{sign}</text>
+            </g>
+          ))}
           {[{ symbol: "U", x: 90, y: 53 }, { symbol: "R", x: 61, y: 116 }, { symbol: "I", x: 119, y: 116 }].map(({ symbol, x, y }) => (
             <g key={symbol}>
-              {wanted === symbol && <rect x={x - 16} y={y - 24} width="32" height="32" rx="6" fill="#fef3c7" />}
               <text x={x} y={y} textAnchor="middle" fontSize="26" fontWeight="600" fontStyle="italic" fontFamily="Georgia, 'Times New Roman', serif" fill={INK}>{symbol}</text>
             </g>
           ))}
