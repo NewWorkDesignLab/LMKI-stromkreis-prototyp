@@ -1588,7 +1588,7 @@ const LEVEL_CATALOG = [
         palette: BASE,
         hint: "Ein Taster ist ein Schließer: er leitet nur, solange du ihn gedrückt hältst. Halte ihn auf dem Feld gedrückt.",
         lesson:
-          "Taster (Schließer) leiten nur während der Betätigung – z. B. eine Klingel.",
+          "Ein Taster leiten nur während der Betätigung – z. B. bei einer Klingel.",
         cells: {
           "0,1": { type: "battery", orient: "v" },
           "5,1": { type: "lamp", orient: "v" },
@@ -1856,7 +1856,7 @@ const LEVEL_CATALOG = [
         H: 3,
         palette: BASE,
         showValues: true,
-        hint: "Eine 9-V-Spannungsquelle versorgt eine Lampe mit einem Widerstand von 90 Ω. Die Stromstärke im Stromkreis soll 29 mA betragen. Berechne den zusätzlich benötigten Widerstand. Wähle anschließend den passenden Widerstand aus, verdrahte den Stromkreis und überprüfe die Stromstärke mit dem Amperemeter.",
+        hint: "Gegeben sind eine Spannung von 9 V und eine Lampe mit einem Widerstand von 90 Ω. Die Stromstärke im Stromkreis soll 29 mA betragen. Berechne den zusätzlich benötigten Widerstand. Wähle anschließend den passenden Widerstand aus, verdrahte den Stromkreis und überprüfe die Stromstärke mit dem Amperemeter.",
         lesson:
           "R = U / I. Der Gesamtwiderstand einer Reihenschaltung ist die Summe aller Widerstände.",
         cells: {
@@ -2074,7 +2074,7 @@ const LEVEL_CATALOG = [
         showValues: true,
         hint: "Beleuchtete Lichtschalter besitzen oft eine kleine Glimmleuchte, die im Dunkeln schwach glimmt, wenn das Licht ausgeschaltet ist. Hier wird sie durch eine LED mit Vorwiderstand dargestellt. Verdrahte den Stromkreis so, dass die LED bei ausgeschalteter Lampe leuchtet und bei eingeschalteter Lampe erlischt.",
         lesson:
-          "Die LED liegt parallel zum Schalter. Bei offenem Schalter fließt der Strom durch LED UND Lampe – sieh dir die Messwerte an: rund 6 mA statt 100 mA. Der LED reicht das zum Leuchten, der Lampe bei Weitem nicht. Geschlossen überbrückt der Schalter die LED, sie bekommt keine Spannung mehr und erlischt.",
+          "Die LED liegt parallel zum Schalter. Bei offenem Schalter fließt ein minimaler Strom durch LED und Lampe (hier 6,3 mA). Der LED (Glimmleuchte) reicht das zum Leuchten, der Lampe bei Weitem nicht. Geschlossen überbrückt der Schalter die LED, sie bekommt keine Spannung mehr und erlischt.",
         cells: {
           "0,2": { type: "battery", orient: "v" },
           "6,2": { type: "lamp", orient: "v" },
@@ -2758,7 +2758,7 @@ function OhmLab({ grid }) {
           <div className="flex gap-2" role="group" aria-label="Gesuchte Größe">
             {["U", "R", "I"].map((symbol) => <button key={symbol} type="button" aria-pressed={wanted === symbol} onClick={() => setWanted(symbol)} className={`rounded-lg border px-3 py-2 text-sm font-medium ${wanted === symbol ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-700 border-stone-200"}`}>{symbol}</button>)}
           </div>
-          <p className="mt-2 text-xs text-stone-600">Gegeben sind Quellenspannung: <Formel>U = 9 V</Formel> und die Zielgröße: <Formel>I = 29 mA</Formel></p>
+          <p className="mt-2 text-xs text-stone-600">Gegeben sind Quellspannung: <Formel>U = 9 V</Formel> und die Zielgröße: <Formel>I = 29 mA</Formel> sowie der Widerstand der Lampe: <Formel>R_Lampe = 90 Ω</Formel></p>
           <p className="mt-1 text-xs text-stone-600">Gesucht ist der zusätzliche Widerstand <Formel>R_zus</Formel> in Ω</p>
           <p className="mt-3 text-xl font-semibold" aria-live="polite"><Formel>{formula}</Formel></p>
           <p className="mt-1 text-sm" aria-live="polite"><Formel>{example}</Formel></p>
