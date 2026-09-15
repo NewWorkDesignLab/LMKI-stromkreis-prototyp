@@ -2136,14 +2136,14 @@ const LEVEL_CATALOG = [
             expr: "id",
             inputs: ["2,1"],
             label:
-              "Die linke Lampe leuchtet nur, solange der Schließer gedrückt ist",
+              "Die linke Lampe leuchtet nur, solange der Schließer betätigt ist",
           },
           {
             k: "logic",
             at: "4,2",
             expr: "not",
             inputs: ["4,1"],
-            label: "Die rechte Lampe erlischt, solange der Öffner gedrückt ist",
+            label: "Die rechte Lampe erlischt, solange der Öffner betätigt ist",
           },
         ],
       },
@@ -3677,7 +3677,7 @@ export default function App() {
               {!check.won
                 ? "Verdrahte zuerst beide Lampenzweige."
                 : labDone
-                  ? "Der Schließer schließt beim Drücken. Der Öffner öffnet beim Drücken."
+                  ? "Der Schließer schließt beim Betätigen. Der Öffner öffnet beim Betätigen."
                   : lab.closer === 1
                     ? "Lass den Schließer wieder los. Beobachte, wie der Kontakt zurückkehrt."
                     : lab.opener === 1
@@ -3702,7 +3702,7 @@ export default function App() {
                       <h4 className="text-sm font-semibold">Taster mit {name}</h4>
                       {c.nc && <div className="shrink-0"><FridgeOrientation /></div>}
                     </div>
-                    <svg viewBox="0 0 240 160" className="w-full" style={{ maxHeight: 170 }} role="img" aria-label={`${name}: ${down ? "gedrückt" : "losgelassen"}, Kontakt ${c.closed ? "geschlossen" : "offen"}`}>
+                    <svg viewBox="0 0 240 160" className="w-full" style={{ maxHeight: 170 }} role="img" aria-label={`${name}: ${down ? "betätigt" : "losgelassen"}, Kontakt ${c.closed ? "geschlossen" : "offen"}`}>
                       <path d="M20 135 V105 H80 M160 105 H220 V135" fill="none" stroke="#78716c" strokeWidth="4" />
                       <circle cx="80" cy="105" r="5" fill="#44403c" />
                       <circle cx="160" cy="105" r="5" fill="#44403c" />
@@ -3711,7 +3711,7 @@ export default function App() {
                         <path d={`M120 28 V${bridgeY - (down ? 27 : 0)}`} stroke="#a8a29e" strokeWidth="4" />
                       </g>
                       <path d={`M75 ${bridgeY} H165`} stroke={c.closed ? "#047857" : "#b45309"} strokeWidth="7" strokeLinecap="round" />
-                      <text x="175" y="46" fontSize="11" fill="#57534e">{down ? "↓ gedrückt" : "losgelassen"}</text>
+                      <text x="175" y="46" fontSize="11" fill="#57534e">{down ? "↓ betätigt" : "losgelassen"}</text>
                     </svg>
                     <p className="text-sm font-medium">Kontakt {c.closed ? "geschlossen · verbunden" : "offen · getrennt"}</p>
                     <p className="mt-1 text-xs text-stone-600">Lampe {sim.lit.has(lamp) ? "an" : "aus"}</p>
