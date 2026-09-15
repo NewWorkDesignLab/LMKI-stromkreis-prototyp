@@ -2772,8 +2772,7 @@ function OhmLab({ grid }) {
           <p><Formel>R_zus = R_ges − R_Lampe = 310,34 Ω − 90 Ω = 220,34 Ω.</Formel></p>
           <p>Auf die verfügbare Widerstandsstufe abgerundet: <Formel>R_zus = 220 Ω</Formel></p>
           <p>Probe: <Formel>I = 9 V / 310 Ω ≈ 0,029032 A = 29,032 mA ≈ 29 mA.</Formel></p>
-          <p> Damit ergbit sich ein einzustellender Zusatzwiderstand von <Formel>220 Ω</Formel> in der Schaltung.</p>
-          <p className="text-xs text-stone-500">Näherung mit 9 V: Die Simulation berücksichtigt zusätzlich kleine Innen- und Messgerätewiderstände.</p>
+          <p> Damit ergibt sich ein <i>einzustellender Zusatzwiderstand</i> von <Formel>220 Ω</Formel> in der Schaltung.</p>
         </div>
       </details>
     </section>
