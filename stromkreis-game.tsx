@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { Fragment, useState, useEffect, useRef, useMemo } from "react";
 import {
   Pencil,
   Cable,
@@ -2700,6 +2700,31 @@ const LEGEND = [
   [{ type: "cross" }, "Kreuzung", "Leitungen kreuzen sich OHNE Verbindung"],
 ];
 
+/* Formelsatz wie an der Tafel: Formelzeichen kursiv und mit tiefgestelltem
+   Index, Zahlen und Einheiten aufrecht. Geschrieben wird einfach "R_ges" –
+   erkannt wird ein einzelnes U, R oder I, wahlweise mit _Index und einem
+   Satzzeichen dahinter. Alles andere im Text bleibt, wie es ist. */
+const FORMELZEICHEN = /^([URI])(?:_([A-Za-zäöüÄÖÜß]+))?([,.;:]?)$/;
+function Formel({ children }) {
+  return (
+    <>
+      {String(children)
+        .split(/(\s+)/)
+        .map((token, n) => {
+          const m = FORMELZEICHEN.exec(token);
+          if (!m) return token;
+          return (
+            <Fragment key={n}>
+              <i className="font-serif">{m[1]}</i>
+              {m[2] && <sub className="font-serif text-[0.75em]">{m[2]}</sub>}
+              {m[3]}
+            </Fragment>
+          );
+        })}
+    </>
+  );
+}
+
 function OhmLab({ grid }) {
   const [wanted, setWanted] = useState("R");
   const resistor = grid["2,0"];
@@ -2710,9 +2735,9 @@ function OhmLab({ grid }) {
   const fmt = (value, digits = 2) => value.toLocaleString("de-DE", { maximumFractionDigits: digits });
   const formula = { U: "U = R · I", R: "R = U / I", I: "I = U / R" }[wanted];
   const example = {
-    U: `${fmt(r)} Ω · ${fmt(i, 6)} A ≈ ${fmt(u)} V`,
-    R: `${fmt(u)} V / ${fmt(i, 6)} A ≈ ${fmt(r)} Ω`,
-    I: `${fmt(u)} V / ${fmt(r)} Ω ≈ ${fmt(i, 6)} A = ${fmt(i * 1000, 3)} mA`,
+    U: `U = ${fmt(r)} Ω · ${fmt(i, 6)} A ≈ ${fmt(u)} V`,
+    R: `R_ges = ${fmt(u)} V / ${fmt(i, 6)} A ≈ ${fmt(r)} Ω`,
+    I: `I = ${fmt(u)} V / ${fmt(r)} Ω ≈ ${fmt(i, 6)} A = ${fmt(i * 1000, 3)} mA`,
   }[wanted];
   return (
     <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
@@ -2725,7 +2750,7 @@ function OhmLab({ grid }) {
           {[{ symbol: "U", x: 90, y: 53 }, { symbol: "R", x: 61, y: 116 }, { symbol: "I", x: 119, y: 116 }].map(({ symbol, x, y }) => (
             <g key={symbol}>
               {wanted === symbol && <rect x={x - 16} y={y - 24} width="32" height="32" rx="6" fill="#fef3c7" />}
-              <text x={x} y={y} textAnchor="middle" fontSize="24" fontWeight="600" fill={INK}>{symbol}</text>
+              <text x={x} y={y} textAnchor="middle" fontSize="26" fontWeight="600" fontStyle="italic" fontFamily="Georgia, 'Times New Roman', serif" fill={INK}>{symbol}</text>
             </g>
           ))}
         </svg>
@@ -2733,20 +2758,21 @@ function OhmLab({ grid }) {
           <div className="flex gap-2" role="group" aria-label="Gesuchte Größe">
             {["U", "R", "I"].map((symbol) => <button key={symbol} type="button" aria-pressed={wanted === symbol} onClick={() => setWanted(symbol)} className={`rounded-lg border px-3 py-2 text-sm font-medium ${wanted === symbol ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-700 border-stone-200"}`}>{symbol}</button>)}
           </div>
-          <p className="mt-2 text-xs text-stone-600">Gegebnen sind Quellenspannung: U = 9 V und die Zielgröße: I = 29 mA</p>
-          <p className="mt-1 text-xs text-stone-600">Gesucht ist der Widerstand Rzus​ in Ω</p>
-          <p className="mt-3 text-xl font-semibold" aria-live="polite">{formula}</p>
-          <p className="mt-1 text-sm" aria-live="polite">{example}</p>
+          <p className="mt-2 text-xs text-stone-600">Gegeben sind Quellenspannung: <Formel>U = 9 V</Formel> und die Zielgröße: <Formel>I = 29 mA</Formel></p>
+          <p className="mt-1 text-xs text-stone-600">Gesucht ist der zusätzliche Widerstand <Formel>R_zus</Formel> in Ω</p>
+          <p className="mt-3 text-xl font-semibold" aria-live="polite"><Formel>{formula}</Formel></p>
+          <p className="mt-1 text-sm" aria-live="polite"><Formel>{example}</Formel></p>
         </div>
       </div>
       <details className="mt-3 rounded-lg border border-stone-200 bg-white p-3 text-sm">
         <summary className="cursor-pointer font-medium">Rechenweg anzeigen</summary>
         <div className="mt-2 space-y-1 text-stone-700">
-          <p>Gesucht: I = 29 mA = 0,029 A.</p>
-          <p>R gesamt = U / I = 9 V / 0,029 A ≈ 310,34 Ω.</p>
-          <p>R zusätzlich = R gesamt − R Lampe = 310,34 Ω − 90 Ω = 220,34 Ω.</p>
-          <p>Auf die verfügbare Widerstandsstufe abgerundet: R zusätzlich = 220 Ω, also R gesamt = 90 Ω + 220 Ω = 310 Ω.</p>
-          <p>Probe: I = 9 V / 310 Ω ≈ 0,029032 A = 29,032 mA. Auf ganze Milliampere gerundet: 29 mA.</p>
+          <p>Zielgröße der Stromstärke: <Formel>I = 29 mA = 0,029 A.</Formel></p>
+          <p><Formel>R_ges = U / I = 9 V / 0,029 A ≈ 310,34 Ω.</Formel></p>
+          <p><Formel>R_zus = R_ges − R_Lampe = 310,34 Ω − 90 Ω = 220,34 Ω.</Formel></p>
+          <p>Auf die verfügbare Widerstandsstufe abgerundet: <Formel>R_zus = 220 Ω</Formel></p>
+          <p>Probe: <Formel>I = 9 V / 310 Ω ≈ 0,029032 A = 29,032 mA ≈ 29 mA.</Formel></p>
+          <p> Damit ergbit sich ein einzustellender Zusatzwiderstand von <Formel>220 Ω</Formel> in der Schaltung.</p>
           <p className="text-xs text-stone-500">Näherung mit 9 V: Die Simulation berücksichtigt zusätzlich kleine Innen- und Messgerätewiderstände.</p>
         </div>
       </details>
