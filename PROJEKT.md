@@ -317,4 +317,4 @@ Dimmer (25) ersetzt Level 15. Die bisherigen Level 22–24 sind ausgeblendet.
 Die bisherigen Level 26–29 werden als 22–25 angehängt. Das Kühlschrankexperiment
 (30) war bereits vor dieser Umstellung nicht mehr im aktuellen Katalog enthalten.
 Level 20 bleibt „Ohmsches Gesetz“ und ergänzt ein interaktives URI-Dreieck mit
-aktuellen Werten am einstellbaren Widerstand sowie einem aufklappbaren Rechenweg.
+Vorhersagen für die gesamte Reihenschaltung (9 V, 90 Ω Lampe plus gewählte Widerstandsstufe) sowie einem aufklappbaren Rechenweg. Ziel sind 29 mA, auf ganze Milliampere gerundet; alle drei URI-Formeln verwenden denselben Gesamtwiderstand.

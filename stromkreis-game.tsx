@@ -1476,7 +1476,7 @@ const LEVEL_CATALOG = [
         W: 7,
         H: 4,
         palette: BASE,
-        hint: "Die grüne Lampe soll leuchten, die rot gestrichelte muss AUS bleiben.",
+        hint: "Verdrahte beide Zweige. Die grüne Lampe soll leuchten, die rot gestrichelte muss AUS bleiben.",
         lesson:
           "Strom fließt nur über geschlossene Stromwege – du entscheidest, welcher das ist.",
         cells: {
@@ -1488,6 +1488,7 @@ const LEVEL_CATALOG = [
           "4,2": { type: "lamp", orient: "v", goal: "off" },
           ...wall("1,1 1,2 3,1 3,2 5,1 6,1 5,2 6,2"),
         },
+        goals: [{ k: "wired", ats: ["2,2", "4,2"] }],
       },
     ],
   },
@@ -1855,7 +1856,7 @@ const LEVEL_CATALOG = [
         H: 3,
         palette: BASE,
         showValues: true,
-        hint: "Welchen zusätzlichen Widerstand brauchst du für etwa 30 mA? Die Quelle liefert 9 V, die Lampe hat 90 Ω. Berechne zuerst deinen Wunschwert mit der Rechenhilfe. Verdrahte dann den Stromkreis, wähle die nächstliegende Widerstandsstufe und prüfe deine Vorhersage am Amperemeter.",
+        hint: "Eine 9-V-Spannungsquelle versorgt eine Lampe mit einem Widerstand von 90 Ω. Die Stromstärke im Stromkreis soll 29 mA betragen. Berechne den zusätzlich benötigten Widerstand. Wähle anschließend den passenden Widerstand aus, verdrahte den Stromkreis und überprüfe die Stromstärke mit dem Amperemeter.",
         lesson:
           "R = U / I. Der Gesamtwiderstand einer Reihenschaltung ist die Summe aller Widerstände.",
         cells: {
@@ -1874,9 +1875,9 @@ const LEVEL_CATALOG = [
           {
             k: "read",
             type: "ammeter",
-            min: 0.028,
-            max: 0.032,
-            label: "Der Strom beträgt 30 mA (± 2 mA)",
+            min: 0.0285,
+            max: 0.029499999,
+            label: "Das Amperemeter zeigt 29 mA",
           },
         ],
       },
@@ -2407,11 +2408,24 @@ function deriveGoals(level, grid) {
    („solange NICHT betätigt“). Dadurch liest sich die Zielangabe wie die Aufgabe. */
 const bareKey = (k) => (k[0] === "!" ? k.slice(1) : k);
 
+/* Aufbau statt Stellung: Wie sähe die Schaltung aus, wenn jeder Schalter und
+   Taster geschlossen wäre? Damit lässt sich prüfen, ob ein Verbraucher
+   überhaupt angeschlossen ist – auch einer, der am Ende aus bleiben soll. */
+function simulateAllClosed(grid) {
+  const g2 = JSON.parse(JSON.stringify(grid));
+  for (const c of Object.values(g2))
+    if (c.type === "switch" || c.type === "button") c.closed = true;
+  return simulate(g2);
+}
+
 function checkLevel(level, grid, sim, seen = false) {
   const goals = deriveGoals(level, grid);
   const items = [];
   /* alle Ziele, die über Schalterkombinationen geprüft werden */
   const lg = goals.filter((g) => g.k === "logic" || g.k === "toggle");
+  const wsim = goals.some((g) => g.k === "wired")
+    ? simulateAllClosed(grid)
+    : null;
   let inputs = null,
     combos = null;
   if (lg.length) {
@@ -2449,6 +2463,19 @@ function checkLevel(level, grid, sim, seen = false) {
           ? `${n === 2 ? "Beide" : `Alle ${n}`} ${PLUR[c.type]} ${g.on ? ONWP[c.type] : "bleiben aus"}`
           : `${CNAME[c.type] || "Das Bauteil"} ${g.on ? ONW[c.type] || "arbeitet" : "bleibt aus"}`);
       items.push({ t, ok: ats.every((a) => sim.lit.has(a) === g.on) });
+    } else if (g.k === "wired") {
+      const ats = g.ats || [g.at];
+      const c = grid[ats[0]];
+      if (!c) continue;
+      const n = ats.length;
+      items.push({
+        t:
+          g.label ||
+          (n > 1
+            ? `${n === 2 ? "Beide" : `Alle ${n}`} ${PLUR[c.type]} sind verdrahtet`
+            : `${CNAME[c.type] || "Das Bauteil"} ist verdrahtet`),
+        ok: ats.every((a) => wsim.lit.has(a)),
+      });
     } else if (g.k === "read") {
       const cand = g.at
         ? [g.at]
@@ -2673,25 +2700,25 @@ const LEGEND = [
   [{ type: "cross" }, "Kreuzung", "Leitungen kreuzen sich OHNE Verbindung"],
 ];
 
-function OhmLab({ grid, sim }) {
+function OhmLab({ grid }) {
   const [wanted, setWanted] = useState("R");
   const resistor = grid["2,0"];
-  const r = resistor?.r ?? 100;
-  const u = Math.abs(sim.volt["2,0"] || 0);
-  const i = Math.abs(sim.cur["2,0"] || 0);
-  const active = i > EPS && !sim.short;
+  const additionalR = resistor?.r ?? 100;
+  const r = 90 + additionalR;
+  const u = 9;
+  const i = u / r;
   const fmt = (value, digits = 2) => value.toLocaleString("de-DE", { maximumFractionDigits: digits });
   const formula = { U: "U = R · I", R: "R = U / I", I: "I = U / R" }[wanted];
   const example = {
-    U: `${fmt(r)} Ω · ${fmt(i, 4)} A ≈ ${fmt(u)} V`,
-    R: `${fmt(u)} V / ${fmt(i, 4)} A ≈ ${fmt(r)} Ω`,
-    I: `${fmt(u)} V / ${fmt(r)} Ω ≈ ${fmt(i, 4)} A = ${fmt(i * 1000)} mA`,
+    U: `${fmt(r)} Ω · ${fmt(i, 6)} A ≈ ${fmt(u)} V`,
+    R: `${fmt(u)} V / ${fmt(i, 6)} A ≈ ${fmt(r)} Ω`,
+    I: `${fmt(u)} V / ${fmt(r)} Ω ≈ ${fmt(i, 6)} A = ${fmt(i * 1000, 3)} mA`,
   }[wanted];
   return (
     <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
       <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">Rechenhilfe</p>
       <h3 className="font-semibold text-stone-800">Wie hängen Spannung, Widerstand und Strom zusammen?</h3>
-      <p className="mt-1 text-xs text-stone-600">Wähle die gesuchte Größe. Decke sie im Dreieck gedanklich ab: Nebeneinander heißt multiplizieren, übereinander heißt dividieren.</p>
+      <p className="mt-1 text-xs text-stone-600">Das Ohmsche Gesetz beschreibt die proportionalen Zusammenhänge der drei elektrischen Grundgrößen, Strom (I), der Spannung (U) und dem Widerstand (R). Mit seiner Hilfe lässt sich der fehlende Wert berechnen, insofern die beiden anderen bekannt sind.</p>
       <div className="flex flex-wrap items-center gap-4 mt-3">
         <svg viewBox="0 0 180 150" width="180" height="150" role="img" aria-label={`URI-Dreieck: U oben, R und I unten. Gesucht: ${wanted}. ${formula}`}>
           <path d="M90 8 L8 140 H172 Z M49 74 H131 M90 74 V140" fill="none" stroke={WIRE} strokeWidth="2" strokeLinejoin="round" />
@@ -2706,19 +2733,20 @@ function OhmLab({ grid, sim }) {
           <div className="flex gap-2" role="group" aria-label="Gesuchte Größe">
             {["U", "R", "I"].map((symbol) => <button key={symbol} type="button" aria-pressed={wanted === symbol} onClick={() => setWanted(symbol)} className={`rounded-lg border px-3 py-2 text-sm font-medium ${wanted === symbol ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-700 border-stone-200"}`}>{symbol}</button>)}
           </div>
-          <p className="mt-2 text-xs text-stone-600">U: Spannung in Volt · R: Widerstand in Ohm · I: Strom in Ampere</p>
+          <p className="mt-2 text-xs text-stone-600">Gegebnen sind Quellenspannung: U = 9 V und die Zielgröße: I = 29 mA</p>
+          <p className="mt-1 text-xs text-stone-600">Gesucht ist der Widerstand Rzus​ in Ω</p>
           <p className="mt-3 text-xl font-semibold" aria-live="polite">{formula}</p>
-          <p className="mt-1 text-xs text-stone-500">Aktuell am einstellbaren Widerstand</p>
-          <p className="mt-1 text-sm" aria-live="polite">{active ? example : "Schließe den Stromkreis, um die aktuellen Werte einzusetzen."}</p>
+          <p className="mt-1 text-sm" aria-live="polite">{example}</p>
         </div>
       </div>
       <details className="mt-3 rounded-lg border border-stone-200 bg-white p-3 text-sm">
-        <summary className="cursor-pointer font-medium">Rechenweg für deine Vorhersage anzeigen</summary>
+        <summary className="cursor-pointer font-medium">Rechenweg anzeigen</summary>
         <div className="mt-2 space-y-1 text-stone-700">
-          <p>30 mA = 0,03 A</p>
-          <p>R gesamt = 9 V / 0,03 A = 300 Ω</p>
-          <p>Die Lampe bringt bereits 90 Ω mit: 300 Ω − 90 Ω = 210 Ω zusätzlich.</p>
-          <p>Die nächste angebotene Stufe ist 220 Ω. Damit erwarten wir etwa 29 mA.</p>
+          <p>Gesucht: I = 29 mA = 0,029 A.</p>
+          <p>R gesamt = U / I = 9 V / 0,029 A ≈ 310,34 Ω.</p>
+          <p>R zusätzlich = R gesamt − R Lampe = 310,34 Ω − 90 Ω = 220,34 Ω.</p>
+          <p>Auf die verfügbare Widerstandsstufe abgerundet: R zusätzlich = 220 Ω, also R gesamt = 90 Ω + 220 Ω = 310 Ω.</p>
+          <p>Probe: I = 9 V / 310 Ω ≈ 0,029032 A = 29,032 mA. Auf ganze Milliampere gerundet: 29 mA.</p>
           <p className="text-xs text-stone-500">Näherung mit 9 V: Die Simulation berücksichtigt zusätzlich kleine Innen- und Messgerätewiderstände.</p>
         </div>
       </details>
@@ -3492,7 +3520,7 @@ export default function App() {
           </svg>
         </div>
 
-        {cfg.ohmLab && <OhmLab key={levelIndex} grid={grid} sim={sim} />}
+        {cfg.ohmLab && <OhmLab key={levelIndex} grid={grid} />}
 
         {cfg.contactLab && (
           <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
