@@ -2107,7 +2107,7 @@ const LEVEL_CATALOG = [
            Arten nebeneinander an derselben Quelle: sobald Strom fließt, brennt
            die eine Lampe und die andere nicht, ohne dass jemand etwas betätigt.
            Als Taster, weil das Halten den Unterschied körperlich macht. */
-        name: "Drücken macht aus?",
+        name: "Der Öffner",
         contactLab: true,
         W: 6,
         H: 4,
