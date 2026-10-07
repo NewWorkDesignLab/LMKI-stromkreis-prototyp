@@ -36,23 +36,85 @@ SPICE-Nachbau — nur so viel Physik, wie die Lernziele brauchen.
 ## 3. Projektaufbau
 
 ```
-stromkreis-game.tsx   das gesamte Spiel: Simulation, Symbole, Level, UI (~1900 Zeilen)
-main.jsx              React-Einstiegspunkt
-index.html            lädt Tailwind über das Play-CDN
-vite.config.js        Dev-Server auf Port 5180
-.claude/launch.json   Startkonfiguration
+src/
+  domain/types.ts       alle Fachtypen: Cell, Grid, LevelDef, Goal, SimResult …
+  engine/               Physik und Spielregeln, reines TypeScript, kein React
+    parts.ts            Bauteilwerte (DEF), Anschlüsse, Knotennamen
+    simulate.ts         Gleichstrom-Löser + Erreichbarkeit (siehe Abschnitt 4)
+    goals.ts            Ziele ableiten und prüfen (checkLevel)
+    editing.ts          Änderungen am Feld als reine Funktionen (setzen, löschen, antippen)
+    format.ts           Zahlenformat (de)
+  content/              Inhalte als Daten
+    levels/*.ts         die Level, nach Herkunftskapitel abgelegt
+    catalog.ts          ALLE Level; curriculum.ts: welche davon in welcher Reihenfolge
+    concepts.ts         Kompetenzen, die Level üben (Grundlage der Bewertung)
+    tutorials.ts, legend.ts, sandbox.ts, helpers.ts
+  services/             Anwendungslogik ohne React
+    content.ts          ContentService: Level/Kapitel zur Laufzeit, Texte überschreibbar
+    progress.ts         ProgressStore (Interface + Speicher im RAM)
+    assessment.ts       Bewertung: Ereignisse → Profil je Kompetenz
+    sequencer.ts        welches Level als nächstes (Standard: linear)
+    attempts.ts         Versuchs-Richtlinie (Platzhalter, noch ohne Wirkung)
+    validate.ts         validateLevel – Prüfung für von außen kommende Level
+    events.ts, store.ts
+  app/
+    runtime.ts          Wurzel: hält Inhalt, Fortschritt, Bewertung, Sitzungszustand
+    RuntimeContext.tsx  React-Anbindung (useRuntimeState …)
+    App.tsx             Kopfzeile, Levelwahl, Overlays
+  api/                  Schnittstelle für Fremdsteuerung (KI), window.stromkreis
+  theme/                Farbtokens als CSS-Variablen, Themen
+  render/               SVG: Board.tsx, symbols/ (ein Bauteil je Datei)
+  features/
+    play/               Spielbereich eines Levels (Hooks + Komponenten)
+    tutorial/           Einführungsanimationen
+    widgets/            Zusatzbausteine einzelner Level (OhmLab, ContactLab, …)
+  ui/                   allgemeine Bausteine (Overlay, LevelPicker, Werkzeugsymbole)
+  styles/index.css      Tailwind + Animationen
+index.html, vite.config.ts, tailwind.config.js, tsconfig.json
 ```
 
 ```bash
-npm install && npm run dev
+npm install && npm run dev       # Entwicklung, Port 5180
+npm run typecheck                # tsc
+npm run build                    # typecheck + Produktions-Build nach dist/
+npm test                         # vitest: Engine, Inhalte, API
 ```
 
-Tailwind läuft **über CDN**, nicht über einen Build. Für ein Durchspiel-Setup reicht das;
-für eine echte Auslieferung wäre ein richtiger Tailwind-Build der nächste Schritt.
+Abhängigkeitsrichtung: `domain` ← `engine` ← `content`/`services` ← `app`/`api` ← Oberfläche
+(`features`, `ui`, `render`). Die Engine kennt weder React noch Inhalte. Die Oberfläche greift
+nur über `Runtime` auf Fortschritt und Inhalt zu, nie auf Dateien in `content/` direkt (außer
+Legende, Sandbox und Tutorial-Daten).
 
-Die Spieldatei ist bewusst eine Datei geblieben, weil sie aus einem Artefakt stammt und so
-weiterhin als Artefakt lauffähig ist. Sobald sie automatisiert getestet werden soll, müsste
-die Engine (`simulate`, `checkLevel`, Level-Daten) in ein eigenes Modul ohne JSX wandern.
+Tailwind läuft als echter Build (v3, PostCSS), nicht mehr über das Play-CDN.
+TypeScript ist bewusst **nicht strikt** (`strict: false`, `strictNullChecks: false`): die Engine
+stammt aus dem Prototyp und ist nur an den Schnittstellen typisiert. Die Typen in
+`domain/types.ts` und alles in `services/`, `api/` sind dagegen sauber; Engine-Dateien können
+nach und nach nachgezogen werden.
+
+### Wie man erweitert
+
+- **Neues Level:** in `content/levels/…` eintragen (stabile `id` als Slug, `concepts`), in
+  `curriculum.ts` einordnen. `npm test` prüft IDs, Lehrplan und Konzepte.
+- **Level-Reihenfolge, Kapitel, Texte, Thema zur Laufzeit:** über die API (siehe unten),
+  nicht durch Umbauen der Oberfläche.
+- **Neues Bauteil:** `domain/types.ts` (CellType), `engine/parts.ts` + `simulate.ts`,
+  Symbol in `render/symbols/`, Eintrag in `symbols/index.tsx`, `ui/tools.tsx`,
+  `engine/editing.ts` (PLACEABLE) und `services/validate.ts`.
+- **Andere Bewertung / Levelauswahl / Versuchsgrenze:** `Assessment`, `LevelSequencer`,
+  `AttemptPolicy` austauschen (`createRuntime({ … })`).
+
+### API für Fremdsteuerung (z. B. KI)
+
+`window.stromkreis` (siehe `src/api/types.ts`, `API_VERSION`): Abfragen (`getSnapshot`,
+`listLevels`, `getLevel`, `getProfile`, `getEvents`), Befehle als JSON über
+`dispatch({ type, … })` — `go_to_level`, `set_level_order`, `set_chapters`, `register_level`
+(wird mit `validateLevel` geprüft), `patch_level` (Aufgabe, Merksatz, Tipps), `set_theme`,
+`register_theme` — und `subscribe` für Lernereignisse und Zustandsänderungen.
+Level werden überall über ihre **ID** angesprochen, nie über die Position.
+
+Noch nicht verdrahtet: Versuchsgrenze mit Tipp/Lösung nach n Fehlversuchen (`tips`,
+`solution` am Level und `AttemptPolicy` sind angelegt, die Oberfläche zeigt sie noch nicht),
+persistenter Fortschritt (nur `MemoryProgressStore`), serverseitige Anbindung.
 
 ## 4. Die Simulation
 
@@ -166,8 +228,8 @@ Kapitel 6 ist eine **Ablage**: die Level liegen hinter den 24 bestehenden, damit
 sich durchspielen lassen, ohne die vorhandene Reihenfolge zu verschieben. Welches
 davon welchen Platz bekommt — und welches bestehende dafür weicht — ist offen.
 
-Level bestehen nur aus Daten (`CHAPTERS`): Name, Feldgröße, Startzellen, Werkzeugpalette,
-Hinweis, Merksatz und optionale Ziele. `showValues: true` blendet Spannungen und Ströme ein. `labelSwitches: true` schreibt
+Level bestehen nur aus Daten (`LevelDef`, siehe `src/domain/types.ts`): `id`, Name,
+Feldgröße, Startzellen, Werkzeugpalette, Aufgabe (`task`, früher `hint`), Merksatz und optionale Ziele. `showValues: true` blendet Spannungen und Ströme ein. `labelSwitches: true` schreibt
 unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, weil dort der
 Öffner in der Palette liegt). `latch` siehe Zielsystem.
 
@@ -255,10 +317,10 @@ Kurzschluss und Überlastung lassen ein Level immer scheitern.
   Schritt, kein Beiwerk.
 - **Kein gespeicherter Fortschritt.** Der Zähler „x/24 gelöst" gilt nur für die laufende
   Sitzung und wird bei jedem Neuladen zurückgesetzt. Das bleibt erstmal so festgeschrieben.
-- **Keine automatisierten Tests.** Geprüft wurde durch Durchspielen. Für einen
-  Prüflauf lassen sich die reinen Blöcke (`constants`…`Symbole`, `Level`…`Tutorial`,
-  `Ziele`…`Werkzeuge`) aber ohne Änderung in ein `.mjs` kopieren und mit Node gegen
-  `simulate`/`checkLevel` fahren — so wurden die Level aus Kapitel 6 verifiziert.
+- **Wenige automatisierte Tests.** `npm test` (vitest) prüft Grundfälle der Simulation und
+  des Editierens, die Inhalts-Integrität und die API. Dass jedes Level lösbar ist, prüft noch
+  nichts — dafür fehlen Musterlösungen (`solution` am Level). Mit ihnen ließe sich pro Level
+  `checkLevel(level, solution, simulate(solution)).won` testen.
 
 ## 10. Behobene Fehler (und was daraus folgt)
 
@@ -297,22 +359,19 @@ Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie
 ## 12. Offene Punkte
 
 - Kapitel 6 einsortieren: für die neuen Level Plätze in den bestehenden 24 wählen.
-- Formatierung: die Datei wurde am 11.09.2026 von einem Editor-Formatter (Prettier-Stil)
-  umbrochen und ist dadurch von ~1900 auf ~3600 Zeilen gewachsen. Inhaltlich identisch.
-  Wenn der dichte Handsatz zurück soll, bräuchte es eine `.prettierrc` oder ein
-  `.editorconfig` — sonst bricht der nächste Speichervorgang sie wieder um.
+- Formatierung: Prettier mit `.prettierrc.json` (Zeilenbreite 100) ist festgelegt.
 - Mögliche nächste Konzepte: Kreuzschaltung (siehe Grenzen oben), Quellen parallel,
   Spannungsteiler, Relais, Verbraucher mit unterschiedlichen Widerständen an einer Quelle.
 - Zweihandschaltung (zwei Taster gleichzeitig) — geht erst mit Touch, mit der Maus
   lässt sich nur ein Taster halten.
 - Leistung (P = U · I) wird intern schon gerechnet: die Lampenhelligkeit ist
   `I²·R / (Un·In)`, also das Verhältnis zur Nennleistung. Angezeigt wird sie nirgends.
-- Echter Tailwind-Build statt CDN, falls das Spiel ausgeliefert wird.
 
 ## Testdurchlauf September 2026
 
-Der sichtbare Durchlauf hat 25 Level. `LEVEL_CATALOG` bewahrt die ursprünglichen
-Leveldaten; `CHAPTERS` stellt daraus den Testdurchlauf zusammen. Der bisherige
+Der sichtbare Durchlauf hat 25 Level. `LEVEL_CATALOG` (`content/catalog.ts`) bewahrt die
+ursprünglichen Leveldaten; `DEFAULT_CURRICULUM` (`content/curriculum.ts`) stellt daraus den
+Testdurchlauf zusammen. Die Nummern unten sind die alten Katalognummern; im Code gelten IDs. Der bisherige
 Dimmer (25) ersetzt Level 15. Die bisherigen Level 22–24 sind ausgeblendet.
 Die bisherigen Level 26–29 werden als 22–25 angehängt. Das Kühlschrankexperiment
 (30) war bereits vor dieser Umstellung nicht mehr im aktuellen Katalog enthalten.

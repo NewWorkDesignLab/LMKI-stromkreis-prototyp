@@ -1,0 +1,102 @@
+import type { LevelDef } from "../../domain/types";
+import { BASE, wall } from "../helpers";
+
+/* Aus dem Prototyp übernommen; Reihenfolge und Kapitelzuordnung steht in ../curriculum.ts */
+export const grundlagenLevels: LevelDef[] = [
+  {
+    id: "schliesse-den-stromkreis",
+    concepts: ["stromkreis"],
+    tutorial: "drawWire",
+    name: "Schließe den Stromkreis",
+    W: 5,
+    H: 3,
+    palette: BASE,
+    task: "Ziehe Leitungen, sodass ein geschlossener Stromkreis von + über die Lampe zurück zu − entsteht. Nur dann fließt Strom.",
+    lesson: "Strom fließt nur im geschlossenen Stromkreis.",
+    cells: {
+      "0,1": { type: "battery", orient: "v" },
+      "4,1": { type: "lamp", orient: "v" },
+    },
+  },
+  {
+    id: "der-schalter",
+    concepts: ["stromkreis", "schalter"],
+    tutorial: "tapSwitch",
+    name: "Der Schalter",
+    W: 5,
+    H: 3,
+    palette: BASE,
+    task: "Ein Schalter unterbricht den Stromkreis. Verdrahte ihn und tippe ihn an.",
+    lesson: "Ein Schalter ist eine gewollte Unterbrechung des Stromkreises.",
+    cells: {
+      "0,1": { type: "battery", orient: "v" },
+      "4,1": { type: "lamp", orient: "v" },
+      "2,0": { type: "switch", orient: "h", closed: false },
+      ...wall("1,1 2,1 3,1"),
+    },
+  },
+  {
+    id: "reihenschaltung-und",
+    concepts: ["reihenschaltung", "schalter", "logik-und"],
+    name: "Reihenschaltung = UND",
+    W: 7,
+    H: 3,
+    palette: BASE,
+    task: "Zwei Schalter in Reihe. Verdrahte sie und prüfe alle vier Schalterstellungen.",
+    lesson:
+      "In Reihe geschaltete Schalter wirken wie UND: nur wenn alle geschlossen sind, fließt Strom.",
+    cells: {
+      "0,1": { type: "battery", orient: "v" },
+      "6,1": { type: "lamp", orient: "v" },
+      "2,0": { type: "switch", orient: "h", closed: false },
+      "4,0": { type: "switch", orient: "h", closed: false },
+      ...wall("1,1 2,1 3,1 4,1 5,1"),
+    },
+    goals: [
+      {
+        k: "logic",
+        at: "6,1",
+        expr: "and",
+        inputs: ["2,0", "4,0"],
+        live: true,
+        label: "Lampe leuchtet nur, wenn BEIDE Schalter geschlossen sind",
+      },
+    ],
+  },
+  {
+    id: "parallelschaltung-beide-lampen",
+    concepts: ["parallelschaltung"],
+    name: "Parallelschaltung – beide Lampen",
+    W: 7,
+    H: 3,
+    palette: BASE,
+    task: "Beide Lampen liegen an derselben Plus- und derselben Minusleitung. Verbinde die obere (+) und die untere (−) Leitung.",
+    lesson: "Parallele Verbraucher liegen an derselben Spannung und sind voneinander unabhängig.",
+    cells: {
+      "0,1": { type: "battery", orient: "v" },
+      "3,1": { type: "lamp", orient: "v" },
+      "5,1": { type: "lamp", orient: "v" },
+      ...wall("1,1 2,1 4,1 6,1"),
+    },
+  },
+  {
+    id: "waehle-den-stromweg",
+    concepts: ["stromkreis", "schalter", "parallelschaltung"],
+    name: "Wähle den Stromweg",
+    W: 7,
+    H: 4,
+    palette: BASE,
+    task: "Verdrahte beide Zweige. Die grüne Lampe soll leuchten, die rot gestrichelte muss AUS bleiben.",
+    lesson: "Strom fließt nur über geschlossene Stromwege – du entscheidest, welcher das ist.",
+    cells: {
+      "0,1": { type: "battery", orient: "v" },
+      "0,2": { type: "wire" },
+      "2,1": { type: "switch", orient: "v", closed: false },
+      "2,2": { type: "lamp", orient: "v", goal: "on" },
+      "4,1": { type: "switch", orient: "v", closed: false },
+      "4,2": { type: "lamp", orient: "v", goal: "off" },
+      ...wall("1,1 1,2 3,1 3,2 5,1 6,1 5,2 6,2"),
+    },
+    goals: [{ k: "wired", ats: ["2,2", "4,2"] }],
+  },
+];

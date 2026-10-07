@@ -1,0 +1,152 @@
+import type { LevelDef } from "../../domain/types";
+import { BASE, lockw, wall } from "../helpers";
+
+/* Aus dem Prototyp übernommen; Reihenfolge und Kapitelzuordnung steht in ../curriculum.ts */
+export const steuernLevels: LevelDef[] = [
+  {
+    id: "der-taster",
+    concepts: ["taster", "schalter"],
+    name: "Der Taster",
+    W: 6,
+    H: 3,
+    palette: BASE,
+    task: "Ein Taster ist ein Schließer: er leitet nur, solange du ihn gedrückt hältst. Halte ihn auf dem Feld gedrückt.",
+    lesson: "Ein Taster leiten nur während der Betätigung – z. B. bei einer Klingel.",
+    cells: {
+      "0,1": { type: "battery", orient: "v" },
+      "5,1": { type: "lamp", orient: "v" },
+      "2,0": { type: "button", orient: "h", closed: false },
+      ...wall("1,1 2,1 3,1 4,1"),
+    },
+    goals: [
+      {
+        k: "logic",
+        at: "5,1",
+        expr: "id",
+        inputs: ["2,0"],
+        label: "Lampe leuchtet genau dann, wenn der Taster gedrückt ist",
+      },
+    ],
+  },
+  {
+    id: "parallelschaltung-oder",
+    concepts: ["parallelschaltung", "logik-oder"],
+    name: "Parallelschaltung = ODER",
+    W: 7,
+    H: 4,
+    palette: BASE,
+    task: "Führe zwei Stromwege zwischen linker und rechter Leitung – über jeden Schalter einen. Die Rückleitung läuft unten.",
+    lesson: "Parallel geschaltete Schalter wirken wie ODER: einer genügt.",
+    cells: {
+      "0,2": { type: "battery", orient: "v" },
+      "6,2": { type: "lamp", orient: "v" },
+      "3,0": { type: "switch", orient: "h", closed: false },
+      "3,1": { type: "switch", orient: "h", closed: false },
+      ...wall("1,2 2,2 3,2 4,2 5,2"),
+    },
+    goals: [
+      {
+        k: "logic",
+        at: "6,2",
+        expr: "or",
+        inputs: ["3,0", "3,1"],
+        live: true,
+        label: "Lampe leuchtet, wenn MINDESTENS EIN Schalter geschlossen ist",
+      },
+    ],
+  },
+  {
+    id: "der-wechselschalter",
+    concepts: ["wechselschalter"],
+    name: "Der Wechselschalter",
+    W: 5,
+    H: 5,
+    palette: BASE,
+    task: "Der Wechselschalter verbindet seinen Wurzelkontakt mit einem von zwei Ausgängen – an jedem hängt eine Lampe. Führe von den äußeren Lampenanschlüssen eine gemeinsame Rückleitung zur Spannungsquelle.",
+    lesson: "Der Wechselschalter (Umschalter) schaltet nicht ein und aus, sondern um.",
+    cells: {
+      "1,2": { type: "battery", orient: "h" },
+      "3,2": { type: "spdt", dir: "W", pos: 0 },
+      "3,1": { type: "lamp", orient: "v" },
+      "3,3": { type: "lamp", orient: "v" },
+      ...wall("2,1 2,3"),
+    },
+    goals: [
+      {
+        k: "logic",
+        at: "3,1",
+        expr: "not",
+        inputs: ["3,2"],
+        label: "Obere Lampe leuchtet in Stellung 1",
+      },
+      {
+        k: "logic",
+        at: "3,3",
+        expr: "id",
+        inputs: ["3,2"],
+        label: "Untere Lampe leuchtet in Stellung 2",
+      },
+    ],
+  },
+  {
+    id: "die-wechselschaltung",
+    concepts: ["wechselschalter", "logik-xor"],
+    name: "Die Wechselschaltung",
+    W: 7,
+    H: 6,
+    palette: BASE,
+    task: "Flurlicht: Spannungsquelle, Lampe und Rückleitung sind fest verlegt. Verbinde die beiden Wechselschalter mit zwei getrennten korrespondierenden Leitungen (oben und unten).",
+    lesson:
+      "Wechselschaltung: zwei Wechselschalter, zwei korrespondierende Leitungen – jeder Schalter schaltet das Licht um.",
+    cells: {
+      "0,3": { type: "battery", orient: "v" },
+      "6,3": { type: "lamp", orient: "v" },
+      "2,2": { type: "spdt", dir: "W", pos: 0 },
+      "4,2": { type: "spdt", dir: "E", pos: 0 },
+      ...lockw("0,2 1,2 5,2 6,2 0,4 0,5 1,5 2,5 3,5 4,5 5,5 6,5 6,4"),
+      ...wall("1,1 5,1 1,3 5,3 3,2 2,4 3,4 4,4"),
+    },
+    goals: [
+      {
+        k: "toggle",
+        at: "6,3",
+        inputs: ["2,2", "4,2"],
+        label: "Jeder der beiden Schalter schaltet das Licht um",
+      },
+    ],
+  },
+  {
+    id: "motor-und-summer",
+    concepts: ["verbraucher"],
+    name: "Motor und Summer",
+    W: 7,
+    H: 4,
+    palette: BASE,
+    task: "Zwei Verbraucher, jeder mit eigenem Schalter – parallel an einer gemeinsamen Plus- und Minusleitung.",
+    lesson: "Jeder Verbraucher bekommt seinen eigenen Schalter in seinem eigenen Zweig.",
+    cells: {
+      "0,2": { type: "battery", orient: "v" },
+      "3,1": { type: "switch", orient: "v", closed: false },
+      "5,1": { type: "switch", orient: "v", closed: false },
+      "3,2": { type: "motor", orient: "v" },
+      "5,2": { type: "buzzer", orient: "v" },
+      ...wall("1,1 2,1 4,1 6,1 1,2 2,2 4,2 6,2"),
+    },
+    goals: [
+      {
+        k: "logic",
+        at: "3,2",
+        expr: "id",
+        inputs: ["3,1"],
+        label: "Motor läuft nur mit dem linken Schalter",
+      },
+      {
+        k: "logic",
+        at: "5,2",
+        expr: "id",
+        inputs: ["5,1"],
+        label: "Summer summt nur mit dem rechten Schalter",
+      },
+    ],
+  },
+];

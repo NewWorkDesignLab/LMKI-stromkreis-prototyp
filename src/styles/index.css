@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Flussanimation der Leitungen und Glühen der Lampen */
+.flow {
+  stroke-dasharray: 7 17;
+  animation: flowmove 0.7s linear infinite;
+}
+.flow.fast {
+  animation-duration: 0.22s;
+}
+@keyframes flowmove {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.lamp-on-glow {
+  opacity: 0.28;
+  animation: lampp 1.5s ease-in-out infinite;
+}
+@keyframes lampp {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
+/* Einführungsanimationen (features/tutorial) */
+.tutorial-demo {
+  animation: tutorial-fade 4.8s linear infinite;
+}
+.tutorial-trace {
+  stroke-dasharray: 1;
+  animation: tutorial-draw 4.8s linear infinite;
+}
+.tutorial-cursor {
+  animation: tutorial-drag 4.8s linear infinite;
+}
+.tutorial-click-cursor {
+  animation: tutorial-click 4.8s ease-in-out infinite;
+}
+.tutorial-click-ring {
+  animation: tutorial-click-ring 4.8s ease-out infinite;
+}
+@keyframes tutorial-click {
+  0%,
+  25%,
+  55%,
+  100% {
+    transform: scale(1);
+  }
+  35%,
+  45% {
+    transform: scale(0.8);
+  }
+}
+@keyframes tutorial-click-ring {
+  0%,
+  35% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.8;
+  }
+  65%,
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+@keyframes tutorial-draw {
+  0%,
+  15% {
+    stroke-dashoffset: 1;
+  }
+  75%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes tutorial-drag {
+  0%,
+  15% {
+    offset-distance: 0%;
+  }
+  75%,
+  100% {
+    offset-distance: 100%;
+  }
+}
+@keyframes tutorial-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  8%,
+  85% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-demo {
+    display: none;
+  }
+  .flow,
+  .lamp-on-glow {
+    animation: none;
+  }
+}
+
+button:focus-visible {
+  outline: 3px solid #0891b2;
+  outline-offset: 3px;
+}
+
+dialog::backdrop {
+  background: rgba(28, 25, 23, 0.55);
+}
