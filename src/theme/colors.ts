@@ -16,4 +16,5 @@ export const BG = tokenRef("bg"),
   INK = tokenRef("ink"),
   MUTE = tokenRef("mute"),
   HOT = tokenRef("hot"),
-  TUT = tokenRef("tutorial");
+  TUT = tokenRef("tutorial"),
+  HINT = tokenRef("hint");

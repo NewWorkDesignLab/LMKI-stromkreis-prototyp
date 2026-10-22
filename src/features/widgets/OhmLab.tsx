@@ -1,11 +1,11 @@
 import { useState } from "react";
-import type { Grid } from "../../domain/types";
+import type { Circuit, PartId } from "../../domain/types";
 import { INK, WIRE } from "../../theme/colors";
 import { Formel } from "./Formel";
 
-export function OhmLab({ grid }: { grid: Grid }) {
+export function OhmLab({ circuit, resistorId }: { circuit: Circuit; resistorId: PartId }) {
   const [wanted, setWanted] = useState("R");
-  const resistor = grid["2,0"];
+  const resistor = circuit.parts[resistorId];
   const additionalR = resistor?.r ?? 100;
   const r = 90 + additionalR;
   const u = 9;

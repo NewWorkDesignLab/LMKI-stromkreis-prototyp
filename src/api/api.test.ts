@@ -51,7 +51,13 @@ describe("API", () => {
       palette: ["wire", "erase"],
       task: "Aufgabe",
       lesson: "Merksatz",
-      cells: { "0,1": { type: "battery", orient: "v" }, "4,1": { type: "lamp", orient: "v" } },
+      circuit: {
+        parts: {
+          G1: { type: "battery", x: 0, y: 1, orient: "v" },
+          E1: { type: "lamp", x: 4, y: 1, orient: "v" },
+        },
+        wires: {},
+      },
     };
     expect(api.dispatch({ type: "register_level", level: level as never }).ok).toBe(true);
     expect(api.getLevel("mein-level")?.name).toBe("Mein Level");

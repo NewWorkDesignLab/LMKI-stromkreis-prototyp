@@ -1,4 +1,5 @@
 import type { LevelDef } from "../domain/types";
+import { fromLegacyLevel } from "./legacy";
 import { grundlagenLevels } from "./levels/grundlagen";
 import { schutzLevels } from "./levels/schutz";
 import { steuernLevels } from "./levels/steuern";
@@ -7,7 +8,8 @@ import { schaltplanLevels } from "./levels/schaltplan";
 import { erweiterungLevels } from "./levels/erweiterung";
 
 /* Alle geschriebenen Level, unabhängig davon, ob der Lehrplan sie gerade
-   verwendet. Neue Level kommen hier hinzu, ihre Einordnung steht in curriculum.ts. */
+   verwendet. Neue Level kommen hier hinzu, ihre Einordnung steht in curriculum.ts.
+   Die Prototyp-Level liegen noch im Altformat und werden hier übersetzt. */
 export const LEVEL_CATALOG: LevelDef[] = [
   ...grundlagenLevels,
   ...schutzLevels,
@@ -15,4 +17,4 @@ export const LEVEL_CATALOG: LevelDef[] = [
   ...messenLevels,
   ...schaltplanLevels,
   ...erweiterungLevels,
-];
+].map(fromLegacyLevel);

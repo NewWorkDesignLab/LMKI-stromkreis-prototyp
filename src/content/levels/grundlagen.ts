@@ -1,8 +1,8 @@
-import type { LevelDef } from "../../domain/types";
+import type { LegacyLevelDef } from "../legacy";
 import { BASE, wall } from "../helpers";
 
 /* Aus dem Prototyp übernommen; Reihenfolge und Kapitelzuordnung steht in ../curriculum.ts */
-export const grundlagenLevels: LevelDef[] = [
+export const grundlagenLevels: LegacyLevelDef[] = [
   {
     id: "schliesse-den-stromkreis",
     concepts: ["stromkreis"],

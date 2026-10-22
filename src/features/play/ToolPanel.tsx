@@ -1,8 +1,8 @@
 import { Cable, Eraser, RotateCw } from "lucide-react";
 import type { Orient, ToolId } from "../../domain/types";
-import { previewCell } from "../../engine/editing";
+import { newPart } from "../../engine/editing";
 import { EMPTY_SIM } from "../../render/emptySim";
-import { cellGlyph } from "../../render/symbols";
+import { partGlyph } from "../../render/symbols";
 import { TOOLS, toolTileStyle } from "../../ui/tools";
 
 interface Props {
@@ -105,7 +105,7 @@ export function ToolPanel({
           >
             {partTools.map((t) => {
               const active = tool === t;
-              const preview = previewCell(t, active ? orient : "h");
+              const preview = newPart(t, 0, 0, active ? orient : "h");
               return (
                 <button
                   key={t}
@@ -120,7 +120,7 @@ export function ToolPanel({
                     aria-hidden="true"
                     className="shrink-0"
                   >
-                    {cellGlyph("0,0", preview, EMPTY_SIM)}
+                    {partGlyph("vorschau", preview, EMPTY_SIM)}
                   </svg>
                   <span className="w-full break-words text-center leading-tight">
                     {TOOLS[t].label}

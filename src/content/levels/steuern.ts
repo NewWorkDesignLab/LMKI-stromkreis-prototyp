@@ -1,8 +1,8 @@
-import type { LevelDef } from "../../domain/types";
+import type { LegacyLevelDef } from "../legacy";
 import { BASE, lockw, wall } from "../helpers";
 
 /* Aus dem Prototyp übernommen; Reihenfolge und Kapitelzuordnung steht in ../curriculum.ts */
-export const steuernLevels: LevelDef[] = [
+export const steuernLevels: LegacyLevelDef[] = [
   {
     id: "der-taster",
     concepts: ["taster", "schalter"],

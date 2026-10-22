@@ -1,16 +1,21 @@
 /* Fachliche Grundtypen. Reine Typen, keine Laufzeitabhängigkeit: Engine, Inhalte,
    Dienste, API und Oberfläche sprechen alle über diese Datei miteinander. */
 
-/* ---------- Schaltungsfeld ---------- */
+/* ---------- Schaltung ---------- */
 
 export type Side = "N" | "S" | "W" | "E";
 export type Orient = "h" | "v";
 
-/** Alles, was auf einer Rasterzelle liegen kann. */
-export type CellType =
-  | "wire"
+/** Rasterpunkt „x,y“ – ein Ort, keine Kennung. */
+export type PointKey = string;
+/** Leitung zwischen zwei benachbarten Punkten, „x,y|x,y“ in kanonischer Reihenfolge (wireKey). */
+export type WireKey = string;
+/** Kennung eines Bauteils, angelehnt an die Betriebsmittelkennzeichnung: G1, E1, S2 … */
+export type PartId = string;
+
+/** Alles, was als Bauteil auf einem Rasterpunkt sitzen kann. */
+export type PartType =
   | "cross"
-  | "wall"
   | "battery"
   | "lamp"
   | "resistor"
@@ -24,8 +29,8 @@ export type CellType =
   | "button"
   | "spdt";
 
-export interface Cell {
-  type: CellType;
+/** Einstellbare Eigenschaften eines Bauteils – alles außer Typ und Ort. */
+export interface PartProps {
   /** Lage von Zweipolen: "h" = W–E, "v" = N–S */
   orient?: Orient;
   /** Wechselschalter: Seite des gemeinsamen Anschlusses */
@@ -44,8 +49,6 @@ export interface Cell {
   rev?: boolean;
   /** Quelle darf im Level umgepolt werden */
   flip?: boolean;
-  /** Fest verlegte Leitung: nicht löschbar, nicht ersetzbar */
-  lock?: boolean;
   /** Vom Spieler gesetzt (nicht vom Level vorgegeben) */
   user?: boolean;
   /** Verbraucher: soll am Ende leuchten/laufen ("on") oder aus bleiben ("off") */
@@ -67,19 +70,45 @@ export interface Cell {
   values?: number[];
 }
 
-/** Schlüssel "x,y". */
-export type CellKey = string;
-export type Grid = Record<CellKey, Cell>;
+export interface Part extends PartProps {
+  type: PartType;
+  x: number;
+  y: number;
+}
+
+export interface Wire {
+  /** Vom Level fest verlegt: im Level nicht löschbar */
+  lock?: boolean;
+}
+
+/** Bauteile auf Rasterpunkten und Leitungen als Kanten dazwischen. Verbunden ist nur,
+    was als Kante existiert – Nachbarschaft allein verbindet nichts. */
+export interface Circuit {
+  parts: Record<PartId, Part>;
+  wires: Record<WireKey, Wire>;
+}
+
+/** Das Brett, auf dem eine Schaltung liegt: Größe in Punkten und gesperrte Punkte. */
+export interface BoardSpec {
+  W: number;
+  H: number;
+  walls?: readonly PointKey[];
+}
 
 /* ---------- Simulationsergebnis ---------- */
 
-export interface SimLine {
-  a: [number, number];
-  b: [number, number];
+export interface WireFlow {
   /** liegt auf einem Strompfad zwischen + und − einer aktiven Quelle */
   live: boolean;
-  /** technische Stromrichtung: +1 von a nach b, −1 von b nach a, 0 = kein Strom */
+  /** technische Stromrichtung: +1 vom ersten zum zweiten Punkt des Schlüssels, −1 umgekehrt */
   dir: -1 | 0 | 1;
+}
+
+/** Leitungsknoten: ein Punkt ohne Bauteil, an dem Leitungen enden. */
+export interface PointState {
+  /** angeschlossene Leitungen (≥3 = Knotenpunkt, 1 = loses Ende) */
+  deg: number;
+  live: boolean;
 }
 
 export interface SimResult {
@@ -90,24 +119,24 @@ export interface SimResult {
   /** Summe der Quellenströme / Spannung der ersten Quelle */
   ibatt: number;
   ubatt: number;
-  lines: SimLine[];
-  /** Zellen, die auf einem Strompfad liegen */
-  glow: Set<CellKey>;
-  liveNode: Set<string>;
-  /** Anzahl Anschlüsse je Leitungszelle (≥3 = Knotenpunkt, ≤1 = loses Ende) */
-  deg: Record<CellKey, number>;
+  wires: Record<WireKey, WireFlow>;
+  points: Record<PointKey, PointState>;
+  /** Kreuzungen: welche ihrer beiden Bahnen Strom führt */
+  crossLive: Record<PartId, { h: boolean; v: boolean }>;
+  /** Bauteile, die auf einem Strompfad liegen */
+  glow: Set<PartId>;
   /** Verbraucher, die leuchten/laufen/summen */
-  lit: Set<CellKey>;
+  lit: Set<PartId>;
   /** Helligkeit 0–1 je Lampe */
-  bright: Record<CellKey, number>;
+  bright: Record<PartId, number>;
   /** Strom [A] durch Bauteile (bei Quellen: gelieferter Strom) */
-  cur: Record<CellKey, number>;
+  cur: Record<PartId, number>;
   /** Spannung [V] an Bauteilen */
-  volt: Record<CellKey, number>;
-  tripped: Set<CellKey>;
-  overload: Set<CellKey>;
+  volt: Record<PartId, number>;
+  tripped: Set<PartId>;
+  overload: Set<PartId>;
   /** LEDs in Sperrrichtung */
-  blocked: Set<CellKey>;
+  blocked: Set<PartId>;
 }
 
 /* ---------- Ziele und Prüfung ---------- */
@@ -115,21 +144,21 @@ export interface SimResult {
 export type LogicExpr = "and" | "or" | "xor" | "id" | "not";
 
 export type Goal =
-  | { k: "on"; at?: CellKey; ats?: CellKey[]; on?: boolean; type?: CellType; label?: string }
-  | { k: "wired"; at?: CellKey; ats?: CellKey[]; label?: string }
-  | { k: "read"; at?: CellKey; type?: CellType; min: number; max: number; label: string }
+  | { k: "on"; at?: PartId; ats?: PartId[]; on?: boolean; type?: PartType; label?: string }
+  | { k: "wired"; at?: PartId; ats?: PartId[]; label?: string }
+  | { k: "read"; at?: PartId; type?: PartType; min: number; max: number; label: string }
   | {
       k: "logic";
-      at: CellKey;
+      at: PartId;
       expr: LogicExpr;
-      /** Schalter-Zellen; ein vorangestelltes „!“ kehrt den Eingang um */
+      /** Schalter-IDs; ein vorangestelltes „!“ kehrt den Eingang um */
       inputs: string[];
       /** zusätzlich muss die Schaltung gerade wirklich durchgeschaltet sein */
       live?: boolean;
       label: string;
     }
-  | { k: "toggle"; at: CellKey; inputs: string[]; label: string }
-  | { k: "state"; pressed: Record<CellKey, boolean>; label: string }
+  | { k: "toggle"; at: PartId; inputs: PartId[]; label: string }
+  | { k: "state"; pressed: Record<PartId, boolean>; label: string }
   | { k: "seen"; label: string }
   | { k: "fuse"; label?: string };
 
@@ -146,8 +175,8 @@ export interface CheckResult {
 
 /* ---------- Level ---------- */
 
-/** Werkzeuge der Palette: Bauteiltypen plus "opener" (Schalter mit nc) und "erase". */
-export type ToolId = Exclude<CellType, "wall"> | "opener" | "erase";
+/** Werkzeuge der Palette: Bauteiltypen plus "wire", "opener" (Schalter mit nc) und "erase". */
+export type ToolId = PartType | "wire" | "opener" | "erase";
 
 export type LevelId = string;
 export type ChapterId = string;
@@ -164,42 +193,52 @@ export interface Frame {
 /** Namen der Einblendungen, die Level aufrufen dürfen (siehe features/tutorial). */
 export type TutorialId = "drawWire" | "tapSwitch";
 
+/** Ein Kontakt der Funktionsansicht samt der Lampe, die er schaltet. */
+export interface ContactLabContact {
+  contact: PartId;
+  lamp: PartId;
+}
+
 export interface LevelDef {
   /** Stabile Kennung. Fortschritt, Bewertung und API beziehen sich nur darauf, nie auf die Position. */
   id: LevelId;
   name: string;
-  /** Spielfeldgröße in Zellen */
+  /** Spielfeldgröße in Punkten */
   W: number;
   H: number;
+  /** Gesperrte Punkte: dort liegt nichts, dort führt keine Leitung hin */
+  walls?: PointKey[];
   /** Zulässige Werkzeuge */
   palette: ToolId[];
   /** Aufgabentext unter dem Leveltitel */
   task: string;
   /** Merksatz nach dem Lösen */
   lesson: string;
-  /** Vorgegebene Zellen (Startzustand und „Zurücksetzen“) */
-  cells: Grid;
+  /** Vorgegebene Schaltung (Startzustand und „Zurücksetzen“) */
+  circuit: Circuit;
   /** Explizite Ziele; Verbraucher ohne Eintrag bekommen automatisch eines (deriveGoals) */
   goals?: Goal[];
   /** Geübte Kompetenzen */
   concepts?: ConceptId[];
   /** Gestaffelte Tipps, vom leichtesten zum deutlichsten. Noch nicht in der Oberfläche. */
   tips?: string[];
-  /** Musterlösung als Zellfeld. Noch nicht in der Oberfläche. */
-  solution?: Grid;
+  /** Musterlösung. Noch nicht in der Oberfläche. */
+  solution?: Circuit;
   /** Messwerte und Werte an den Bauteilen beschriften */
   showValues?: boolean;
   /** Schalter immer mit „Schließer“/„Öffner“ beschriften */
   labelSwitches?: boolean;
   /** Gestrichelte Geräterahmen (reine Anzeige) */
   frames?: Frame[];
-  /** Merker: das Ziel „seen“ ist erfüllt, sobald diese Verbraucher je geleuchtet haben */
-  latch?: { lit: CellKey[] };
+  /** Merker: das Ziel „seen“ ist erfüllt, sobald diese Verbraucher je gemeinsam liefen */
+  latch?: { lit: PartId[] };
   /** Einführende Animation */
   tutorial?: TutorialId;
   /* Zusatzbausteine der Oberfläche (features/widgets) */
-  ohmLab?: boolean;
-  contactLab?: boolean;
+  /** Rechenhilfe zum Ohmschen Gesetz; rechnet mit dem Wert dieses Widerstands */
+  ohmLab?: { resistor: PartId };
+  /** Funktionsansicht eines Schließers und eines Öffners */
+  contactLab?: { closer: ContactLabContact; opener: ContactLabContact };
   switchOrientation?: boolean;
 }
 

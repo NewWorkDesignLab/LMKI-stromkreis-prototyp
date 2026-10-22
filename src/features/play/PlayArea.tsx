@@ -33,7 +33,7 @@ export function PlayArea({ level, mode, overlayOpen, hasNext, onNext, onSolved, 
 
   const tutorial = useTutorial({
     level,
-    grid: s.grid,
+    circuit: s.circuit,
     won: s.won,
     suppressed: mode !== "level" || s.tool !== "wire" || overlayOpen || s.isDrawing,
   });
@@ -54,19 +54,21 @@ export function PlayArea({ level, mode, overlayOpen, hasNext, onNext, onSolved, 
 
       <Board
         level={level}
-        grid={s.grid}
+        circuit={s.circuit}
         sim={s.sim}
         tool={s.tool}
         svgRef={s.svgRef}
         handlers={s.handlers}
+        hint={s.hint}
         overlay={tutorial}
       />
 
-      {level.ohmLab && <OhmLab grid={s.grid} />}
+      {level.ohmLab && <OhmLab circuit={s.circuit} resistorId={level.ohmLab.resistor} />}
 
       {level.contactLab && (
         <ContactLab
-          grid={s.grid}
+          config={level.contactLab}
+          circuit={s.circuit}
           sim={s.sim}
           wired={s.check.won}
           lab={s.contactLab.lab}
@@ -86,7 +88,17 @@ export function PlayArea({ level, mode, overlayOpen, hasNext, onNext, onSolved, 
         />
       )}
 
-      <StatusPanel mode={mode} sim={s.sim} check={s.check} onReset={s.reset} onClear={s.clear} />
+      <StatusPanel
+        mode={mode}
+        sim={s.sim}
+        check={s.check}
+        onReset={s.reset}
+        onClear={s.clear}
+        onUndo={s.undo}
+        onRedo={s.redo}
+        canUndo={s.canUndo}
+        canRedo={s.canRedo}
+      />
 
       {mode === "level" && s.won && (
         <WinPanel lesson={level.lesson} hasNext={hasNext} onNext={onNext} />

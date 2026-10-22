@@ -1,8 +1,8 @@
-import type { LevelDef } from "../../domain/types";
+import type { LegacyLevelDef } from "../legacy";
 import { BASE, lockw, wall, wire } from "../helpers";
 
 /* Aus dem Prototyp übernommen; Reihenfolge und Kapitelzuordnung steht in ../curriculum.ts */
-export const messenLevels: LevelDef[] = [
+export const messenLevels: LegacyLevelDef[] = [
   {
     id: "der-widerstand",
     concepts: ["widerstand"],
@@ -139,7 +139,7 @@ export const messenLevels: LevelDef[] = [
     id: "ohmsches-gesetz",
     concepts: ["ohmsches-gesetz", "widerstand"],
     name: "Ohmsches Gesetz",
-    ohmLab: true,
+    ohmLab: { resistor: "2,0" },
     W: 7,
     H: 3,
     palette: BASE,

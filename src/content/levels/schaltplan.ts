@@ -1,8 +1,8 @@
-import type { LevelDef } from "../../domain/types";
+import type { LegacyLevelDef } from "../legacy";
 import { BASE, lockw, wall, wire } from "../helpers";
 
 /* Aus dem Prototyp übernommen; Reihenfolge und Kapitelzuordnung steht in ../curriculum.ts */
-export const schaltplanLevels: LevelDef[] = [
+export const schaltplanLevels: LegacyLevelDef[] = [
   {
     id: "knotenpunkt-oder-kreuzung",
     concepts: ["knotenpunkt", "kreuzung", "kurzschluss"],

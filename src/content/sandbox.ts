@@ -30,8 +30,11 @@ export const SANDBOX: LevelDef = {
   W: 9,
   H: 6,
   showValues: true,
-  cells: {
-    "1,2": { type: "battery", orient: "v" },
-    "7,2": { type: "lamp", orient: "v" },
+  circuit: {
+    parts: {
+      G1: { type: "battery", x: 1, y: 2, orient: "v" },
+      E1: { type: "lamp", x: 7, y: 2, orient: "v" },
+    },
+    wires: {},
   },
 };

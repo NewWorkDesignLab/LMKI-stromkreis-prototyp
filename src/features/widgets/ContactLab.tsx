@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import type { CellKey, Grid, SimResult } from "../../domain/types";
+import type { Circuit, LevelDef, PartId, SimResult } from "../../domain/types";
 import { FridgeOrientation } from "./FridgeOrientation";
 
 /* Funktionsansicht zu „Der Öffner“: zeigt den Kontakt im Taster und verlangt, dass
-   beide Taster einmal gedrückt UND wieder losgelassen wurden. Bindet sich an die
-   Zellen dieses Levels (Taster bei 2,1 und 4,1, Lampen darunter). */
+   beide Taster einmal gedrückt UND wieder losgelassen wurden. Welche Taster und Lampen
+   gemeint sind, steht im Level (`contactLab`). */
 
 interface Lab {
   closer: 0 | 1 | 2;
@@ -12,49 +12,53 @@ interface Lab {
 }
 const FRESH: Lab = { closer: 0, opener: 0 };
 
-const CONTACTS: { at: CellKey; lamp: CellKey; name: string }[] = [
-  { at: "2,1", lamp: "2,2", name: "Schließerkontakt" },
-  { at: "4,1", lamp: "4,2", name: "Öffnerkontakt" },
-];
+type Config = LevelDef["contactLab"];
 
 /** Je Taster 0 = noch nicht angefasst, 1 = gerade gedrückt, 2 = gedrückt UND wieder losgelassen.
     Zwei getrennte Zähler, damit die Reihenfolge egal ist – wer mit dem Öffner anfängt,
     soll nicht ins Leere laufen. Nur bei richtiger Verdrahtung zählen die Betätigungen. */
-export function useContactLab(enabled: boolean, grid: Grid, wired: boolean) {
+export function useContactLab(config: Config | undefined, circuit: Circuit, wired: boolean) {
   const [lab, setLab] = useState<Lab>(FRESH);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!config) return;
     if (!wired) {
       if (lab.closer || lab.opener) setLab(FRESH);
       return;
     }
     /* „betätigt“ statt „leitet“ – beim Öffner ist das gegenläufig. */
-    const held = (k: CellKey) => {
-      const c = grid[k];
+    const held = (id: PartId) => {
+      const c = circuit.parts[id];
       return c ? (c.nc ? !c.closed : !!c.closed) : false;
     };
     const next = (cur: 0 | 1 | 2, down: boolean): 0 | 1 | 2 =>
       cur === 2 ? 2 : down ? 1 : cur === 1 ? 2 : 0;
-    const n: Lab = { closer: next(lab.closer, held("2,1")), opener: next(lab.opener, held("4,1")) };
+    const n: Lab = {
+      closer: next(lab.closer, held(config.closer.contact)),
+      opener: next(lab.opener, held(config.opener.contact)),
+    };
     if (n.closer !== lab.closer || n.opener !== lab.opener) setLab(n);
-  }, [enabled, wired, grid, lab]);
+  }, [config, wired, circuit, lab]);
 
   return { lab, done: lab.closer === 2 && lab.opener === 2, reset: () => setLab(FRESH) };
 }
 
 interface Props {
-  grid: Grid;
+  config: Config;
+  circuit: Circuit;
   sim: SimResult;
   wired: boolean;
   lab: Lab;
   done: boolean;
-  press: (x: number, y: number) => void;
+  press: (id: PartId) => void;
   release: () => void;
 }
 
-export function ContactLab({ grid, sim, wired, lab, done, press, release }: Props) {
-  const pressAt = (at: CellKey) => press(...(at.split(",").map(Number) as [number, number]));
+export function ContactLab({ config, circuit, sim, wired, lab, done, press, release }: Props) {
+  const contacts = [
+    { ...config.closer, name: "Schließerkontakt" },
+    { ...config.opener, name: "Öffnerkontakt" },
+  ];
   return (
     <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
       <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">
@@ -80,8 +84,8 @@ export function ContactLab({ grid, sim, wired, lab, done, press, release }: Prop
                     : "Halte einen der beiden Taster gedrückt und beobachte die Kontaktbrücke."}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {CONTACTS.map(({ at, lamp, name }) => {
-          const c = grid[at];
+        {contacts.map(({ contact: at, lamp, name }) => {
+          const c = circuit.parts[at];
           /* Beim Levelwechsel rendert die Kachel kurz gegen das alte Feld –
              ohne diese Zeile reißt sie die ganze App mit. */
           if (!c) return null;
@@ -151,7 +155,7 @@ export function ContactLab({ grid, sim, wired, lab, done, press, release }: Prop
                   if (e.button !== 0 || !e.isPrimary) return;
                   e.preventDefault();
                   e.currentTarget.setPointerCapture(e.pointerId);
-                  pressAt(at);
+                  press(at);
                 }}
                 onPointerUp={release}
                 onPointerCancel={release}
@@ -159,7 +163,7 @@ export function ContactLab({ grid, sim, wired, lab, done, press, release }: Prop
                 onKeyDown={(e) => {
                   if ((e.key === " " || e.key === "Enter") && !e.repeat) {
                     e.preventDefault();
-                    pressAt(at);
+                    press(at);
                   }
                 }}
                 onKeyUp={(e) => {

@@ -37,15 +37,18 @@ SPICE-Nachbau — nur so viel Physik, wie die Lernziele brauchen.
 
 ```
 src/
-  domain/types.ts       alle Fachtypen: Cell, Grid, LevelDef, Goal, SimResult …
+  domain/types.ts       alle Fachtypen: Circuit, Part, Wire, LevelDef, Goal, SimResult …
   engine/               Physik und Spielregeln, reines TypeScript, kein React
+    circuit.ts          Punkte, Leitungsschlüssel, Bauteil-IDs (siehe Abschnitt 5)
     parts.ts            Bauteilwerte (DEF), Anschlüsse, Knotennamen
     simulate.ts         Gleichstrom-Löser + Erreichbarkeit (siehe Abschnitt 4)
     goals.ts            Ziele ableiten und prüfen (checkLevel)
-    editing.ts          Änderungen am Feld als reine Funktionen (setzen, löschen, antippen)
+    editing.ts          Bearbeitungsbefehle als reine Funktionen (verbinden, setzen, löschen, antippen)
+    history.ts          Verlauf für Rückgängig/Wiederholen
     format.ts           Zahlenformat (de)
   content/              Inhalte als Daten
-    levels/*.ts         die Level, nach Herkunftskapitel abgelegt
+    levels/*.ts         die Level, nach Herkunftskapitel abgelegt (noch im Altformat)
+    legacy.ts           Übersetzer des Altformats (Zellraster) ins heutige Modell
     catalog.ts          ALLE Level; curriculum.ts: welche davon in welcher Reihenfolge
     concepts.ts         Kompetenzen, die Level üben (Grundlage der Bewertung)
     tutorials.ts, legend.ts, sandbox.ts, helpers.ts
@@ -93,13 +96,16 @@ nach und nach nachgezogen werden.
 
 ### Wie man erweitert
 
-- **Neues Level:** in `content/levels/…` eintragen (stabile `id` als Slug, `concepts`), in
-  `curriculum.ts` einordnen. `npm test` prüft IDs, Lehrplan und Konzepte.
+- **Neues Level:** im heutigen Format (`circuit`, `walls`, Verweise über Bauteil-IDs) schreiben,
+  **nicht** im Altformat der Prototyp-Level; stabile `id` als Slug, `concepts`. In
+  `catalog.ts` aufnehmen, in `curriculum.ts` einordnen. `npm test` prüft IDs, Lehrplan,
+  Konzepte, Verweise und die Schaltung (`validateLevel`).
 - **Level-Reihenfolge, Kapitel, Texte, Thema zur Laufzeit:** über die API (siehe unten),
   nicht durch Umbauen der Oberfläche.
-- **Neues Bauteil:** `domain/types.ts` (CellType), `engine/parts.ts` + `simulate.ts`,
-  Symbol in `render/symbols/`, Eintrag in `symbols/index.tsx`, `ui/tools.tsx`,
-  `engine/editing.ts` (PLACEABLE) und `services/validate.ts`.
+- **Neues Bauteil:** `domain/types.ts` (PartType), `engine/parts.ts` + `simulate.ts`,
+  `engine/circuit.ts` (ID_PREFIX), Symbol in `render/symbols/`, Eintrag in
+  `symbols/index.tsx`, `ui/tools.tsx`, `engine/editing.ts` (PLACEABLE) und
+  `services/validate.ts`.
 - **Andere Bewertung / Levelauswahl / Versuchsgrenze:** `Assessment`, `LevelSequencer`,
   `AttemptPolicy` austauschen (`createRuntime({ … })`).
 
@@ -134,7 +140,7 @@ könnte. Die Topologie liefert genau das.
 ### Wie der Löser arbeitet
 
 1. **Knoten bilden.** Union-Find verschmilzt alle Anschlüsse, die direkt verbunden sind:
-   benachbarte Zellen, geschlossene Schalter und Taster, der aktive Zweig eines
+   Leitungskanten, geschlossene Schalter und Taster, der aktive Zweig eines
    Wechselschalters. Ideale Leiter tauchen dadurch gar nicht erst im Gleichungssystem auf.
 2. **Stempeln.** Jedes übrige Bauteil wird als Norton-Zweipol eingetragen: Leitwert `g`
    zwischen zwei Knoten plus optionale Stromquelle `i`. Der Strom durch ein Bauteil ist
@@ -164,11 +170,45 @@ vom Anfang zum Ende der SVG-Linie.
 
 ## 5. Datenmodell
 
-Das Spielfeld ist ein Objekt `{"x,y": zelle}`. Fehlt ein Schlüssel, ist die Zelle leer.
+Eine Schaltung besteht aus **Bauteilen auf Rasterpunkten** und **Leitungen als Kanten**
+zwischen benachbarten Punkten (`domain/types.ts`, Hilfen in `engine/circuit.ts`):
 
 ```js
-{ type: "lamp", orient: "v", goal: "off", lock: true, user: true, r: 360 }
+{
+  parts: {
+    G1: { type: "battery", x: 0, y: 1, orient: "v" },
+    E1: { type: "lamp", x: 4, y: 1, orient: "v", goal: "off", user: true, r: 360 },
+  },
+  wires: { "0,0|1,0": {}, "1,0|2,0": { lock: true } },
+}
 ```
+
+- **Verbunden ist nur, was als Kante existiert.** Nebeneinanderliegen verbindet nichts –
+  das war im Prototyp anders und der Grund für „Die Falle“ (Abschnitt 7).
+- Eine Kante leitet nur, wenn beide Enden dort einen Anschluss haben; der Editor lässt
+  andere gar nicht erst zu. Ein Punkt ohne Bauteil, an dem Kanten enden, ist ein
+  Leitungsknoten (≥ 3 Kanten = Knotenpunkt, 1 = loses Ende).
+- **IDs** nach Kennbuchstaben (G Quelle, E Lampe, P LED, R Widerstand, M Motor, H Summer,
+  F Sicherung, PA/PV Messgeräte, S Schalter, X Kreuzung). Ziele, Widgets, Einführungen und
+  API verweisen nur auf IDs, nie auf Punkte.
+- Leitungsschlüssel `"x,y|x,y"`, linker bzw. oberer Punkt zuerst (`wireKey`). Lange
+  Leitungen sind mehrere Kanten; für Leveldaten gibt es `wires(["0,1 0,0 4,0"])`.
+- `lock` an einer Kante: im Level nicht löschbar. `user` am Bauteil: vom Spieler gesetzt,
+  nur das darf er im Level löschen und drehen. Beim Frei bauen gehört ihm alles.
+- Wände stehen am Level (`walls`), nicht in der Schaltung.
+- **Bearbeiten** nur über `engine/editing.ts`. Ein Bauteil lässt sich in eine Leitung
+  einsetzen, wenn alle dort endenden Kanten auf seine Anschlüsse treffen. Entfernen nimmt
+  die eigenen angeschlossenen Kanten mit (sonst entstünde am leeren Punkt eine Brücke).
+  Drehen löst Kanten, die danach ins Leere liefen.
+- **Verlauf:** Aufbau-Änderungen (setzen, löschen, verbinden, drehen, Werte, Zurücksetzen)
+  kommen in den Verlauf, eine Geste ist ein Eintrag. Bedienung (Schalter, Taster,
+  Sicherung) nicht; sie bleibt beim Rückgängigmachen erhalten (`carryOperatingState`).
+- **Bedienung am Brett:** Ziehen verbindet Punkt für Punkt, auch von einem Bauteil aus.
+  Rechtsklick löscht mit jedem Werkzeug (nah am Punkt: Bauteil bzw. Knoten, sonst die
+  Leitung daneben). Strg+Z / Strg+Y. Unter dem Zeiger zeigt das Brett, was passieren wird
+  (Zielpunkt, Bauteilvorschau grün/rot, rot markierte Löschstelle).
+
+Bauteileigenschaften:
 
 - `orient` — `"h"` (Anschlüsse West/Ost) oder `"v"` (Nord/Süd). Zweipole nur.
 - `dir` / `pos` — nur Wechselschalter: `dir` ist die Seite des Wurzelanschlusses, die beiden
@@ -233,7 +273,7 @@ Feldgröße, Startzellen, Werkzeugpalette, Aufgabe (`task`, früher `hint`), Mer
 unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, weil dort der
 Öffner in der Palette liegt). `latch` siehe Zielsystem.
 
-`contactLab: true` blendet unter dem Brett die **Funktionsansicht** ein: zwei
+`contactLab: { closer: {contact, lamp}, opener: {contact, lamp} }` blendet unter dem Brett die **Funktionsansicht** ein: zwei
 aufgeschnittene Taster, in denen Stößel und Kontaktbrücke sich mitbewegen, dazu eine
 Schrittfolge, die zum Ausprobieren beider Kontakte auffordert. Sie zeigt den
 *Mechanismus*, den der Schaltplan grundsätzlich nicht zeigen kann — bewusst **neben**
@@ -246,14 +286,17 @@ Die Schrittfolge ist **reihenfolgefrei**: je Taster merkt sich `lab` 0 (unberüh
 auf 2 stehen. Dass es diese Zusatzbedingung gibt, steht im Aufgabentext, nicht in der
 Zielliste — die Ziele bleiben die Verdrahtung.
 
-Offener Punkt: die Zellschlüssel der beiden Taster (`2,1` / `4,1`) stehen fest im
-Bauteil-Code statt im Level. Wird Level 28 verschoben oder umgebaut, bricht die
-Funktionsansicht still. Gehört ins Level, etwa als `contactLab: { closer, opener }`. `frames` zeichnet gestrichelte
+Welche Taster und Lampen gemeint sind, steht im Level, nicht im Bauteil-Code; ebenso
+`ohmLab: { resistor }`. `frames` zeichnet gestrichelte
 **Gerätegrenzen** (Rechtecke in Feldkoordinaten) — die Konvention „das ist ein Bauteil“
 aus dem Installationsplan, reines Dekor ohne Wirkung auf die Simulation. Level 27 fasst
 damit Schalter und Orientierungslicht zu einem Gerät zusammen.
 
-### Level bauen: die Falle
+### Level bauen: die Falle (nur Altformat)
+
+Gilt nur noch für die Prototyp-Level im Altformat (`content/legacy.ts`), deren
+Zellraster beim Laden nach dieser Regel in Kanten übersetzt wird. Im heutigen Modell
+gibt es die Falle nicht mehr.
 
 **Zwei benachbarte Zellen mit Anschlüssen sind elektrisch verbunden — immer.** Eine
 Rückleitung, die neben einem Abzweig verläuft, schließt ihn kurz. Level 12 war deshalb
@@ -283,7 +326,7 @@ Ziele stehen pro Level in `goals`; für Verbraucher ohne eigenes Ziel wird autom
 Zustand. Dadurch wird wirklich die Verdrahtung geprüft.
 
 Ihre Eingänge bedeuten dabei **„betätigt“, nicht „leitet“** — beim Öffner ist das
-gegenläufig. Ein vorangestelltes `!` dreht einen Eingang um: `inputs: ["!1,0", "3,1"]`
+gegenläufig. Ein vorangestelltes `!` dreht einen Eingang um: `inputs: ["!S1", "S2"]`
 heißt „Not-Aus nicht gedrückt UND Schalter zu“. Bei gewöhnlichen Kontakten fallen beide
 Lesarten zusammen, dort ändert das nichts.
 
@@ -359,6 +402,10 @@ Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie
 ## 12. Offene Punkte
 
 - Kapitel 6 einsortieren: für die neuen Level Plätze in den bestehenden 24 wählen.
+- Normgerechte Kreuzungen (später entscheiden): Zieht man eine Leitung gerade durch eine
+  bestehende, entsteht heute ein Knotenpunkt. Nach DIN EN 60617 verbindet eine Kreuzung
+  ohne Punkt aber nicht. Ob der Editor das automatisch als `cross` setzt, hängt davon ab,
+  wie normgerecht die Anwendung sein soll – Level 21 übt genau diesen Unterschied.
 - Formatierung: Prettier mit `.prettierrc.json` (Zeilenbreite 100) ist festgelegt.
 - Mögliche nächste Konzepte: Kreuzschaltung (siehe Grenzen oben), Quellen parallel,
   Spannungsteiler, Relais, Verbraucher mit unterschiedlichen Widerständen an einer Quelle.

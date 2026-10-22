@@ -1,8 +1,8 @@
-import type { LevelDef } from "../../domain/types";
+import type { LegacyLevelDef } from "../legacy";
 import { BASE, lockw, wall } from "../helpers";
 
 /* Aus dem Prototyp übernommen; Reihenfolge und Kapitelzuordnung steht in ../curriculum.ts */
-export const erweiterungLevels: LevelDef[] = [
+export const erweiterungLevels: LegacyLevelDef[] = [
   {
     id: "der-dimmer",
     concepts: ["widerstand", "ohmsches-gesetz"],
@@ -122,7 +122,10 @@ export const erweiterungLevels: LevelDef[] = [
            die eine Lampe und die andere nicht, ohne dass jemand etwas betätigt.
            Als Taster, weil das Halten den Unterschied körperlich macht. */
     name: "Der Öffner",
-    contactLab: true,
+    contactLab: {
+      closer: { contact: "2,1", lamp: "2,2" },
+      opener: { contact: "4,1", lamp: "4,2" },
+    },
     W: 6,
     H: 4,
     palette: BASE,

@@ -1,4 +1,4 @@
-import type { Cell, CellKey, SimResult } from "../../domain/types";
+import type { Part, PartId, SimResult } from "../../domain/types";
 import { batteryEl } from "./battery";
 import { buttonEl } from "./button";
 import { crossEl } from "./cross";
@@ -9,23 +9,22 @@ import { resistorEl } from "./resistor";
 import { buzzerEl, meterEl, motorEl } from "./round";
 import { spdtEl } from "./spdt";
 import { switchEl } from "./switch";
-import { wallEl } from "./wall";
 
 export * from "./icons";
 
-/* zeichnet eine Zelle; wird vom Brett und von der Symbol-Legende benutzt */
-export function cellGlyph(
-  k: CellKey,
-  c: Cell,
-  sim: Pick<SimResult, "glow" | "liveNode" | "lit" | "bright" | "overload" | "tripped" | "short">,
-) {
-  const [x, y] = k.split(",").map(Number);
+export type GlyphSim = Pick<
+  SimResult,
+  "glow" | "crossLive" | "lit" | "bright" | "overload" | "tripped" | "short"
+>;
+
+/* zeichnet ein Bauteil an seinem Punkt; wird vom Brett, den Werkzeugkacheln und der
+   Symbol-Legende benutzt */
+export function partGlyph(k: PartId, c: Part, sim: GlyphSim) {
+  const { x, y } = c;
   const glow = sim.glow.has(k);
   switch (c.type) {
-    case "wall":
-      return wallEl(x, y);
     case "cross":
-      return crossEl(x, y, sim.liveNode.has(`ch:${k}`), sim.liveNode.has(`cv:${k}`));
+      return crossEl(x, y, !!sim.crossLive[k]?.h, !!sim.crossLive[k]?.v);
     case "battery":
       return batteryEl(x, y, c, glow || sim.short, sim.short);
     case "switch":

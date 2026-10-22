@@ -20,6 +20,8 @@ export const TOKEN_DEFAULTS = {
   mute: "#b9b3a4",
   hot: "#d63b3b",
   tutorial: "#06b6d4",
+  /** Bearbeitungshinweis: Zielpunkt beim Verdrahten, Vorschau beim Setzen */
+  hint: "#2f9e8f",
 } as const;
 
 export type ThemeToken = keyof typeof TOKEN_DEFAULTS;

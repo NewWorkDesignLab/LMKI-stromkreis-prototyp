@@ -1,110 +1,171 @@
-import { CONSUMER, EPS, P, TWO, IDEAL, hasPort, nodeId, sidesOf, spdtOuts } from "./parts";
-import type { Grid, Side, SimResult } from "../domain/types";
+import {
+  CONSUMER,
+  EPS,
+  P,
+  TWO,
+  IDEAL,
+  hasPort,
+  portNode,
+  sidesOf,
+  spdtOuts,
+  wireNode,
+} from "./parts";
+import { OPPOSITE, partIndex, sideTowards, wireEnds } from "./circuit";
+import type { Circuit, Part, PartId, PointKey, Side, SimResult, WireKey } from "../domain/types";
+
+/* Leitungsstück zwischen zwei Anschlussknoten */
+interface Seg {
+  key: WireKey;
+  a: PointKey;
+  b: PointKey;
+  na: string;
+  nb: string;
+}
+/* Bauteil als Zweipol zwischen den Knoten a und b */
+interface El {
+  key: PartId;
+  type: Part["type"];
+  cell: Part;
+  a: string;
+  b: string;
+}
+/* Norton-Stempel: Leitwert g zwischen a und b, Stromquelle i */
+interface Stamp {
+  a: string;
+  b: string;
+  g: number;
+  i: number;
+  el: El;
+}
+
+/* Gauß-Jordan mit Spaltenpivot auf einer erweiterten Matrix (n × n+1), in place.
+   Singuläre Spalten werden übersprungen; ihre Unbekannte gilt danach als 0. */
+function solveInPlace(A: Float64Array[], n: number): number[] {
+  for (let col = 0; col < n; col++) {
+    let piv = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
+    if (Math.abs(A[piv][col]) < 1e-14) continue;
+    if (piv !== col) {
+      const t = A[piv];
+      A[piv] = A[col];
+      A[col] = t;
+    }
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const f = A[r][col] / A[col][col];
+      if (!f) continue;
+      for (let cc = col; cc <= n; cc++) A[r][cc] -= f * A[col][cc];
+    }
+  }
+  return Array.from({ length: n }, (_, i) => (Math.abs(A[i][i]) < 1e-14 ? 0 : A[i][n] / A[i][i]));
+}
+
+/* Zusammenhangskomponenten eines ungerichteten Graphen über seine Nachbarlisten. */
+function components<T>(nodes: Iterable<T>, nbr: (n: T) => Iterable<T>): T[][] {
+  const seen = new Set<T>(),
+    out: T[][] = [];
+  for (const start of nodes) {
+    if (seen.has(start)) continue;
+    const comp = [start];
+    seen.add(start);
+    for (let q = 0; q < comp.length; q++)
+      for (const m of nbr(comp[q]))
+        if (!seen.has(m)) {
+          seen.add(m);
+          comp.push(m);
+        }
+    out.push(comp);
+  }
+  return out;
+}
 
 /* ================= Simulation =================
    Zwei Sichten auf dieselbe Schaltung:
    – ein Gleichstrom-Löser (Knotenpotentialverfahren) für echte Ströme und Spannungen
    – der topologische Erreichbarkeitstest von + nach − dafür, was überhaupt Strom führt
    – die Flussrichtung der Animation folgt den gerechneten Strömen, also immer + nach −   */
-export function simulate(grid: Grid): SimResult {
-  const keys = Object.keys(grid);
+export function simulate(circuit: Circuit): SimResult {
   const res: SimResult = {
     hasBattery: false,
     closed: false,
     short: false,
     ibatt: 0,
     ubatt: 0,
-    lines: [],
-    glow: new Set<string>(),
-    liveNode: new Set<string>(),
-    deg: {},
-    lit: new Set<string>(),
+    wires: {},
+    points: {},
+    crossLive: {},
+    glow: new Set(),
+    lit: new Set(),
     bright: {},
     cur: {},
     volt: {},
-    tripped: new Set<string>(),
-    overload: new Set<string>(),
-    blocked: new Set<string>(),
+    tripped: new Set(),
+    overload: new Set(),
+    blocked: new Set(),
   };
+  const at = partIndex(circuit);
 
-  /* --- Segmente zwischen benachbarten Anschlüssen --- */
-  const segs: any[] = [];
-  for (const k of keys) {
-    const [x, y] = k.split(",").map(Number);
-    const c = grid[k];
-    const rk = `${x + 1},${y}`,
-      dk = `${x},${y + 1}`;
-    const rc = grid[rk],
-      dc = grid[dk];
-    if (rc && hasPort(c, "E") && hasPort(rc, "W"))
-      segs.push({
-        a: [x, y],
-        b: [x + 1, y],
-        na: nodeId(c, "E", k),
-        nb: nodeId(rc, "W", rk),
-        ka: k,
-        kb: rk,
-      });
-    if (dc && hasPort(c, "S") && hasPort(dc, "N"))
-      segs.push({
-        a: [x, y],
-        b: [x, y + 1],
-        na: nodeId(c, "S", k),
-        nb: nodeId(dc, "N", dk),
-        ka: k,
-        kb: dk,
-      });
+  /* --- Leitungen: nur Kanten, deren beide Enden dort einen Anschluss haben --- */
+  const portAt = (p: PointKey, side: Side): string | null => {
+    const id = at.get(p);
+    if (!id) return wireNode(p);
+    const part = circuit.parts[id];
+    return hasPort(part, side) ? portNode(part, side, id) : null;
+  };
+  const segs: Seg[] = [];
+  for (const key of Object.keys(circuit.wires)) {
+    const [a, b] = wireEnds(key);
+    const s = sideTowards(a, b);
+    const na = s && portAt(a, s),
+      nb = s && portAt(b, OPPOSITE[s]);
+    res.wires[key] = { live: false, dir: 0 };
+    if (!na || !nb) continue; // endet an einer Bauteilseite ohne Anschluss: leitet nicht
+    segs.push({ key, a, b, na, nb });
   }
   for (const s of segs)
-    for (const kk of [s.ka, s.kb])
-      if (grid[kk].type === "wire") res.deg[kk] = (res.deg[kk] || 0) + 1;
+    for (const p of [s.a, s.b])
+      if (!at.has(p)) {
+        const st = (res.points[p] ??= { deg: 0, live: false });
+        st.deg++;
+      }
 
   /* --- Bauteile als Zweipole --- */
-  const els: any[] = [];
-  for (const k of keys) {
-    const c = grid[k];
+  const els: El[] = [];
+  for (const [key, c] of Object.entries(circuit.parts)) {
     if (c.type === "battery") {
-      let plus = c.orient === "h" ? "E" : "N",
-        minus = c.orient === "h" ? "W" : "S";
-      if (c.rev) {
-        const t = plus;
-        plus = minus;
-        minus = t;
-      }
+      let plus: Side = c.orient === "h" ? "E" : "N",
+        minus: Side = c.orient === "h" ? "W" : "S";
+      if (c.rev) [plus, minus] = [minus, plus];
       els.push({
-        key: k,
-        type: "battery",
+        key,
+        type: c.type,
         cell: c,
-        a: nodeId(c, plus as Side, k),
-        b: nodeId(c, minus as Side, k),
+        a: portNode(c, plus, key),
+        b: portNode(c, minus, key),
       });
     } else if (c.type === "spdt") {
       const outs = spdtOuts(c);
       els.push({
-        key: k,
-        type: "spdt",
+        key,
+        type: c.type,
         cell: c,
-        a: nodeId(c, c.dir, k),
-        b: nodeId(c, outs[c.pos ? 1 : 0], k),
+        a: portNode(c, c.dir, key),
+        b: portNode(c, outs[c.pos ? 1 : 0], key),
       });
     } else if (TWO.has(c.type)) {
       const [s1, s2] = sidesOf(c);
-      let a = nodeId(c, s1, k),
-        b = nodeId(c, s2, k);
-      if (c.rev) {
-        const t = a;
-        a = b;
-        b = t;
-      } // LED-Polung
-      els.push({ key: k, type: c.type, cell: c, a, b });
+      let a = portNode(c, s1, key),
+        b = portNode(c, s2, key);
+      if (c.rev) [a, b] = [b, a]; // LED-Polung
+      els.push({ key, type: c.type, cell: c, a, b });
     }
   }
   const batts = els.filter((e) => e.type === "battery");
   res.hasBattery = batts.length > 0;
 
-  /* --- Knoten verschmelzen: Segmente und geschlossene ideale Schalter --- */
-  const par = new Map();
-  const find = (a) => {
+  /* --- Knoten verschmelzen: Leitungen und geschlossene ideale Schalter --- */
+  const par = new Map<string, string>();
+  const find = (a: string): string => {
     if (!par.has(a)) par.set(a, a);
     let r = a;
     while (par.get(r) !== r) r = par.get(r);
@@ -115,7 +176,7 @@ export function simulate(grid: Grid): SimResult {
     }
     return r;
   };
-  const uni = (a, b) => {
+  const uni = (a: string, b: string) => {
     const ra = find(a),
       rb = find(b);
     if (ra !== rb) par.set(ra, rb);
@@ -126,24 +187,21 @@ export function simulate(grid: Grid): SimResult {
     else if ((e.type === "switch" || e.type === "button") && e.cell.closed) uni(e.a, e.b);
   }
 
-  if (!batts.length) {
-    res.lines = segs.map((s) => ({ a: s.a, b: s.b, live: false, dir: 0 as const }));
-    return res;
-  }
+  if (!batts.length) return res;
 
   /* --- Stempel: Leitwert g zwischen a und b, Stromquelle i (Norton) --- */
   /* Eine ausgelöste Sicherung bleibt offen, bis sie von Hand eingeschaltet wird
      (cell.open). Sie ist damit der einzige Bauteilzustand, den die Simulation
-     zurück ins Feld schreibt – siehe useEffect in App. */
-  const fuseOpen = {},
-    ledOn = {};
+     zurück in die Schaltung schreibt – siehe latchTripped in usePlaySession. */
+  const fuseOpen: Record<PartId, boolean> = {},
+    ledOn: Record<PartId, boolean> = {};
   for (const e of els) {
     if (e.type === "led") ledOn[e.key] = true;
     if (e.type === "fuse" && e.cell.open) fuseOpen[e.key] = true;
   }
 
-  const stamps = () => {
-    const st = [];
+  const stamps = (): Stamp[] => {
+    const st: Stamp[] = [];
     for (const e of els) {
       const c = e.cell,
         A = find(e.a),
@@ -171,8 +229,8 @@ export function simulate(grid: Grid): SimResult {
      geschlossenen Weg – keine definierte Knotenspannung und läsen sich wie kurzgeschlossen. */
   const solveOnce = () => {
     const st = stamps();
-    const nb = new Map();
-    const touch = (x) => {
+    const nb = new Map<string, string[]>();
+    const touch = (x: string) => {
       if (!nb.has(x)) nb.set(x, []);
     };
     for (const s of st) {
@@ -183,32 +241,18 @@ export function simulate(grid: Grid): SimResult {
         nb.get(s.b).push(s.a);
       }
     }
-    const compOf = new Map(),
-      comps = [];
-    for (const start of nb.keys()) {
-      if (compOf.has(start)) continue;
-      const ci = comps.length,
-        comp = [start];
-      compOf.set(start, ci);
-      for (let q = 0; q < comp.length; q++)
-        for (const m of nb.get(comp[q]))
-          if (!compOf.has(m)) {
-            compOf.set(m, ci);
-            comp.push(m);
-          }
-      comps.push(comp);
-    }
-    const V = new Map();
-    comps.forEach((comp, ci) => {
+    const V = new Map<string, number>();
+    for (const comp of components(nb.keys(), (x) => nb.get(x))) {
+      const inComp = new Set(comp);
       const gnd = comp[0];
       V.set(gnd, 0);
-      const idx = new Map();
+      const idx = new Map<string, number>();
       let n = 0;
       for (const nd of comp) if (nd !== gnd) idx.set(nd, n++);
-      if (!n) return;
+      if (!n) continue;
       const A = Array.from({ length: n }, () => new Float64Array(n + 1));
       for (const s of st) {
-        if (s.a === s.b || compOf.get(s.a) !== ci) continue;
+        if (s.a === s.b || !inComp.has(s.a)) continue;
         const ia = idx.has(s.a) ? idx.get(s.a) : -1,
           ib = idx.has(s.b) ? idx.get(s.b) : -1;
         if (ia >= 0) {
@@ -222,27 +266,13 @@ export function simulate(grid: Grid): SimResult {
           if (ia >= 0) A[ib][ia] -= s.g;
         }
       }
-      for (let col = 0; col < n; col++) {
-        /* Gauß-Jordan mit Spaltenpivot */
-        let piv = col;
-        for (let r = col + 1; r < n; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
-        if (Math.abs(A[piv][col]) < 1e-14) continue;
-        if (piv !== col) {
-          const t = A[piv];
-          A[piv] = A[col];
-          A[col] = t;
-        }
-        for (let r = 0; r < n; r++) {
-          if (r === col) continue;
-          const f = A[r][col] / A[col][col];
-          if (!f) continue;
-          for (let cc = col; cc <= n; cc++) A[r][cc] -= f * A[col][cc];
-        }
-      }
-      for (const [nd, i] of idx) V.set(nd, Math.abs(A[i][i]) < 1e-14 ? 0 : A[i][n] / A[i][i]);
-    });
+      const x = solveInPlace(A, n);
+      for (const [nd, i] of idx) V.set(nd, x[i]);
+    }
     return { V, st };
   };
+  const current = (sol: ReturnType<typeof solveOnce>, s: Stamp) =>
+    s.g * ((sol.V.get(s.a) ?? 0) - (sol.V.get(s.b) ?? 0)) - s.i; // von a nach b durch das Bauteil
 
   /* LEDs sperren gegen die Durchlassrichtung, Sicherungen lösen aus:
      beides iterativ, bis der Zustand stabil ist */
@@ -251,7 +281,7 @@ export function simulate(grid: Grid): SimResult {
     let changed = false;
     for (const s of sol.st) {
       const e = s.el;
-      const I = s.g * ((sol.V.get(s.a) ?? 0) - (sol.V.get(s.b) ?? 0)) - s.i;
+      const I = current(sol, s);
       if (e.type === "led" && I < 0) {
         ledOn[e.key] = false;
         changed = true;
@@ -280,19 +310,18 @@ export function simulate(grid: Grid): SimResult {
   /* --- Ströme und Spannungen je Bauteil --- */
   for (const s of sol.st) {
     const e = s.el;
-    const Ua = sol.V.get(s.a) ?? 0,
-      Ub = sol.V.get(s.b) ?? 0;
-    const I = s.g * (Ua - Ub) - s.i; // von a nach b durch das Bauteil
+    const U = (sol.V.get(s.a) ?? 0) - (sol.V.get(s.b) ?? 0);
+    const I = current(sol, s);
     if (e.type === "battery") {
       res.cur[e.key] = -I; // abgegebener Strom
-      res.volt[e.key] = Ua - Ub;
+      res.volt[e.key] = U;
       if (e === batts[0]) {
         res.ibatt = -I;
-        res.ubatt = Ua - Ub;
+        res.ubatt = U;
       }
     } else {
       res.cur[e.key] = I;
-      res.volt[e.key] = Ua - Ub;
+      res.volt[e.key] = U;
     }
   }
   res.closed = batts.some((e) => Math.abs(res.cur[e.key] || 0) > EPS);
@@ -325,10 +354,10 @@ export function simulate(grid: Grid): SimResult {
      auch in Parallelzweigen, wo die reine Erreichbarkeit von + und − beide
      Richtungen zulässt und die Animation deshalb falsch herum lief. */
   const segCur = (() => {
-    const idOf = new Map(),
-      edges = [];
+    const idOf = new Map<string, number>(),
+      edges: [number, number, number][] = [];
     let n = 0;
-    const nid = (k) => {
+    const nid = (k: string) => {
       if (!idOf.has(k)) idOf.set(k, n++);
       return idOf.get(k);
     };
@@ -340,40 +369,29 @@ export function simulate(grid: Grid): SimResult {
     const inj = new Float64Array(n);
     for (const s of sol.st) {
       const e = s.el;
-      const I = s.g * ((sol.V.get(s.a) ?? 0) - (sol.V.get(s.b) ?? 0)) - s.i; // von a nach b im Bauteil
+      const I = current(sol, s);
       if (idOf.has(e.a)) inj[idOf.get(e.a)] -= I; // dort verlässt der Strom das Leitungsnetz
       if (idOf.has(e.b)) inj[idOf.get(e.b)] += I; // und dort kommt er zurück
     }
-    const nbr = Array.from({ length: n }, () => []);
+    const nbr: number[][] = Array.from({ length: n }, () => []);
     for (const [u, v] of edges)
       if (u !== v) {
         nbr[u].push(v);
         nbr[v].push(u);
       }
-    const compOf = new Int32Array(n).fill(-1),
-      comps = [];
-    for (let s0 = 0; s0 < n; s0++) {
-      if (compOf[s0] >= 0) continue;
-      const ci = comps.length,
-        comp = [s0];
-      compOf[s0] = ci;
-      for (let q = 0; q < comp.length; q++)
-        for (const m of nbr[comp[q]])
-          if (compOf[m] < 0) {
-            compOf[m] = ci;
-            comp.push(m);
-          }
-      comps.push(comp);
-    }
     const V = new Float64Array(n);
-    comps.forEach((comp, ci) => {
-      const idx = new Map();
+    for (const comp of components(
+      Array.from({ length: n }, (_, i) => i),
+      (i) => nbr[i],
+    )) {
+      const inComp = new Set(comp);
+      const idx = new Map<number, number>();
       let m = 0;
       for (let j = 1; j < comp.length; j++) idx.set(comp[j], m++); // comp[0] ist Bezugsknoten
-      if (!m) return;
+      if (!m) continue;
       const A = Array.from({ length: m }, () => new Float64Array(m + 1));
       for (const [u, v] of edges) {
-        if (u === v || compOf[u] !== ci) continue;
+        if (u === v || !inComp.has(u)) continue;
         const iu = idx.has(u) ? idx.get(u) : -1,
           iv = idx.has(v) ? idx.get(v) : -1;
         if (iu >= 0) {
@@ -386,32 +404,22 @@ export function simulate(grid: Grid): SimResult {
         }
       }
       for (const [nd, i] of idx) A[i][m] = inj[nd];
-      for (let col = 0; col < m; col++) {
-        /* Gauß-Jordan mit Spaltenpivot */
-        let piv = col;
-        for (let r = col + 1; r < m; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
-        if (Math.abs(A[piv][col]) < 1e-14) continue;
-        if (piv !== col) {
-          const t = A[piv];
-          A[piv] = A[col];
-          A[col] = t;
-        }
-        for (let r = 0; r < m; r++) {
-          if (r === col) continue;
-          const f = A[r][col] / A[col][col];
-          if (!f) continue;
-          for (let cc = col; cc <= m; cc++) A[r][cc] -= f * A[col][cc];
-        }
-      }
-      for (const [nd, i] of idx) V[nd] = Math.abs(A[i][i]) < 1e-14 ? 0 : A[i][m] / A[i][i];
-    });
+      const x = solveInPlace(A, m);
+      for (const [nd, i] of idx) V[nd] = x[i];
+    }
     const out = new Float64Array(segs.length); // Leitwert 1: Strom = Spannungsdifferenz
     for (const [u, v, si] of edges) if (si >= 0) out[si] = V[u] - V[v];
     return out;
   })();
 
   /* --- topologische Sicht für Glühen und Flussanimation --- */
-  const te: any[] = segs.map((s, i) => ({ a: s.na, b: s.nb, seg: i }));
+  interface TEdge {
+    a: string;
+    b: string;
+    seg?: number;
+    el?: El;
+  }
+  const te: TEdge[] = segs.map((s, i) => ({ a: s.na, b: s.nb, seg: i }));
   for (const e of els) {
     let cond = true;
     if (e.type === "switch" || e.type === "button") cond = !!e.cell.closed;
@@ -422,16 +430,16 @@ export function simulate(grid: Grid): SimResult {
     if (!cond) continue;
     te.push({ a: e.a, b: e.b, el: e });
   }
-  const battEdge = new Map();
+  const battEdge = new Map<PartId, number>();
   te.forEach((e, i) => {
     if (e.el && e.el.type === "battery") battEdge.set(e.el.key, i);
   });
-  const adj = {};
+  const adj: Record<string, [string, number][]> = {};
   te.forEach((e, i) => {
-    (adj[e.a] = adj[e.a] || []).push([e.b, i]);
-    (adj[e.b] = adj[e.b] || []).push([e.a, i]);
+    (adj[e.a] ??= []).push([e.b, i]);
+    (adj[e.b] ??= []).push([e.a, i]);
   });
-  const reach = (start, ex) => {
+  const reach = (start: string, ex: Set<number>) => {
     const seen = new Set([start]),
       st = [start];
     while (st.length) {
@@ -451,7 +459,7 @@ export function simulate(grid: Grid): SimResult {
   const active = batts.filter((b) => Math.abs(res.cur[b.key] || 0) > EPS);
   /* 0 = kein Strom, sonst die technische Stromrichtung: +1 von a nach b, −1 von b nach a.
      Welches Ende vom Pluspol und welches vom Minuspol aus erreichbar ist, gibt sie vor. */
-  const flowDir = (i) => {
+  const flowDir = (i: number) => {
     for (const b of active) {
       const bi = battEdge.get(b.key);
       if (bi === i) continue;
@@ -464,21 +472,26 @@ export function simulate(grid: Grid): SimResult {
     }
     return 0;
   };
-  res.lines = segs.map((s) => ({ a: s.a, b: s.b, live: false, dir: 0 }));
+  const liveNode = new Set<string>();
   te.forEach((e, i) => {
     const d = flowDir(i);
     if (e.seg !== undefined) {
-      const ic = segCur[e.seg]; /* allein der gerechnete Strom gibt die Richtung */
-      res.lines[e.seg].live = d !== 0;
-      res.lines[e.seg].dir = Math.abs(ic) > 1e-9 ? (ic > 0 ? 1 : -1) : 0;
+      const s = segs[e.seg],
+        ic = segCur[e.seg]; /* allein der gerechnete Strom gibt die Richtung */
+      res.wires[s.key] = { live: d !== 0, dir: Math.abs(ic) > 1e-9 ? (ic > 0 ? 1 : -1) : 0 };
       if (d) {
-        res.liveNode.add(e.a);
-        res.liveNode.add(e.b);
-        res.glow.add(segs[e.seg].ka);
-        res.glow.add(segs[e.seg].kb);
+        liveNode.add(e.a);
+        liveNode.add(e.b);
       }
     } else if (d) res.glow.add(e.el.key);
   });
   for (const b of active) res.glow.add(b.key);
+  for (const [p, st] of Object.entries(res.points)) st.live = liveNode.has(wireNode(p));
+  for (const [id, c] of Object.entries(circuit.parts))
+    if (c.type === "cross")
+      res.crossLive[id] = {
+        h: liveNode.has(portNode(c, "E", id)),
+        v: liveNode.has(portNode(c, "N", id)),
+      };
   return res;
 }

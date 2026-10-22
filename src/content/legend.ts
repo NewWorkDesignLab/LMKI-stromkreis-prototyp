@@ -1,7 +1,7 @@
-import type { Cell } from "../domain/types";
+import type { Part } from "../domain/types";
 
 /* Symbol-Legende: Schaltzeichen, Name und Kurzbeschreibung. */
-export type LegendEntry = [cell: Cell, name: string, description: string];
+export type LegendEntry = [part: Omit<Part, "x" | "y">, name: string, description: string];
 
 export const LEGEND: LegendEntry[] = [
   [{ type: "battery", orient: "h" }, "Spannungsquelle", "9 V, mit kleinem Innenwiderstand"],

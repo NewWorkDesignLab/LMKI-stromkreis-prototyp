@@ -1,12 +1,9 @@
-import type { SimResult } from "../domain/types";
+import type { GlyphSim } from "./symbols";
 
 /* Leeres Ergebnis für Symbole außerhalb des Bretts (Werkzeugkacheln, Legende). */
-export const EMPTY_SIM: Pick<
-  SimResult,
-  "glow" | "liveNode" | "lit" | "bright" | "overload" | "tripped" | "short"
-> = {
+export const EMPTY_SIM: GlyphSim = {
   glow: new Set(),
-  liveNode: new Set(),
+  crossLive: {},
   lit: new Set(),
   bright: {},
   overload: new Set(),

@@ -1,6 +1,6 @@
 import { LEGEND } from "../content/legend";
 import { EMPTY_SIM } from "../render/emptySim";
-import { cellGlyph } from "../render/symbols";
+import { partGlyph } from "../render/symbols";
 import { BG, WIRE } from "../theme/colors";
 
 export function LegendOverlay() {
@@ -24,7 +24,7 @@ export function LegendOverlay() {
               strokeWidth={6}
               strokeLinecap="round"
             />
-            {cellGlyph("0,0", c, EMPTY_SIM)}
+            {partGlyph("legende", { ...c, x: 0, y: 0 }, EMPTY_SIM)}
           </svg>
           <div className="min-w-0">
             <div className="text-sm font-semibold">{name}</div>

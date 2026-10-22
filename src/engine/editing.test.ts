@@ -1,0 +1,138 @@
+import { describe, expect, it } from "vitest";
+import type { Circuit } from "../domain/types";
+import { wires } from "../content/helpers";
+import { wireKey } from "./circuit";
+import {
+  activate,
+  canConnect,
+  carryOperatingState,
+  connect,
+  disconnect,
+  erasePoint,
+  place,
+  release,
+  removePart,
+  type EditContext,
+} from "./editing";
+
+const level: EditContext = { board: { W: 5, H: 3, walls: ["2,1"] }, mode: "level" };
+const sandbox: EditContext = { ...level, mode: "sandbox" };
+
+const loop = (): Circuit => ({
+  parts: {
+    G1: { type: "battery", x: 0, y: 1, orient: "v" },
+    E1: { type: "lamp", x: 4, y: 1, orient: "v" },
+  },
+  wires: wires(["0,1 0,0 4,0 4,1"], { lock: true }),
+});
+
+describe("Leitungen", () => {
+  it("verbindet nur benachbarte, freie Punkte mit passenden Anschlüssen", () => {
+    const c = loop();
+    expect(canConnect(c, level, "0,2", "1,2")).toBe(true);
+    expect(canConnect(c, level, "0,2", "2,2")).toBe(false); // keine Nachbarn
+    expect(canConnect(c, level, "1,1", "2,1")).toBe(false); // Wand
+    expect(canConnect(c, level, "4,2", "5,2")).toBe(false); // außerhalb
+    expect(canConnect(c, level, "1,1", "0,1")).toBe(false); // Quelle hat seitlich keinen Anschluss
+    expect(canConnect(c, level, "0,0", "1,0")).toBe(false); // liegt schon
+  });
+
+  it("lässt eine abgelehnte Änderung unverändert (gleiches Objekt)", () => {
+    const c = loop();
+    expect(connect(c, level, "1,1", "0,1")).toBe(c);
+    expect(disconnect(c, level, wireKey("1,0", "2,0"))).toBe(c); // fest verlegt
+  });
+
+  it("schützt fest verlegte Leitungen nur im Level", () => {
+    const c = loop();
+    const k = wireKey("1,0", "2,0");
+    expect(disconnect(c, sandbox, k).wires[k]).toBeUndefined();
+  });
+});
+
+describe("Bauteile", () => {
+  it("setzt ein Bauteil in eine Leitung ein, wenn die Ausrichtung passt", () => {
+    const c = { ...loop(), wires: wires(["0,0 4,0"]) };
+    expect(place(c, level, "2,0", "lamp", "v").circuit).toBe(c);
+    const r = place(c, level, "2,0", "lamp", "h");
+    expect(r.id).toBe("E2");
+    expect(r.circuit.parts.E2).toMatchObject({ type: "lamp", x: 2, y: 0, user: true });
+  });
+
+  it("nimmt beim Entfernen die angeschlossenen Leitungen mit, damit keine Brücke entsteht", () => {
+    let c: Circuit = { parts: {}, wires: {} };
+    c = place(c, sandbox, "2,0", "lamp", "h").circuit;
+    c = connect(connect(c, sandbox, "1,0", "2,0"), sandbox, "2,0", "3,0");
+    const removed = removePart(c, sandbox, "E1");
+    expect(removed.parts.E1).toBeUndefined();
+    expect(Object.keys(removed.wires)).toEqual([]);
+  });
+
+  it("schützt vorgegebene Bauteile im Level, im Frei bauen nicht", () => {
+    const c = loop();
+    expect(erasePoint(c, level, "0,1")).toBe(c);
+    expect(erasePoint(c, sandbox, "0,1").parts.G1).toBeUndefined();
+  });
+
+  it("löscht an einem Leitungsknoten nur die eigenen Leitungen", () => {
+    const c = { ...loop(), wires: { ...loop().wires, ...wires(["1,0 1,1"]) } };
+    const n = erasePoint(c, level, "1,0");
+    expect(n.wires[wireKey("1,0", "1,1")]).toBeUndefined();
+    expect(n.wires[wireKey("0,0", "1,0")]).toBeDefined();
+    expect(n.wires[wireKey("1,0", "2,0")]).toBeDefined();
+  });
+});
+
+describe("Antippen", () => {
+  it("schaltet Schalter und lässt Taster zurückfedern", () => {
+    const sw: Circuit = {
+      parts: { S1: { type: "switch", x: 0, y: 0, orient: "h", closed: false } },
+      wires: {},
+    };
+    const t = activate(sw, level, "S1");
+    expect(t.kind).toBe("operate");
+    expect(t.circuit.parts.S1.closed).toBe(true);
+
+    const btn: Circuit = {
+      parts: { S1: { type: "button", x: 0, y: 0, orient: "h", closed: false } },
+      wires: {},
+    };
+    const pressed = activate(btn, level, "S1");
+    expect(pressed.circuit.parts.S1.closed).toBe(true);
+    expect(pressed.pressed).toBe("S1");
+    expect(release(pressed.circuit, "S1").parts.S1.closed).toBe(false);
+  });
+
+  it("dreht eigene Bauteile und löst dabei Leitungen, die ins Leere liefen", () => {
+    let c: Circuit = { parts: {}, wires: {} };
+    c = place(c, sandbox, "1,1", "lamp", "h").circuit;
+    c = connect(c, sandbox, "0,1", "1,1");
+    const r = activate(c, sandbox, "E1");
+    expect(r.kind).toBe("edit");
+    expect(r.circuit.parts.E1.orient).toBe("v");
+    expect(r.circuit.wires).toEqual({});
+  });
+
+  it("dreht nicht, wenn dabei eine fest verlegte Leitung gelöst würde", () => {
+    const c: Circuit = {
+      parts: { E1: { type: "lamp", x: 1, y: 1, orient: "h", user: true } },
+      wires: wires(["0,1 1,1"], { lock: true }),
+    };
+    expect(activate(c, level, "E1").circuit).toBe(c);
+  });
+});
+
+describe("Bedienzustand", () => {
+  it("wird beim Zurückspringen übernommen, der Aufbau nicht", () => {
+    const before = loop();
+    before.parts.S1 = { type: "switch", x: 2, y: 0, orient: "h", closed: false };
+    const now = {
+      ...before,
+      parts: { ...before.parts, S1: { ...before.parts.S1, closed: true } },
+      wires: {},
+    };
+    const back = carryOperatingState(before, now);
+    expect(back.parts.S1.closed).toBe(true);
+    expect(back.wires).toEqual(before.wires);
+  });
+});

@@ -1,8 +1,8 @@
-import type { LevelDef } from "../../domain/types";
+import type { LegacyLevelDef } from "../legacy";
 import { BASE, wall, wire } from "../helpers";
 
 /* Aus dem Prototyp übernommen; Reihenfolge und Kapitelzuordnung steht in ../curriculum.ts */
-export const schutzLevels: LevelDef[] = [
+export const schutzLevels: LegacyLevelDef[] = [
   {
     id: "der-kurzschluss",
     concepts: ["kurzschluss"],

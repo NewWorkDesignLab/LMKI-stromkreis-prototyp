@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Circle, RotateCcw, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Circle, Redo2, RotateCcw, Trash2, Undo2 } from "lucide-react";
 import type { CheckResult, SimResult } from "../../domain/types";
 import type { PlayMode } from "../../engine/editing";
 import { fmtA } from "../../engine/format";
@@ -9,6 +9,10 @@ interface Props {
   check: CheckResult;
   onReset: () => void;
   onClear: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 function statusText(sim: SimResult) {
@@ -26,7 +30,20 @@ function statusText(sim: SimResult) {
 /* Infoanzeigen unter dem Brett: links untereinander, was die Schaltung
    gerade tut – Checkliste und Stromzustand. Rechts daneben die Aktionen,
    die das Brett zurücknehmen. */
-export function StatusPanel({ mode, sim, check, onReset, onClear }: Props) {
+const ACTION =
+  "flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800 disabled:pointer-events-none disabled:opacity-35";
+
+export function StatusPanel({
+  mode,
+  sim,
+  check,
+  onReset,
+  onClear,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+}: Props) {
   return (
     <div className="mt-3 flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1 space-y-1">
@@ -70,9 +87,24 @@ export function StatusPanel({ mode, sim, check, onReset, onClear }: Props) {
           gleich, statt rechts um eine halbe Buttonhöhe größer zu wirken. */}
       <div className="-mt-3 flex shrink-0 items-center gap-1">
         <button
-          onClick={onReset}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+          onClick={onUndo}
+          disabled={!canUndo}
+          aria-label="Rückgängig (Strg+Z)"
+          title="Rückgängig (Strg+Z)"
+          className={ACTION}
         >
+          <Undo2 size={15} />
+        </button>
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          aria-label="Wiederholen (Strg+Y)"
+          title="Wiederholen (Strg+Y)"
+          className={ACTION}
+        >
+          <Redo2 size={15} />
+        </button>
+        <button onClick={onReset} className={ACTION}>
           <RotateCcw size={15} />
           Zurücksetzen
         </button>

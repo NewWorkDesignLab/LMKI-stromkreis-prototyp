@@ -1,4 +1,4 @@
-import type { Cell, CellKey, CellType, Grid, Side } from "../domain/types";
+import type { Part, PartId, PartType, Side } from "../domain/types";
 
 export const EPS = 1e-5;
 
@@ -14,10 +14,17 @@ export const DEF = {
   ammeter: { r: 0.005 },
   voltmeter: { r: 1e6 },
 };
-export const P = (c: Cell, k: string): any =>
-  c && (c as any)[k] !== undefined ? (c as any)[k] : ((DEF as any)[c.type] || {})[k];
+type ValueKey = "u" | "ri" | "imax" | "r" | "un" | "in" | "vf" | "rs" | "imin";
+/** Wert eines Bauteils: eigener Wert, sonst die Vorgabe seines Typs. */
+export function P(c: Pick<Part, "type" | ValueKey>, k: ValueKey): number;
+export function P(c: Pick<Part, "type" | "values">, k: "values"): number[] | undefined;
+export function P(c: Partial<Part>, k: ValueKey | "values"): number | number[] | undefined {
+  if (c[k] !== undefined) return c[k];
+  const d = (DEF as Record<string, Record<string, number | number[]>>)[c.type];
+  return d?.[k];
+}
 
-export const TWO = new Set<CellType>([
+export const TWO = new Set<PartType>([
   "battery",
   "lamp",
   "resistor",
@@ -30,37 +37,32 @@ export const TWO = new Set<CellType>([
   "switch",
   "button",
 ]);
-export const CONSUMER = new Set<CellType>(["lamp", "led", "motor", "buzzer"]);
-export const IDEAL = new Set<CellType>(["switch", "button", "spdt"]); // widerstandslos, per Union verschmolzen
+export const CONSUMER = new Set<PartType>(["lamp", "led", "motor", "buzzer"]);
+export const IDEAL = new Set<PartType>(["switch", "button", "spdt"]); // widerstandslos, per Union verschmolzen
 /* Bauteile ohne eigene Tippfunktion – dort dreht ein Tippen die Lage */
-export const ROTATABLE = new Set<CellType>(["lamp", "motor", "buzzer", "ammeter", "voltmeter"]);
+export const ROTATABLE = new Set<PartType>(["lamp", "motor", "buzzer", "ammeter", "voltmeter"]);
 
-export const sidesOf = (c: Cell): Side[] => (c.orient === "h" ? ["W", "E"] : ["N", "S"]);
-export const spdtOuts = (c: Cell): Side[] =>
+export const sidesOf = (c: Pick<Part, "orient">): Side[] =>
+  c.orient === "h" ? ["W", "E"] : ["N", "S"];
+export const spdtOuts = (c: Pick<Part, "dir">): Side[] =>
   c.dir === "N" || c.dir === "S" ? ["W", "E"] : ["N", "S"];
 
-export function hasPort(c: Cell | undefined, side: Side): boolean {
-  if (!c) return false;
-  if (c.type === "wire" || c.type === "cross") return true;
-  if (c.type === "spdt") return side === c.dir || spdtOuts(c).includes(side);
-  if (TWO.has(c.type)) return sidesOf(c).includes(side);
-  return false;
-}
-/* Wie viele Anschlüsse hat eine Leitungszelle je Achse? Entscheidet, ob ein
-   Bauteil in der eingestellten Orientierung dort überhaupt passt. */
-export function wireLinks(grid: Grid, x: number, y: number) {
-  const h =
-    (hasPort(grid[`${x - 1},${y}`], "E") ? 1 : 0) + (hasPort(grid[`${x + 1},${y}`], "W") ? 1 : 0);
-  const v =
-    (hasPort(grid[`${x},${y - 1}`], "S") ? 1 : 0) + (hasPort(grid[`${x},${y + 1}`], "N") ? 1 : 0);
-  return { h, v };
+/** Seiten, an denen ein Bauteil einen Anschluss hat. */
+export function portsOf(c: Pick<Part, "type" | "orient" | "dir">): Side[] {
+  if (c.type === "cross") return ["N", "E", "S", "W"];
+  if (c.type === "spdt") return [c.dir, ...spdtOuts(c)];
+  return sidesOf(c);
 }
 
-/* Knotenname eines Anschlusses. Leitungszellen fassen alle 4 Seiten zusammen,
-   eine Kreuzung hält waagerecht und senkrecht getrennt. */
-export function nodeId(c: Cell, side: Side, key: CellKey): string {
-  if (c.type === "wire") return `w:${key}`;
-  if (c.type === "cross") return side === "N" || side === "S" ? `cv:${key}` : `ch:${key}`;
-  if (c.type === "spdt") return side === c.dir ? `k:${key}:c` : `k:${key}:${side}`;
-  return `t:${key}:${side}`;
+export const hasPort = (c: Pick<Part, "type" | "orient" | "dir">, side: Side): boolean =>
+  portsOf(c).includes(side);
+
+/* Knotenname eines Anschlusses. Eine Kreuzung hält waagerecht und senkrecht getrennt,
+   der Wechselschalter fasst seine Wurzel unter einem Namen zusammen. */
+export function portNode(c: Pick<Part, "type" | "dir">, side: Side, id: PartId): string {
+  if (c.type === "cross") return side === "N" || side === "S" ? `cv:${id}` : `ch:${id}`;
+  if (c.type === "spdt") return side === c.dir ? `k:${id}:c` : `k:${id}:${side}`;
+  return `t:${id}:${side}`;
 }
+/** Knotenname eines Leitungsknotens (Punkt ohne Bauteil). */
+export const wireNode = (p: string) => `w:${p}`;

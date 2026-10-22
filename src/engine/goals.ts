@@ -1,13 +1,14 @@
 import type {
   CheckItem,
   CheckResult,
+  Circuit,
   Goal,
-  Grid,
   LevelDef,
   LogicExpr,
+  PartType,
   SimResult,
 } from "../domain/types";
-import { cloneGrid } from "./editing";
+import { cloneCircuit } from "./circuit";
 import { CONSUMER } from "./parts";
 import { simulate } from "./simulate";
 
@@ -44,12 +45,12 @@ const EXPR: Record<LogicExpr, (s: boolean[]) => boolean> = {
   not: (s) => !s[0],
 };
 
-export function deriveGoals(level: Pick<LevelDef, "goals">, grid: Grid): Goal[] {
+export function deriveGoals(level: Pick<LevelDef, "goals">, circuit: Circuit): Goal[] {
   const explicit = level.goals || [];
   const covered = new Set(explicit.flatMap((g) => ("at" in g && g.at ? [g.at] : [])));
   /* gleiche Verbraucher mit gleichem Ziel zu einer Zeile zusammenfassen */
-  const groups = new Map();
-  for (const [k, c] of Object.entries(grid)) {
+  const groups = new Map<string, { k: "on"; type: PartType; on: boolean; ats: string[] }>();
+  for (const [k, c] of Object.entries(circuit.parts)) {
     if (!CONSUMER.has(c.type) || covered.has(k)) continue;
     const on = c.goal !== "off",
       gk = `${c.type}|${on}`;
@@ -67,51 +68,53 @@ const bareKey = (k: string) => (k[0] === "!" ? k.slice(1) : k);
 /* Aufbau statt Stellung: Wie sähe die Schaltung aus, wenn jeder Schalter und
    Taster geschlossen wäre? Damit lässt sich prüfen, ob ein Verbraucher
    überhaupt angeschlossen ist – auch einer, der am Ende aus bleiben soll. */
-export function simulateAllClosed(grid: Grid): SimResult {
-  const g2 = cloneGrid(grid);
-  for (const c of Object.values(g2))
+export function simulateAllClosed(circuit: Circuit): SimResult {
+  const c2 = cloneCircuit(circuit);
+  for (const c of Object.values(c2.parts))
     if (c.type === "switch" || c.type === "button") c.closed = true;
-  return simulate(g2);
+  return simulate(c2);
 }
 
 export function checkLevel(
   level: Pick<LevelDef, "goals">,
-  grid: Grid,
+  circuit: Circuit,
   sim: SimResult,
   seen = false,
 ): CheckResult {
-  const goals = deriveGoals(level, grid);
+  const parts = circuit.parts;
+  const goals = deriveGoals(level, circuit);
   const items: CheckItem[] = [];
   /* alle Ziele, die über Schalterkombinationen geprüft werden */
   const lg = goals.filter((g) => g.k === "logic" || g.k === "toggle");
-  const wsim = goals.some((g) => g.k === "wired") ? simulateAllClosed(grid) : null;
+  const wsim = goals.some((g) => g.k === "wired") ? simulateAllClosed(circuit) : null;
   let inputs = null,
     combos = null;
   if (lg.length) {
     inputs = [...new Set(lg.flatMap((g) => g.inputs.map(bareKey)))];
     combos = [];
     for (let m = 0; m < 1 << inputs.length; m++) {
-      const g2 = cloneGrid(grid);
+      const c2 = cloneCircuit(circuit);
       const st = inputs.map((key, i) => {
         const on = !!((m >> i) & 1),
-          c = g2[key];
+          c = c2.parts[key];
         if (c) {
           if (c.type === "spdt") {
             c.pos = on ? 1 : 0;
             /* gekoppelte Schalter mitführen, sonst prüft das Ziel Stellungen durch,
                die es am Kreuzschalter gar nicht gibt */
-            if (c.link) for (const cc of Object.values(g2)) if (cc.link === c.link) cc.pos = c.pos;
+            if (c.link)
+              for (const cc of Object.values(c2.parts)) if (cc.link === c.link) cc.pos = c.pos;
           } else c.closed = c.nc ? !on : on; // on = betätigt
         }
         return on;
       });
-      combos.push({ st, sim: simulate(g2) });
+      combos.push({ st, sim: simulate(c2) });
     }
   }
   for (const g of goals) {
     if (g.k === "on") {
       const ats = g.ats || [g.at];
-      const c = grid[ats[0]];
+      const c = parts[ats[0]];
       if (!c) continue;
       const n = ats.length;
       const t =
@@ -122,7 +125,7 @@ export function checkLevel(
       items.push({ t, ok: ats.every((a) => sim.lit.has(a) === g.on) });
     } else if (g.k === "wired") {
       const ats = g.ats || [g.at];
-      const c = grid[ats[0]];
+      const c = parts[ats[0]];
       if (!c) continue;
       const n = ats.length;
       items.push({
@@ -134,9 +137,9 @@ export function checkLevel(
         ok: ats.every((a) => wsim.lit.has(a)),
       });
     } else if (g.k === "read") {
-      const cand = g.at ? [g.at] : Object.keys(grid).filter((k) => grid[k].type === g.type);
+      const cand = g.at ? [g.at] : Object.keys(parts).filter((k) => parts[k].type === g.type);
       const ok = cand.some((k) => {
-        const v = Math.abs((grid[k].type === "voltmeter" ? sim.volt[k] : sim.cur[k]) || 0);
+        const v = Math.abs((parts[k]?.type === "voltmeter" ? sim.volt[k] : sim.cur[k]) || 0);
         return v >= g.min && v <= g.max;
       });
       items.push({ t: g.label, ok });
@@ -168,7 +171,7 @@ export function checkLevel(
     } else if (g.k === "state") {
       /* Stellungen im Jetzt, wieder als „betätigt“ – beim Öffner also closed === false. */
       const ok = Object.entries(g.pressed).every(([k, want]) => {
-        const c = grid[k];
+        const c = parts[k];
         return c ? (c.nc ? !c.closed : !!c.closed) === want : false;
       });
       items.push({ t: g.label, ok });
