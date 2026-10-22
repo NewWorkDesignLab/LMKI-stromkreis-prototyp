@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Circuit, LevelDef, PartId, SimResult } from "../../domain/types";
-import { FridgeOrientation } from "./FridgeOrientation";
+import type { BuildStep, Circuit, PartId, SimResult } from "../../domain/types";
 
 /* Funktionsansicht zu „Der Öffner“: zeigt den Kontakt im Taster und verlangt, dass
    beide Taster einmal gedrückt UND wieder losgelassen wurden. Welche Taster und Lampen
@@ -12,7 +11,7 @@ interface Lab {
 }
 const FRESH: Lab = { closer: 0, opener: 0 };
 
-type Config = LevelDef["contactLab"];
+type Config = BuildStep["contactLab"];
 
 /** Je Taster 0 = noch nicht angefasst, 1 = gerade gedrückt, 2 = gedrückt UND wieder losgelassen.
     Zwei getrennte Zähler, damit die Reihenfolge egal ist – wer mit dem Öffner anfängt,
@@ -93,14 +92,7 @@ export function ContactLab({ config, circuit, sim, wired, lab, done, press, rele
           const bridgeY = c.closed ? 105 : c.nc ? 132 : 78;
           return (
             <div key={at} className="rounded-lg border border-stone-200 bg-white p-3">
-              <div className="flex items-start justify-between gap-2">
-                <h4 className="text-sm font-semibold">Taster mit {name}</h4>
-                {c.nc && (
-                  <div className="shrink-0">
-                    <FridgeOrientation />
-                  </div>
-                )}
-              </div>
+              <h4 className="text-sm font-semibold">Taster mit {name}</h4>
               <svg
                 viewBox="0 0 240 160"
                 className="w-full"

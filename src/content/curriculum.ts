@@ -69,5 +69,10 @@ export const DEFAULT_CURRICULUM: Curriculum = {
         "der-not-aus",
       ],
     },
+    {
+      id: "beispiele",
+      name: "Neu: Level mit Schritten",
+      levelIds: ["lichterkette-in-reihe"],
+    },
   ],
 };

@@ -79,12 +79,31 @@ export const erweiterungLevels: LegacyLevelDef[] = [
            Waagerechte Bauteile haben oben und unten keinen Anschluss – deshalb
            berühren Widerstand und LED die Zuleitung darunter nicht. */
     name: "Das Licht im Schalter",
-    switchOrientation: true,
     W: 7,
     H: 4,
     palette: BASE,
     showValues: true,
-    task: "Beleuchtete Lichtschalter besitzen oft eine kleine Glimmleuchte, die im Dunkeln schwach glimmt, wenn das Licht ausgeschaltet ist. Hier wird sie durch eine LED mit Vorwiderstand dargestellt. Verdrahte den Stromkreis so, dass die LED bei ausgeschalteter Lampe leuchtet und bei eingeschalteter Lampe erlischt.",
+    before: [
+      {
+        kind: "context",
+        id: "alltag",
+        title: "Alltag",
+        heading: "Kennst du diesen Schalter?",
+        blocks: [
+          {
+            k: "widget",
+            widget: "lichtschalter",
+            caption:
+              "Ein kleines Glimmlicht hilft dir, den Schalter im Dunkeln zu finden – auch wenn das Raumlicht ausgeschaltet ist.",
+          },
+          {
+            k: "p",
+            text: "Beleuchtete Lichtschalter besitzen oft eine kleine Glimmleuchte, die im Dunkeln schwach glimmt, wenn das Licht ausgeschaltet ist. Wie muss sie angeschlossen sein, damit sie genau dann leuchtet?",
+          },
+        ],
+      },
+    ],
+    task: "Die Glimmleuchte wird hier durch eine LED mit Vorwiderstand dargestellt. Verdrahte den Stromkreis so, dass die LED bei ausgeschalteter Lampe leuchtet und bei eingeschalteter Lampe erlischt.",
     lesson:
       "Die LED liegt parallel zum Schalter. Bei offenem Schalter fließt ein minimaler Strom durch LED und Lampe (hier 6,3 mA). Der LED (Glimmleuchte) reicht das zum Leuchten, der Lampe bei Weitem nicht. Geschlossen überbrückt der Schalter die LED, sie bekommt keine Spannung mehr und erlischt.",
     cells: {
@@ -129,6 +148,21 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     W: 6,
     H: 4,
     palette: BASE,
+    before: [
+      {
+        kind: "context",
+        id: "alltag",
+        title: "Alltag",
+        heading: "Ein Öffner im Kühlschrank",
+        blocks: [
+          {
+            k: "p",
+            text: "Im Kühlschrank steckt ein Taster, den die Tür betätigt. Probiere aus, was beim Schließen und Öffnen passiert.",
+          },
+          { k: "widget", widget: "kuehlschrank" },
+        ],
+      },
+    ],
     task: "Verbinde beide Lampenzweige mit der Quelle. Untersuche danach beide Taster: Was verbindet sich beim Drücken, was trennt sich? Die Funktionsansicht unter dem Schaltplan zeigt dir die Bewegung im Bauteil – probiere beide aus.",
     lesson:
       "Der Name beschreibt, was passiert: Der Öffner öffnet den Stromkreis, wenn er betätigt wird. Während er im Ruhezustand Strom durchlässt. Der Schließer schließt den Stromkreis, wenn er betätigt wird. Während er im Ruhezustand keinen Strom durchlässt.",

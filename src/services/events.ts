@@ -1,4 +1,4 @@
-import type { LevelId } from "../domain/types";
+import type { AnswerValue, LevelId, StepId } from "../domain/types";
 
 /* Alles, was die Lernenden tun und die Bewertung später braucht, als Ereignisse.
    Die Oberfläche meldet sie, Fortschritt, Bewertung und API hören mit. */
@@ -6,7 +6,20 @@ export type LearningEvent =
   | { type: "level_started"; levelId: LevelId; at: number }
   | { type: "board_reset"; levelId: LevelId; at: number }
   | { type: "level_solved"; levelId: LevelId; at: number }
-  | { type: "level_left"; levelId: LevelId; at: number; solved: boolean };
+  | { type: "level_left"; levelId: LevelId; at: number; solved: boolean }
+  | { type: "step_started"; levelId: LevelId; stepId: StepId; at: number }
+  | { type: "step_completed"; levelId: LevelId; stepId: StepId; at: number }
+  /** Eine gültige Antwort auf Quiz oder Vorhersage. correct = null: Vorhersage ohne Auflösung.
+      confidence (0–1) ist für die Sicherheitsabfrage vorgesehen und noch nicht belegt. */
+  | {
+      type: "answer_submitted";
+      levelId: LevelId;
+      stepId: StepId;
+      at: number;
+      answer: AnswerValue;
+      correct: boolean | null;
+      confidence?: number;
+    };
 
 export type Unsubscribe = () => void;
 

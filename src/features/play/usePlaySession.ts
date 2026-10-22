@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CheckResult, LevelDef } from "../../domain/types";
+import type { BuildStep, CheckResult } from "../../domain/types";
 import { cloneCircuit, emptyCircuit } from "../../engine/circuit";
 import { checkLevel } from "../../engine/goals";
 import { latchTripped, type PlayMode } from "../../engine/editing";
@@ -14,15 +14,16 @@ interface Callbacks {
   onReset?: () => void;
 }
 
-/* Ein Spielversuch an einem Level: Brett, Simulation, Zielprüfung und alles, was
-   daraus folgt. Gilt für genau ein Level – beim Levelwechsel wird die Komponente
-   neu eingehängt (key), damit gar kein Zustand des alten Levels überlebt. */
+/* Ein Spielversuch an einem Bauschritt: Brett, Simulation, Zielprüfung und alles, was
+   daraus folgt. Gilt für genau einen Schritt – beim Wechsel wird die Komponente neu
+   eingehängt (key), damit gar kein Zustand des alten Levels überlebt. */
 export function usePlaySession(
-  level: LevelDef,
+  level: BuildStep,
   mode: PlayMode,
+  active: boolean,
   { onSolved, onReset }: Callbacks = {},
 ) {
-  const editor = useBoardEditor(level, mode);
+  const editor = useBoardEditor(level, mode, active);
   const { circuit, update, commit } = editor;
   const [seen, setSeen] = useState(false);
 

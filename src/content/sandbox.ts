@@ -1,4 +1,4 @@
-import type { LevelDef, ToolId } from "../domain/types";
+import type { BuildStep, ToolId } from "../domain/types";
 
 const SANDBOX_PALETTE: ToolId[] = [
   "wire",
@@ -19,13 +19,13 @@ const SANDBOX_PALETTE: ToolId[] = [
   "erase",
 ];
 
-/* Spielwiese: kein Lehrplan-Level, sondern ein freies Feld mit allen Bauteilen. */
-export const SANDBOX: LevelDef = {
+/* Spielwiese: kein Lehrplan-Level, sondern ein freies Feld mit allen Bauteilen –
+   ein einzelner Bauschritt ohne Ziele. */
+export const SANDBOX: BuildStep = {
+  kind: "build",
   id: "sandbox",
-  name: "Frei bauen",
   palette: SANDBOX_PALETTE,
   task: "",
-  lesson: "",
   labelSwitches: true,
   W: 9,
   H: 6,

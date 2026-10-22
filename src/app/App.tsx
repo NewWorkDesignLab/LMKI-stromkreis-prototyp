@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, LayoutGrid, Zap } from "lucide-react";
 import { SANDBOX } from "../content/sandbox";
+import { LessonView } from "../features/lesson/LessonView";
 import { PlayArea } from "../features/play/PlayArea";
 import { applyTheme, DEFAULT_THEME } from "../theme/themes";
 import { LegendOverlay } from "../ui/LegendOverlay";
@@ -23,7 +24,7 @@ export default function App() {
   }, [rt, s.themeId, s.themeRevision]);
 
   const mode = s.mode;
-  const level = mode === "sandbox" ? SANDBOX : rt.content.getLevel(s.levelId)!;
+  const level = rt.content.getLevel(s.levelId)!;
   const { chapter } = rt.content.chapterOf(s.levelId);
   const solved = new Set(s.solved);
   const position = s.order.indexOf(s.levelId);
@@ -114,17 +115,18 @@ export default function App() {
           </div>
         )}
 
-        {/* Neu eingehängt je Level und je ersetztem Brett: so überlebt kein Zustand des alten Levels */}
-        <PlayArea
-          key={`${mode}:${level.id}:${rt.content.boardRevision(level.id)}`}
-          level={level}
-          mode={mode}
-          overlayOpen={overlay !== null}
-          hasNext={nextId !== null}
-          onNext={() => nextId && goLevel(nextId)}
-          onSolved={() => rt.reportSolved(level.id)}
-          onReset={() => rt.reportReset(level.id)}
-        />
+        {/* Neu eingehängt je Level und je ersetztem Level: so überlebt kein Zustand des alten */}
+        {mode === "sandbox" ? (
+          <PlayArea key="sandbox" step={SANDBOX} mode="sandbox" overlayOpen={overlay !== null} />
+        ) : (
+          <LessonView
+            key={`${level.id}:${rt.content.boardRevision(level.id)}`}
+            level={level}
+            overlayOpen={overlay !== null}
+            hasNextLevel={nextId !== null}
+            onNextLevel={() => nextId && goLevel(nextId)}
+          />
+        )}
       </div>
 
       {overlay === "levels" && (

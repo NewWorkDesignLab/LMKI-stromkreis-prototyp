@@ -6,11 +6,21 @@ export interface LevelStats {
   resets: number;
   solves: number;
   solved: boolean;
+  /** abgegebene Antworten auf Fragen, davon falsch */
+  answers: number;
+  wrongAnswers: number;
   firstSolvedAt?: number;
   lastPlayedAt?: number;
 }
 
-const EMPTY: LevelStats = { starts: 0, resets: 0, solves: 0, solved: false };
+const EMPTY: LevelStats = {
+  starts: 0,
+  resets: 0,
+  solves: 0,
+  solved: false,
+  answers: 0,
+  wrongAnswers: 0,
+};
 
 /* Speicher für den Lernfortschritt. Die Oberfläche kennt nur dieses Interface;
    ein Speicher im Browser (localStorage) oder auf einem Server lässt sich
@@ -36,6 +46,9 @@ export class MemoryProgressStore implements ProgressStore {
       s.solves++;
       s.solved = true;
       s.firstSolvedAt ??= e.at;
+    } else if (e.type === "answer_submitted") {
+      s.answers++;
+      if (e.correct === false) s.wrongAnswers++;
     }
     this.byLevel.set(e.levelId, s);
   }

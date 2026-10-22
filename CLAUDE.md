@@ -68,6 +68,17 @@ Die Oberfläche greift über `Runtime` auf Inhalt und Fortschritt zu, nicht dire
 - Das alte Zellformat (`content/legacy.ts`) ist ein **Übergangsformat** für die Prototyp-Level
   und wird beim Laden übersetzt. Neue Level und neue Funktionen nie darin schreiben.
 
+## Level und Schritte (verbindlich)
+
+- Ein Level ist eine Folge von Schritten (`context`, `predict`, `build`, `quiz`, `summary`).
+  Ablaufregeln stehen in `engine/lesson.ts`, nicht in Komponenten.
+- Texte als Bausteine (`Block`), nie als HTML- oder Markdown-String. Neue Anschauungen als
+  `widget`-Baustein mit eingetragener `WidgetId` – keine Sonder-Props am Level.
+- Jede neue Schrittart braucht: Typ, Regeln mit Tests, Prüfung in `validateLevel`, Eintrag
+  in `STEP_VIEWS`. Neue Level im heutigen Format, mit `solution` am Bauschritt.
+- Was Lernende tun, wird als `LearningEvent` gemeldet (synchron im Handler), damit
+  Bewertung und Auswertung darauf aufbauen können.
+
 ## Code-Qualität
 
 - **TypeScript:** neuer und angefasster Code ist vollständig typisiert, kein `any`, keine

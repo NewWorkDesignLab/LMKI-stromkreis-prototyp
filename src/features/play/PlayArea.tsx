@@ -1,8 +1,7 @@
-import type { LevelDef } from "../../domain/types";
+import type { BuildStep } from "../../domain/types";
 import { PLACEABLE, type PlayMode } from "../../engine/editing";
 import { Board } from "../../render/Board";
 import { ContactLab } from "../widgets/ContactLab";
-import { OhmLab } from "../widgets/OhmLab";
 import { useTutorial } from "../tutorial/useTutorial";
 import { SandboxParts } from "./SandboxParts";
 import { StatusPanel } from "./StatusPanel";
@@ -12,35 +11,45 @@ import { WinPanel } from "./WinPanel";
 import { usePlaySession } from "./usePlaySession";
 
 interface Props {
-  level: LevelDef;
+  step: BuildStep;
   mode: PlayMode;
+  /** Sichtbar und bedienbar; sonst greifen auch Tastenkürzel nicht */
+  active?: boolean;
   /** Ein Dialog liegt über dem Spiel: Einführungsanimationen pausieren */
   overlayOpen: boolean;
-  hasNext: boolean;
-  onNext: () => void;
-  onSolved: () => void;
-  onReset: () => void;
+  onSolved?: () => void;
+  onReset?: () => void;
+  /** Knopf nach dem Lösen */
+  proceed?: { label: string; onClick: () => void };
 }
 
-/* Alles unter dem Leveltitel: Aufgabe, Werkzeuge, Brett, Zusatzbausteine, Status.
-   Gilt für genau ein Level – der Aufrufer hängt es pro Level mit eigenem key ein. */
-export function PlayArea({ level, mode, overlayOpen, hasNext, onNext, onSolved, onReset }: Props) {
-  const s = usePlaySession(level, mode, { onSolved, onReset });
+/* Ein Bauschritt: Aufgabe, Werkzeuge, Brett, Zusatzbausteine, Status. Gilt für genau
+   einen Schritt – der Aufrufer hängt es je Schritt mit eigenem key ein. */
+export function PlayArea({
+  step,
+  mode,
+  active = true,
+  overlayOpen,
+  onSolved,
+  onReset,
+  proceed,
+}: Props) {
+  const s = usePlaySession(step, mode, active, { onSolved, onReset });
   const toggleOrient = () => s.setOrient((o) => (o === "h" ? "v" : "h"));
 
-  const palette = level.palette;
+  const palette = step.palette;
   const partTools = palette.filter((t) => PLACEABLE.has(t));
 
   const tutorial = useTutorial({
-    level,
+    level: step,
     circuit: s.circuit,
     won: s.won,
-    suppressed: mode !== "level" || s.tool !== "wire" || overlayOpen || s.isDrawing,
+    suppressed: !active || mode !== "level" || s.tool !== "wire" || overlayOpen || s.isDrawing,
   });
 
   return (
     <>
-      <TaskCard level={level} mode={mode} />
+      <TaskCard level={step} mode={mode} />
 
       <ToolPanel
         palette={palette}
@@ -53,7 +62,7 @@ export function PlayArea({ level, mode, overlayOpen, hasNext, onNext, onSolved, 
       />
 
       <Board
-        level={level}
+        level={step}
         circuit={s.circuit}
         sim={s.sim}
         tool={s.tool}
@@ -63,11 +72,9 @@ export function PlayArea({ level, mode, overlayOpen, hasNext, onNext, onSolved, 
         overlay={tutorial}
       />
 
-      {level.ohmLab && <OhmLab circuit={s.circuit} resistorId={level.ohmLab.resistor} />}
-
-      {level.contactLab && (
+      {step.contactLab && (
         <ContactLab
-          config={level.contactLab}
+          config={step.contactLab}
           circuit={s.circuit}
           sim={s.sim}
           wired={s.check.won}
@@ -100,9 +107,7 @@ export function PlayArea({ level, mode, overlayOpen, hasNext, onNext, onSolved, 
         canRedo={s.canRedo}
       />
 
-      {mode === "level" && s.won && (
-        <WinPanel lesson={level.lesson} hasNext={hasNext} onNext={onNext} />
-      )}
+      {mode === "level" && s.won && proceed && <WinPanel proceed={proceed} />}
     </>
   );
 }

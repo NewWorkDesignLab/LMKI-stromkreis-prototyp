@@ -1,4 +1,15 @@
-import type { Circuit, Goal, LevelDef, PartType, ToolId } from "../domain/types";
+import type {
+  Block,
+  BuildStep,
+  Choice,
+  Circuit,
+  Goal,
+  LevelDef,
+  PartType,
+  Step,
+  ToolId,
+  WidgetId,
+} from "../domain/types";
 import {
   OPPOSITE,
   isWireKey,
@@ -116,16 +127,66 @@ function validateCircuit(
   }
 }
 
-export function validateLevel(level: unknown): ValidationResult {
-  const errors: string[] = [];
-  const err = (m: string) => errors.push(m);
-  const l = level as Partial<LevelDef> | null;
-  if (!l || typeof l !== "object") return { ok: false, errors: ["Level ist kein Objekt"] };
+const isText = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
+const isTextList = (v: unknown) => Array.isArray(v) && v.every((x) => typeof x === "string");
+const SLUG = /^[a-z0-9][a-z0-9-]*$/;
 
-  if (typeof l.id !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(l.id))
-    err("id muss ein Slug sein (a–z, 0–9, Bindestrich)");
-  for (const f of ["name", "task", "lesson"] as const)
-    if (typeof l[f] !== "string") err(`${f} fehlt oder ist kein Text`);
+const WIDGETS: Record<WidgetId, true> = {
+  "uri-dreieck": true,
+  kuehlschrank: true,
+  lichtschalter: true,
+};
+
+/* Bausteine: Art bekannt, Texte vorhanden. Bilder und Videos nur über http(s) oder
+   relative Pfade – kein javascript:, kein data: mit Skript. */
+function validateBlocks(blocks: unknown, where: string, err: (m: string) => void) {
+  if (blocks === undefined) return;
+  if (!Array.isArray(blocks)) return err(`${where}: blocks muss eine Liste sein`);
+  const safeUrl = (u: unknown) => typeof u === "string" && /^(https?:\/\/|\/|\.\/)/.test(u);
+  blocks.forEach((b: Block, i) => {
+    const at = `${where}, Baustein ${i + 1}`;
+    switch (b?.k) {
+      case "p":
+      case "note":
+      case "formula":
+        if (!isText(b.text)) err(`${at}: text fehlt`);
+        break;
+      case "list":
+        if (!isTextList(b.items) || !b.items.length) err(`${at}: items muss Texte enthalten`);
+        break;
+      case "image":
+        if (!safeUrl(b.src) || !isText(b.alt))
+          err(`${at}: Bild braucht src (http/https/relativ) und alt`);
+        break;
+      case "video":
+        if (!safeUrl(b.src) || !isText(b.title)) err(`${at}: Video braucht src und title`);
+        break;
+      case "widget":
+        if (!WIDGETS[b.widget]) err(`${at}: unbekannte Anschauung „${b.widget}“`);
+        break;
+      default:
+        err(`${at}: unbekannte Art „${(b as { k?: string })?.k}“`);
+    }
+  });
+}
+
+function validateChoices(choices: unknown, where: string, err: (m: string) => void): Set<string> {
+  const ids = new Set<string>();
+  if (!Array.isArray(choices) || choices.length < 2) {
+    err(`${where}: mindestens zwei Antwortmöglichkeiten`);
+    return ids;
+  }
+  for (const c of choices as Choice[]) {
+    if (!c || !isText(c.id) || !isText(c.text)) err(`${where}: Antwort braucht id und text`);
+    else if (ids.has(c.id)) err(`${where}: Antwort-ID „${c.id}“ doppelt`);
+    else ids.add(c.id);
+  }
+  return ids;
+}
+
+function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
+  const e = (m: string) => err(`${where}: ${m}`);
+  if (!isText(l.task)) e("task fehlt");
   const { W, H } = l;
   const sizeOk =
     Number.isInteger(W) &&
@@ -134,54 +195,131 @@ export function validateLevel(level: unknown): ValidationResult {
     H >= 2 &&
     W <= MAX_BOARD &&
     H <= MAX_BOARD;
-  if (!sizeOk) err(`W und H müssen ganze Zahlen zwischen 2 und ${MAX_BOARD} sein`);
+  if (!sizeOk) e(`W und H müssen ganze Zahlen zwischen 2 und ${MAX_BOARD} sein`);
 
-  if (!Array.isArray(l.palette)) err("palette fehlt");
-  else for (const t of l.palette) if (!TOOLS.has(t)) err(`unbekanntes Werkzeug „${t}“`);
+  if (!Array.isArray(l.palette)) e("palette fehlt");
+  else for (const t of l.palette) if (!TOOLS.has(t)) e(`unbekanntes Werkzeug „${t}“`);
 
   const walls = new Set<string>();
   if (l.walls !== undefined) {
-    if (!Array.isArray(l.walls)) err("walls muss eine Liste von Punkten sein");
+    if (!Array.isArray(l.walls)) e("walls muss eine Liste von Punkten sein");
     else
       for (const w of l.walls) {
         try {
           const [x, y] = parsePoint(w);
-          if (sizeOk && (x < 0 || y < 0 || x >= W || y >= H)) err(`Wand ${w} liegt außerhalb`);
+          if (sizeOk && (x < 0 || y < 0 || x >= W || y >= H)) e(`Wand ${w} liegt außerhalb`);
           walls.add(w);
         } catch {
-          err(`Wand „${w}“ ist kein Punkt „x,y“`);
+          e(`Wand „${w}“ ist kein Punkt „x,y“`);
         }
       }
   }
 
   /* ohne gültige Größe lässt sich die Schaltung nicht sinnvoll prüfen */
   if (sizeOk) {
-    validateCircuit(l.circuit, W, H, walls, err);
-    if (l.solution !== undefined) validateCircuit(l.solution, W, H, walls, err);
+    validateCircuit(l.circuit, W, H, walls, e);
+    if (l.solution !== undefined) validateCircuit(l.solution, W, H, walls, e);
   }
 
   const parts = l.circuit?.parts ?? {};
-  const ref = (id: string, where: string) => {
-    if (!parts[id]) err(`${where} verweist auf unbekanntes Bauteil „${id}“`);
+  const ref = (id: string, what: string) => {
+    if (!parts[id]) e(`${what} verweist auf unbekanntes Bauteil „${id}“`);
   };
   for (const g of l.goals ?? []) {
     if (!g || !GOAL_KINDS.has(g.k)) {
-      err(`unbekanntes Ziel „${(g as { k?: string })?.k}“`);
+      e(`unbekanntes Ziel „${(g as { k?: string })?.k}“`);
       continue;
     }
     for (const id of goalRefs(g)) ref(id, `Ziel „${g.k}“`);
   }
   for (const id of l.latch?.lit ?? []) ref(id, "latch");
-  if (l.ohmLab) ref(l.ohmLab.resistor, "ohmLab");
   if (l.contactLab)
     for (const c of [l.contactLab.closer, l.contactLab.opener]) {
       ref(c?.contact, "contactLab");
       ref(c?.lamp, "contactLab");
     }
+  if (l.tips !== undefined && !isTextList(l.tips)) e("tips muss eine Liste von Texten sein");
+}
 
-  for (const f of ["tips", "concepts"] as const)
-    if (l[f] !== undefined && !(Array.isArray(l[f]) && l[f]!.every((s) => typeof s === "string")))
-      err(`${f} muss eine Liste von Texten sein`);
+function validateStep(st: Step, earlier: Step[], err: (m: string) => void) {
+  const where = `Schritt „${st.id}“`;
+  if (st.title !== undefined && !isText(st.title)) err(`${where}: title ist leer`);
+  if (st.concepts !== undefined && !isTextList(st.concepts))
+    err(`${where}: concepts muss eine Liste von Texten sein`);
+  switch (st.kind) {
+    case "context":
+      if (!Array.isArray(st.blocks) || !st.blocks.length) err(`${where}: blocks fehlt`);
+      validateBlocks(st.blocks, where, err);
+      break;
+    case "predict": {
+      if (!isText(st.question)) err(`${where}: question fehlt`);
+      validateBlocks(st.blocks, where, err);
+      const ids = validateChoices(st.choices, where, err);
+      if (st.correct !== undefined && !ids.has(st.correct))
+        err(`${where}: correct „${st.correct}“ ist keine der Antworten`);
+      break;
+    }
+    case "build":
+      validateBuild(st, where, err);
+      break;
+    case "quiz": {
+      if (!isText(st.question)) err(`${where}: question fehlt`);
+      validateBlocks(st.blocks, where, err);
+      validateBlocks(st.explanation, `${where} (Lösungsweg)`, err);
+      const a = st.answer;
+      if (a?.k === "choice") {
+        const ids = validateChoices(a.choices, where, err);
+        if (!Array.isArray(a.correct) || !a.correct.length)
+          err(`${where}: mindestens eine richtige Antwort`);
+        else
+          for (const c of a.correct)
+            if (!ids.has(c)) err(`${where}: „${c}“ ist keine der Antworten`);
+      } else if (a?.k === "number") {
+        if (!Number.isFinite(a.value)) err(`${where}: value muss eine Zahl sein`);
+        if (!isText(a.unit)) err(`${where}: unit fehlt`);
+        if (a.tolerance !== undefined && !(a.tolerance >= 0)) err(`${where}: tolerance ≥ 0`);
+      } else err(`${where}: answer muss „choice“ oder „number“ sein`);
+      break;
+    }
+    case "summary":
+      if (!isText(st.lesson)) err(`${where}: lesson fehlt`);
+      validateBlocks(st.blocks, where, err);
+      if (
+        st.recall !== undefined &&
+        !earlier.some((e) => e.id === st.recall && e.kind === "predict")
+      )
+        err(`${where}: recall muss auf einen früheren Vorhersage-Schritt zeigen`);
+      break;
+    default:
+      err(`${where}: unbekannte Art „${(st as { kind?: string }).kind}“`);
+  }
+}
+
+export function validateLevel(level: unknown): ValidationResult {
+  const errors: string[] = [];
+  const err = (m: string) => errors.push(m);
+  const l = level as Partial<LevelDef> | null;
+  if (!l || typeof l !== "object") return { ok: false, errors: ["Level ist kein Objekt"] };
+
+  if (typeof l.id !== "string" || !SLUG.test(l.id))
+    err("id muss ein Slug sein (a–z, 0–9, Bindestrich)");
+  if (!isText(l.name)) err("name fehlt oder ist kein Text");
+  if (l.concepts !== undefined && !isTextList(l.concepts))
+    err("concepts muss eine Liste von Texten sein");
+
+  if (!Array.isArray(l.steps) || !l.steps.length) {
+    err("steps muss mindestens einen Schritt enthalten");
+    return { ok: false, errors };
+  }
+  const seen = new Set<string>();
+  l.steps.forEach((st, i) => {
+    if (!st || typeof st !== "object") return err(`Schritt ${i + 1} ist kein Objekt`);
+    if (typeof st.id !== "string" || !SLUG.test(st.id))
+      err(`Schritt ${i + 1}: id muss ein Slug sein`);
+    else if (seen.has(st.id)) err(`Schritt-ID „${st.id}“ doppelt`);
+    seen.add(st.id);
+    validateStep(st, l.steps.slice(0, i), err);
+  });
 
   return { ok: errors.length === 0, errors };
 }

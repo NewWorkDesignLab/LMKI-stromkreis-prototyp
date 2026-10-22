@@ -1,11 +1,11 @@
 import { useMemo, type ReactNode } from "react";
-import type { Circuit, LevelDef } from "../../domain/types";
+import type { BuildStep, Circuit } from "../../domain/types";
 import { simulate } from "../../engine/simulate";
 import { TUTORIALS } from "../../content/tutorials";
 import { TutorialClick, TutorialRoute } from "./TutorialOverlays";
 
 interface Args {
-  level: LevelDef;
+  level: BuildStep;
   circuit: Circuit;
   won: boolean;
   /** Spielerin zeichnet gerade, ein Dialog ist offen o. Ä. – dann zeigt die Einführung nichts.

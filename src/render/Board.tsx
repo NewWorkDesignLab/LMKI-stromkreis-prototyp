@@ -1,7 +1,7 @@
 import type { MouseEventHandler, PointerEventHandler, ReactNode, RefObject } from "react";
 import type {
   Circuit,
-  LevelDef,
+  BuildStep,
   Part,
   PartId,
   PointKey,
@@ -39,7 +39,7 @@ export type BoardHint =
   | { kind: "eraseWire"; key: WireKey };
 
 interface Props {
-  level: Pick<LevelDef, "W" | "H" | "walls" | "frames" | "showValues" | "labelSwitches">;
+  level: Pick<BuildStep, "W" | "H" | "walls" | "frames" | "showValues" | "labelSwitches">;
   circuit: Circuit;
   sim: SimResult;
   tool: ToolId;

@@ -1,35 +1,19 @@
 import { useState } from "react";
-import type { Circuit, PartId } from "../../domain/types";
 import { INK, WIRE } from "../../theme/colors";
 import { Formel } from "./Formel";
 
-export function OhmLab({ circuit, resistorId }: { circuit: Circuit; resistorId: PartId }) {
-  const [wanted, setWanted] = useState("R");
-  const resistor = circuit.parts[resistorId];
-  const additionalR = resistor?.r ?? 100;
-  const r = 90 + additionalR;
-  const u = 9;
-  const i = u / r;
-  const fmt = (value, digits = 2) =>
-    value.toLocaleString("de-DE", { maximumFractionDigits: digits });
+type Wanted = "U" | "R" | "I";
+
+/* URI-Dreieck: Wer die gesuchte Größe wählt, sieht, wie sich die Formel umstellt.
+   Allgemein gehalten – die Werte einer Aufgabe stehen in deren Text, nicht hier. */
+export function UriDreieck() {
+  const [wanted, setWanted] = useState<Wanted>("R");
   const formula = { U: "U = R · I", R: "R = U / I", I: "I = U / R" }[wanted];
-  const example = {
-    U: `U = ${fmt(r)} Ω · ${fmt(i, 6)} A ≈ ${fmt(u)} V`,
-    R: `R_ges = ${fmt(u)} V / ${fmt(i, 6)} A ≈ ${fmt(r)} Ω`,
-    I: `I = ${fmt(u)} V / ${fmt(r)} Ω ≈ ${fmt(i, 6)} A = ${fmt(i * 1000, 3)} mA`,
-  }[wanted];
   return (
-    <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
-      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">
-        Rechenhilfe
-      </p>
-      <h3 className="font-semibold text-stone-800">
-        Wie hängen Spannung, Widerstand und Strom zusammen?
-      </h3>
-      <p className="mt-1 text-xs text-stone-600">
-        Das Ohmsche Gesetz beschreibt die proportionalen Zusammenhänge der drei elektrischen
-        Grundgrößen, Strom (I), der Spannung (U) und dem Widerstand (R). Mit seiner Hilfe lässt sich
-        der fehlende Wert berechnen, insofern die beiden anderen bekannt sind.
+    <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+      <p className="text-xs text-stone-600">
+        Das Ohmsche Gesetz verbindet Spannung (U), Widerstand (R) und Strom (I). Sind zwei Größen
+        bekannt, lässt sich die dritte berechnen.
       </p>
       <div className="flex flex-wrap items-center gap-4 mt-3">
         <svg
@@ -116,7 +100,7 @@ export function OhmLab({ circuit, resistorId }: { circuit: Circuit; resistorId: 
         </svg>
         <div className="flex-1 min-w-[180px]">
           <div className="flex gap-2" role="group" aria-label="Gesuchte Größe">
-            {["U", "R", "I"].map((symbol) => (
+            {(["U", "R", "I"] as const).map((symbol) => (
               <button
                 key={symbol}
                 type="button"
@@ -128,47 +112,11 @@ export function OhmLab({ circuit, resistorId }: { circuit: Circuit; resistorId: 
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-stone-600">
-            Gegeben sind Quellspannung: <Formel>U = 9 V</Formel> und die Zielgröße:{" "}
-            <Formel>I = 29 mA</Formel> sowie der Widerstand der Lampe:{" "}
-            <Formel>R_Lampe = 90 Ω</Formel>
-          </p>
-          <p className="mt-1 text-xs text-stone-600">
-            Gesucht ist der zusätzliche Widerstand <Formel>R_zus</Formel> in Ω
-          </p>
           <p className="mt-3 text-xl font-semibold" aria-live="polite">
             <Formel>{formula}</Formel>
           </p>
-          <p className="mt-1 text-sm" aria-live="polite">
-            <Formel>{example}</Formel>
-          </p>
         </div>
       </div>
-      <details className="mt-3 rounded-lg border border-stone-200 bg-white p-3 text-sm">
-        <summary className="cursor-pointer font-medium">Rechenweg anzeigen</summary>
-        <div className="mt-2 space-y-1 text-stone-700">
-          <p>
-            Zielgröße der Stromstärke: <Formel>I = 29 mA = 0,029 A.</Formel>
-          </p>
-          <p>
-            <Formel>R_ges = U / I = 9 V / 0,029 A ≈ 310,34 Ω.</Formel>
-          </p>
-          <p>
-            <Formel>R_zus = R_ges − R_Lampe = 310,34 Ω − 90 Ω = 220,34 Ω.</Formel>
-          </p>
-          <p>
-            Auf die verfügbare Widerstandsstufe abgerundet: <Formel>R_zus = 220 Ω</Formel>
-          </p>
-          <p>
-            Probe: <Formel>I = 9 V / 310 Ω ≈ 0,029032 A = 29,032 mA ≈ 29 mA.</Formel>
-          </p>
-          <p>
-            {" "}
-            Damit ergibt sich ein <i>einzustellender Zusatzwiderstand</i> von <Formel>220 Ω</Formel>{" "}
-            in der Schaltung.
-          </p>
-        </div>
-      </details>
-    </section>
+    </div>
   );
 }

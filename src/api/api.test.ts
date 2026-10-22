@@ -12,7 +12,7 @@ describe("API", () => {
   it("startet im ersten Level des Lehrplans", () => {
     const { api } = setup();
     expect(api.getSnapshot().currentLevelId).toBe("schliesse-den-stromkreis");
-    expect(api.getSnapshot().order).toHaveLength(25);
+    expect(api.getSnapshot().order).toHaveLength(26);
   });
 
   it("wechselt das Level und weist Unbekanntes ab", () => {
@@ -46,29 +46,50 @@ describe("API", () => {
     const level = {
       id: "mein-level",
       name: "Mein Level",
-      W: 5,
-      H: 3,
-      palette: ["wire", "erase"],
-      task: "Aufgabe",
-      lesson: "Merksatz",
-      circuit: {
-        parts: {
-          G1: { type: "battery", x: 0, y: 1, orient: "v" },
-          E1: { type: "lamp", x: 4, y: 1, orient: "v" },
+      steps: [
+        {
+          kind: "build",
+          id: "bauen",
+          W: 5,
+          H: 3,
+          palette: ["wire", "erase"],
+          task: "Aufgabe",
+          circuit: {
+            parts: {
+              G1: { type: "battery", x: 0, y: 1, orient: "v" },
+              E1: { type: "lamp", x: 4, y: 1, orient: "v" },
+            },
+            wires: {},
+          },
         },
-        wires: {},
-      },
+        { kind: "summary", id: "merksatz", lesson: "Merksatz" },
+      ],
     };
     expect(api.dispatch({ type: "register_level", level: level as never }).ok).toBe(true);
     expect(api.getLevel("mein-level")?.name).toBe("Mein Level");
   });
 
-  it("überschreibt Texte, ohne das Brett zu ersetzen", () => {
+  it("überschreibt Texte je Schritt, ohne das Brett zu ersetzen", () => {
     const { rt, api } = setup();
     const rev = rt.content.boardRevision("der-schalter");
-    api.dispatch({ type: "patch_level", levelId: "der-schalter", patch: { task: "Neue Aufgabe" } });
-    expect(api.getLevel("der-schalter")?.task).toBe("Neue Aufgabe");
+    const ok = api.dispatch({
+      type: "patch_level",
+      levelId: "der-schalter",
+      patch: { steps: { bauen: { task: "Neue Aufgabe" }, merksatz: { lesson: "Neu" } } },
+    });
+    expect(ok).toEqual({ ok: true });
+    const steps = api.getLevel("der-schalter")?.steps;
+    expect(steps[0]).toMatchObject({ kind: "build", task: "Neue Aufgabe" });
+    expect(steps[1]).toMatchObject({ kind: "summary", lesson: "Neu" });
     expect(rt.content.boardRevision("der-schalter")).toBe(rev);
+  });
+
+  it("lehnt Texte für unbekannte Schritte oder fremde Felder ab", () => {
+    const { api } = setup();
+    const patch = (p: object) =>
+      api.dispatch({ type: "patch_level", levelId: "der-schalter", patch: p as never });
+    expect(patch({ steps: { gibtsnicht: { task: "x" } } }).ok).toBe(false);
+    expect(patch({ steps: { merksatz: { task: "x" } } }).ok).toBe(false);
   });
 
   it("meldet Lernereignisse und Zustandsänderungen", () => {
@@ -83,6 +104,17 @@ describe("API", () => {
     expect(types).toContain("state_changed");
     expect(api.getSnapshot().solved).toContain("der-schalter");
     expect(api.getProfile().concepts["schalter"].solves).toBe(1);
+  });
+
+  it("wertet Antworten bei den Konzepten ihres Schritts aus", () => {
+    const { rt, api } = setup();
+    api.dispatch({ type: "go_to_level", levelId: "ohmsches-gesetz" });
+    rt.reportAnswer("ohmsches-gesetz", "rechnen", { k: "number", text: "300" }, false);
+    rt.reportAnswer("ohmsches-gesetz", "rechnen", { k: "number", text: "220" }, true);
+    expect(api.getProfile().concepts["ohmsches-gesetz"]).toMatchObject({ answers: 2, wrong: 1 });
+    /* „widerstand“ übt das Level, aber nicht diese Frage */
+    expect(api.getProfile().concepts["widerstand"].answers).toBe(0);
+    expect(api.getLevelStats("ohmsches-gesetz")).toMatchObject({ answers: 2, wrongAnswers: 1 });
   });
 
   it("wechselt das Thema", () => {

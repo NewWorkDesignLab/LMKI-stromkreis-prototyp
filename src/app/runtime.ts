@@ -1,4 +1,4 @@
-import type { LevelDef, LevelId } from "../domain/types";
+import type { AnswerValue, LevelDef, LevelId, StepId } from "../domain/types";
 import type { PlayMode } from "../engine/editing";
 import { DEFAULT_CURRICULUM } from "../content/curriculum";
 import { LEVEL_CATALOG } from "../content/catalog";
@@ -80,6 +80,12 @@ export class Runtime {
   }
   reportSolved(levelId: LevelId) {
     this.report({ type: "level_solved", levelId, at: Date.now() });
+  }
+  reportStep(levelId: LevelId, stepId: StepId, what: "started" | "completed") {
+    this.report({ type: `step_${what}`, levelId, stepId, at: Date.now() });
+  }
+  reportAnswer(levelId: LevelId, stepId: StepId, answer: AnswerValue, correct: boolean | null) {
+    this.report({ type: "answer_submitted", levelId, stepId, answer, correct, at: Date.now() });
   }
 
   /* ---- Navigation ---- */

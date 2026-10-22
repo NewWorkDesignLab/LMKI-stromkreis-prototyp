@@ -139,12 +139,41 @@ export const messenLevels: LegacyLevelDef[] = [
     id: "ohmsches-gesetz",
     concepts: ["ohmsches-gesetz", "widerstand"],
     name: "Ohmsches Gesetz",
-    ohmLab: { resistor: "2,0" },
     W: 7,
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Gegeben sind eine Spannung von 9 V und eine Lampe mit einem Widerstand von 90 Ω. Die Stromstärke im Stromkreis soll 29 mA betragen. Berechne den zusätzlich benötigten Widerstand. Wähle anschließend den passenden Widerstand aus, verdrahte den Stromkreis und überprüfe die Stromstärke mit dem Amperemeter.",
+    /* Erst rechnen, dann bauen: der Rechenweg erscheint erst nach dem ersten Versuch,
+       damit er nicht überlesen, sondern angewendet wird. */
+    before: [
+      {
+        kind: "quiz",
+        id: "rechnen",
+        title: "Rechnen",
+        concepts: ["ohmsches-gesetz"],
+        question: "Welchen zusätzlichen Widerstand brauchst du, damit genau 29 mA fließen?",
+        blocks: [
+          {
+            k: "p",
+            text: "Gegeben sind eine Spannung von 9 V und eine Lampe mit einem Widerstand von 90 Ω. Die Stromstärke im Stromkreis soll 29 mA betragen.",
+          },
+          { k: "widget", widget: "uri-dreieck" },
+          {
+            k: "note",
+            text: "Gib den Widerstand auf ganze Ohm gerundet an – zum Beispiel 150 oder 0,15 kΩ.",
+          },
+        ],
+        answer: { k: "number", value: 220, unit: "Ω", tolerance: 0.01 },
+        explanation: [
+          { k: "formula", text: "I = 29 mA = 0,029 A" },
+          { k: "formula", text: "R_ges = U / I = 9 V / 0,029 A ≈ 310,34 Ω" },
+          { k: "formula", text: "R_zus = R_ges − R_Lampe = 310,34 Ω − 90 Ω = 220,34 Ω" },
+          { k: "p", text: "Auf die verfügbare Widerstandsstufe gerundet: 220 Ω." },
+          { k: "formula", text: "Probe: I = 9 V / 310 Ω ≈ 0,029 A = 29 mA" },
+        ],
+      },
+    ],
+    task: "Stelle am Widerstand den Wert ein, den du berechnet hast, verdrahte den Stromkreis und überprüfe die Stromstärke mit dem Amperemeter.",
     lesson:
       "R = U / I. Der Gesamtwiderstand einer Reihenschaltung ist die Summe aller Widerstände.",
     cells: {

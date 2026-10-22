@@ -6,17 +6,25 @@
    Die Level dieses Formats werden beim Laden in das heutige Modell übersetzt
    (Bauteile mit IDs, Leitungen als Kanten). Die Übersetzung übernimmt die alte
    Nachbarschaftsregel genau einmal, beim Laden – danach gilt auch für diese Level:
-   verbunden ist nur, was als Kante existiert. */
+   verbunden ist nur, was als Kante existiert.
+
+   Ein Level dieses Formats war genau eine Bauaufgabe mit Merksatz. Die Übersetzung macht
+   daraus die Schritte „Bauen“ und „Merksatz“; `before` stellt Schritte im heutigen
+   Format davor (Realitätsbezug, Rechnen vor dem Bauen). */
 import type {
+  BuildStep,
   Circuit,
+  ConceptId,
   ContactLabContact,
   Goal,
   LevelDef,
+  LevelId,
   Part,
   PartId,
   PartType,
   PointKey,
   Side,
+  Step,
 } from "../domain/types";
 import { ID_PREFIX, OPPOSITE, neighbor, parsePoint, wireKey } from "../engine/circuit";
 import { hasPort } from "../engine/parts";
@@ -30,15 +38,19 @@ export interface LegacyCell extends Omit<Part, "type" | "x" | "y"> {
 }
 export type LegacyGrid = Record<PointKey, LegacyCell>;
 
-/** Ein Level im Altformat: Zellen statt Schaltung, Verweise über Zellschlüssel. */
+/** Ein Level im Altformat: ein Bauschritt mit Zellen statt Schaltung, Verweise über
+    Zellschlüssel, dazu der Merksatz. */
 export interface LegacyLevelDef extends Omit<
-  LevelDef,
-  "circuit" | "walls" | "solution" | "ohmLab" | "contactLab"
+  BuildStep,
+  "kind" | "id" | "circuit" | "walls" | "solution"
 > {
+  id: LevelId;
+  name: string;
+  concepts?: ConceptId[];
+  lesson: string;
   cells: LegacyGrid;
-  /** Zellschlüssel des Widerstands */
-  ohmLab?: { resistor: PointKey };
-  contactLab?: { closer: ContactLabContact; opener: ContactLabContact };
+  /** Schritte im heutigen Format vor dem Bauen */
+  before?: Step[];
 }
 
 const legacyPort = (c: LegacyCell, side: Side) =>
@@ -91,11 +103,22 @@ export function circuitFromCells(cells: LegacyGrid): {
 /** Übersetzt ein ganzes Level. Ein Verweis auf eine Zelle ohne Bauteil ist ein
     Inhaltsfehler und wirft – das fällt in content.test.ts auf, nicht erst im Spiel. */
 export function fromLegacyLevel(l: LegacyLevelDef): LevelDef {
-  const { cells, ohmLab, contactLab, goals, latch, ...rest } = l;
+  const {
+    id: levelId,
+    name,
+    concepts,
+    lesson,
+    before,
+    cells,
+    contactLab,
+    goals,
+    latch,
+    ...board
+  } = l;
   const { circuit, walls, ids } = circuitFromCells(cells);
   const id = (k: PointKey): PartId => {
     const v = ids.get(k);
-    if (!v) throw new Error(`Level „${l.id}“: an ${k} liegt kein Bauteil`);
+    if (!v) throw new Error(`Level „${levelId}“: an ${k} liegt kein Bauteil`);
     return v;
   };
   /* „!“ vor einem Eingang bleibt erhalten: „!1,0“ wird zu „!S1“ */
@@ -121,15 +144,22 @@ export function fromLegacyLevel(l: LegacyLevelDef): LevelDef {
     }
   };
   const contact = (c: ContactLabContact) => ({ contact: id(c.contact), lamp: id(c.lamp) });
-  return {
-    ...rest,
+  const build: BuildStep = {
+    ...board,
+    kind: "build",
+    id: "bauen",
     circuit,
     ...(walls.length > 0 && { walls }),
     ...(goals && { goals: goals.map(goal) }),
     ...(latch && { latch: { lit: latch.lit.map(id) } }),
-    ...(ohmLab && { ohmLab: { resistor: id(ohmLab.resistor) } }),
     ...(contactLab && {
       contactLab: { closer: contact(contactLab.closer), opener: contact(contactLab.opener) },
     }),
+  };
+  return {
+    id: levelId,
+    name,
+    ...(concepts && { concepts }),
+    steps: [...(before ?? []), build, { kind: "summary", id: "merksatz", lesson }],
   };
 }

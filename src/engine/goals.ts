@@ -3,7 +3,7 @@ import type {
   CheckResult,
   Circuit,
   Goal,
-  LevelDef,
+  BuildStep,
   LogicExpr,
   PartType,
   SimResult,
@@ -45,7 +45,7 @@ const EXPR: Record<LogicExpr, (s: boolean[]) => boolean> = {
   not: (s) => !s[0],
 };
 
-export function deriveGoals(level: Pick<LevelDef, "goals">, circuit: Circuit): Goal[] {
+export function deriveGoals(level: Pick<BuildStep, "goals">, circuit: Circuit): Goal[] {
   const explicit = level.goals || [];
   const covered = new Set(explicit.flatMap((g) => ("at" in g && g.at ? [g.at] : [])));
   /* gleiche Verbraucher mit gleichem Ziel zu einer Zeile zusammenfassen */
@@ -76,7 +76,7 @@ export function simulateAllClosed(circuit: Circuit): SimResult {
 }
 
 export function checkLevel(
-  level: Pick<LevelDef, "goals">,
+  level: Pick<BuildStep, "goals">,
   circuit: Circuit,
   sim: SimResult,
   seen = false,

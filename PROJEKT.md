@@ -37,7 +37,7 @@ SPICE-Nachbau — nur so viel Physik, wie die Lernziele brauchen.
 
 ```
 src/
-  domain/types.ts       alle Fachtypen: Circuit, Part, Wire, LevelDef, Goal, SimResult …
+  domain/types.ts       alle Fachtypen: Circuit, Part, Wire, LevelDef, Step, Block, Goal, SimResult …
   engine/               Physik und Spielregeln, reines TypeScript, kein React
     circuit.ts          Punkte, Leitungsschlüssel, Bauteil-IDs (siehe Abschnitt 5)
     parts.ts            Bauteilwerte (DEF), Anschlüsse, Knotennamen
@@ -45,6 +45,8 @@ src/
     goals.ts            Ziele ableiten und prüfen (checkLevel)
     editing.ts          Bearbeitungsbefehle als reine Funktionen (verbinden, setzen, löschen, antippen)
     history.ts          Verlauf für Rückgängig/Wiederholen
+    lesson.ts           Ablauf der Schritte eines Levels, Auswertung von Antworten
+    quantity.ts         Zahleneingaben mit Einheit („29 mA“, „0,22 kΩ“)
     format.ts           Zahlenformat (de)
   content/              Inhalte als Daten
     levels/*.ts         die Level, nach Herkunftskapitel abgelegt (noch im Altformat)
@@ -68,9 +70,10 @@ src/
   theme/                Farbtokens als CSS-Variablen, Themen
   render/               SVG: Board.tsx, symbols/ (ein Bauteil je Datei)
   features/
-    play/               Spielbereich eines Levels (Hooks + Komponenten)
+    lesson/             Level als Schrittfolge: Schrittleiste, Darstellung je Schrittart, Textbausteine
+    play/               Spielfläche eines Bauschritts (Hooks + Komponenten)
     tutorial/           Einführungsanimationen
-    widgets/            Zusatzbausteine einzelner Level (OhmLab, ContactLab, …)
+    widgets/            Anschauungen (URI-Dreieck, Kühlschrank, Lichtschalter) und Funktionsansicht
   ui/                   allgemeine Bausteine (Overlay, LevelPicker, Werkzeugsymbole)
   styles/index.css      Tailwind + Animationen
 index.html, vite.config.ts, tailwind.config.js, tsconfig.json
@@ -96,10 +99,17 @@ nach und nach nachgezogen werden.
 
 ### Wie man erweitert
 
-- **Neues Level:** im heutigen Format (`circuit`, `walls`, Verweise über Bauteil-IDs) schreiben,
-  **nicht** im Altformat der Prototyp-Level; stabile `id` als Slug, `concepts`. In
-  `catalog.ts` aufnehmen, in `curriculum.ts` einordnen. `npm test` prüft IDs, Lehrplan,
-  Konzepte, Verweise und die Schaltung (`validateLevel`).
+- **Neues Level:** im heutigen Format als Schrittfolge schreiben (Vorlage:
+  `content/levels/beispiele.ts`), **nicht** im Altformat der Prototyp-Level; stabile `id`
+  als Slug, `concepts`. Bauschritten möglichst eine `solution` mitgeben – der Test prüft,
+  dass sie die Ziele erreicht. In `catalog.ts` aufnehmen, in `curriculum.ts` einordnen.
+  `npm test` prüft IDs, Lehrplan, Konzepte, Verweise, Schritte und Schaltungen.
+- **Neue Schrittart:** Typ in `domain/types.ts` (Step), Regeln in `engine/lesson.ts`,
+  Prüfung in `services/validate.ts`, Darstellung in `features/lesson/stepViews.tsx`
+  (`STEP_VIEWS` – die Typprüfung meldet einen fehlenden Eintrag).
+- **Neue Anschauung (Widget):** Komponente in `features/widgets/`, Eintrag in `WidgetId`,
+  `features/lesson/Blocks.tsx` und `services/validate.ts`; eingebunden als
+  `{ k: "widget", widget: "…" }`.
 - **Level-Reihenfolge, Kapitel, Texte, Thema zur Laufzeit:** über die API (siehe unten),
   nicht durch Umbauen der Oberfläche.
 - **Neues Bauteil:** `domain/types.ts` (PartType), `engine/parts.ts` + `simulate.ts`,
@@ -114,13 +124,19 @@ nach und nach nachgezogen werden.
 `window.stromkreis` (siehe `src/api/types.ts`, `API_VERSION`): Abfragen (`getSnapshot`,
 `listLevels`, `getLevel`, `getProfile`, `getEvents`), Befehle als JSON über
 `dispatch({ type, … })` — `go_to_level`, `set_level_order`, `set_chapters`, `register_level`
-(wird mit `validateLevel` geprüft), `patch_level` (Aufgabe, Merksatz, Tipps), `set_theme`,
+(wird mit `validateLevel` geprüft), `patch_level` (Name und Texte je Schritt, etwa
+`{ steps: { bauen: { task }, merksatz: { lesson } } }`), `set_theme`,
 `register_theme` — und `subscribe` für Lernereignisse und Zustandsänderungen.
 Level werden überall über ihre **ID** angesprochen, nie über die Position.
 
+Lernereignisse (API-Version 2): `level_started`, `board_reset`, `level_solved`, `level_left`,
+`step_started`, `step_completed` und `answer_submitted` (Schritt, Antwort, richtig/falsch;
+`null` bei einer Vorhersage ohne Auflösung; `confidence` ist für die Sicherheitsabfrage
+vorgesehen). Die Bewertung zählt Antworten bei den Konzepten des Schritts, sonst des Levels.
+
 Noch nicht verdrahtet: Versuchsgrenze mit Tipp/Lösung nach n Fehlversuchen (`tips`,
-`solution` am Level und `AttemptPolicy` sind angelegt, die Oberfläche zeigt sie noch nicht),
-persistenter Fortschritt (nur `MemoryProgressStore`), serverseitige Anbindung.
+`solution` am Bauschritt und `AttemptPolicy` sind angelegt, die Oberfläche zeigt sie noch
+nicht), persistenter Fortschritt (nur `MemoryProgressStore`), serverseitige Anbindung.
 
 ## 4. Die Simulation
 
@@ -268,8 +284,39 @@ Kapitel 6 ist eine **Ablage**: die Level liegen hinter den 24 bestehenden, damit
 sich durchspielen lassen, ohne die vorhandene Reihenfolge zu verschieben. Welches
 davon welchen Platz bekommt — und welches bestehende dafür weicht — ist offen.
 
-Level bestehen nur aus Daten (`LevelDef`, siehe `src/domain/types.ts`): `id`, Name,
-Feldgröße, Startzellen, Werkzeugpalette, Aufgabe (`task`, früher `hint`), Merksatz und optionale Ziele. `showValues: true` blendet Spannungen und Ströme ein. `labelSwitches: true` schreibt
+### Level als Schrittfolge
+
+Ein Level (`LevelDef`) ist `{ id, name, concepts, steps }`. Die Schritte erscheinen
+nacheinander; eine **Schrittleiste** zeigt, wo man steht. Erledigte Schritte lassen sich
+wieder öffnen, spätere erst, wenn der Weg dorthin frei ist (war das Level schon einmal
+gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt sind.
+
+| Art | Inhalt | erledigt, wenn … |
+|---|---|---|
+| `context` | Realitätsbezug/Erklärung aus Textbausteinen | „Weiter“ |
+| `predict` | Vorhersage mit Auswahl; festgehalten, nicht bewertet, danach unveränderlich | eine Antwort festgehalten |
+| `build` | das Brett (alles, was früher ein ganzes Level war) | die Ziele erreicht sind |
+| `quiz` | Auswahl (auch mehrere richtige) oder Zahl mit Einheit und Toleranz (Standard 2 %) | richtig beantwortet |
+| `summary` | Merksatz; `recall` löst eine frühere Vorhersage auf | „Weiter“ |
+
+- **Textbausteine statt HTML/Markdown** (`Block`: `p`, `list`, `formula`, `note`, `image`,
+  `video`, `widget`). Level können über die API von außen kommen; Bausteine lassen sich
+  prüfen, Bilder und Videos nur über http(s) oder relative Pfade.
+- **Lösungsweg erst nach dem ersten Versuch** (`quiz.explanation`): wer ihn vorher liest,
+  rechnet nicht mehr selbst. Ungültige Eingaben (keine Zahl, falsche Einheit) zählen nicht
+  als Versuch.
+- Zahleneingaben verstehen Komma und Vorsätze: „29 mA“, „0,22 kΩ“, „220 Ohm“, „0,22k“.
+- Verborgene Schritte bleiben eingehängt: ein halb verdrahtetes Brett übersteht das
+  Zurückblättern. Tastenkürzel (Strg+Z) wirken nur auf das sichtbare Brett.
+- Die Prototyp-Level werden zu „Bauen“ + „Merksatz“ übersetzt; `before` stellt Schritte im
+  heutigen Format davor. So heißt es bei „Ohmsches Gesetz“ jetzt „erst rechnen, dann
+  bauen“, und „Das Licht im Schalter“ und „Der Öffner“ zeigen ihren Alltagsbezug als
+  ersten Schritt statt hinter einem „?“.
+
+### Bauschritt
+
+Ein Bauschritt hat Feldgröße, Startschaltung, Werkzeugpalette, Aufgabe (`task`) und optionale
+Ziele. `showValues: true` blendet Spannungen und Ströme ein. `labelSwitches: true` schreibt
 unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, weil dort der
 Öffner in der Palette liegt). `latch` siehe Zielsystem.
 
@@ -286,8 +333,8 @@ Die Schrittfolge ist **reihenfolgefrei**: je Taster merkt sich `lab` 0 (unberüh
 auf 2 stehen. Dass es diese Zusatzbedingung gibt, steht im Aufgabentext, nicht in der
 Zielliste — die Ziele bleiben die Verdrahtung.
 
-Welche Taster und Lampen gemeint sind, steht im Level, nicht im Bauteil-Code; ebenso
-`ohmLab: { resistor }`. `frames` zeichnet gestrichelte
+Welche Taster und Lampen gemeint sind, steht im Bauschritt, nicht im Bauteil-Code.
+`frames` zeichnet gestrichelte
 **Gerätegrenzen** (Rechtecke in Feldkoordinaten) — die Konvention „das ist ein Bauteil“
 aus dem Installationsplan, reines Dekor ohne Wirkung auf die Simulation. Level 27 fasst
 damit Schalter und Orientierungslicht zu einem Gerät zusammen.
@@ -422,5 +469,9 @@ Testdurchlauf zusammen. Die Nummern unten sind die alten Katalognummern; im Code
 Dimmer (25) ersetzt Level 15. Die bisherigen Level 22–24 sind ausgeblendet.
 Die bisherigen Level 26–29 werden als 22–25 angehängt. Das Kühlschrankexperiment
 (30) war bereits vor dieser Umstellung nicht mehr im aktuellen Katalog enthalten.
-Level 20 bleibt „Ohmsches Gesetz“ und ergänzt ein interaktives URI-Dreieck mit
-Vorhersagen für die gesamte Reihenschaltung (9 V, 90 Ω Lampe plus gewählte Widerstandsstufe) sowie einem aufklappbaren Rechenweg. Ziel sind 29 mA, auf ganze Milliampere gerundet; alle drei URI-Formeln verwenden denselben Gesamtwiderstand.
+Level 20 bleibt „Ohmsches Gesetz“; seit dem Schrittformat wird zuerst gerechnet (Frage
+mit Zahleneingabe, URI-Dreieck als Hilfe, Rechenweg nach dem ersten Versuch), dann gebaut.
+Ziel sind 29 mA, auf ganze Milliampere gerundet.
+
+Seit Oktober 2026 hängt ein Kapitel „Neu: Level mit Schritten“ an (Level 26 „Die
+Lichterkette“) – die Vorlage für Level im neuen Format; sie nutzt jede Schrittart.

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type {
+  BuildStep,
   Circuit,
-  LevelDef,
   Orient,
   PartId,
   PointKey,
@@ -73,8 +73,10 @@ interface Gesture {
    selbst sind reine Funktionen in engine/editing.ts; hier steckt nur die Geste –
    was ein Tippen, was ein Zug und was ein Loslassen bedeutet – und der Verlauf. */
 export function useBoardEditor(
-  level: Pick<LevelDef, "W" | "H" | "walls" | "circuit">,
+  level: Pick<BuildStep, "W" | "H" | "walls" | "circuit">,
   mode: PlayMode,
+  /** Tastenkürzel nur, solange das Brett sichtbar ist */
+  active = true,
 ) {
   const { W, H, walls } = level;
   const ctx: EditContext = useMemo(() => ({ board: { W, H, walls }, mode }), [W, H, walls, mode]);
@@ -271,6 +273,7 @@ export function useBoardEditor(
   /* Strg+Z / Strg+Y / Strg+Umschalt+Z. Nicht in Eingabefeldern – dort gehört Strg+Z
      dem Text. Eine laufende Geste wird vorher abgeschlossen. */
   useEffect(() => {
+    if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
       const t = e.target as HTMLElement | null;
@@ -284,7 +287,7 @@ export function useBoardEditor(
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo, stop]);
+  }, [active, undo, redo, stop]);
 
   return {
     circuit,

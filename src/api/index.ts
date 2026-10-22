@@ -49,10 +49,10 @@ export function createApi(rt: Runtime): StromkreisApi {
         const r = rt.content.registerLevel(c.level);
         return r.ok ? { ok: true } : fail("Level ungültig", r.errors);
       }
-      case "patch_level":
-        return rt.content.patchLevel(c.levelId, c.patch)
-          ? { ok: true }
-          : fail(`Unbekanntes Level „${c.levelId}“`);
+      case "patch_level": {
+        const r = rt.content.patchLevel(c.levelId, c.patch);
+        return r.ok ? { ok: true } : fail("Texte nicht übernommen", r.errors);
+      }
       case "register_theme":
         rt.registerTheme(c.theme);
         return { ok: true };

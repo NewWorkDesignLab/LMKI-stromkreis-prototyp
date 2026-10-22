@@ -9,7 +9,9 @@ import type { ThemeDef } from "../theme/themes";
    Tests). Alles hier ist JSON-tauglich: Befehle gehen als Daten hinein, Zustand
    und Ereignisse kommen als Daten heraus. Änderungen an diesem Vertrag gehören
    in `API_VERSION`. */
-export const API_VERSION = 1;
+export const API_VERSION = 2;
+/* Version 2: Level bestehen aus Schritten (`steps`), `patch_level` adressiert Texte je
+   Schritt, neue Lernereignisse step_started, step_completed, answer_submitted. */
 
 /** Nur-Lese-Sicht auf die Sitzung. */
 export interface Snapshot {
@@ -42,7 +44,7 @@ export type Command =
   | { type: "set_chapters"; chapters: ChapterDef[] }
   /** Level hinzufügen oder ersetzen; wird vorher geprüft (validateLevel) */
   | { type: "register_level"; level: LevelDef }
-  /** Texte eines Levels überschreiben: Aufgabe, Merksatz, Tipps, Name */
+  /** Texte überschreiben: Name des Levels, je Schritt z. B. Aufgabe, Frage, Merksatz, Tipps */
   | { type: "patch_level"; levelId: LevelId; patch: LevelTextPatch }
   | { type: "register_theme"; theme: ThemeDef }
   | { type: "set_theme"; themeId: string };
