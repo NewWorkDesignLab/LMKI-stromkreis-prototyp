@@ -38,10 +38,13 @@ export function lampEl(x, y, c, on, bright, over) {
         strokeWidth={forbid || over ? 2.5 : 2}
         strokeDasharray={forbid ? "4 3" : "none"}
       />
+      {/* DIN-Schaltzeichen: Kreis mit Kreuz. Die Kreuzarme enden auf dem Kreis
+          (Radius 15 · cos 45° ≈ 10,6). Leuchtet die Lampe, wird das Kreuz dunkler
+          Bernstein, damit es auf der gelben Füllung sichtbar bleibt. */}
       <path
-        d={`M ${cx - 5} ${cy + 4} Q ${cx} ${cy - 8} ${cx + 5} ${cy + 4}`}
+        d={`M ${cx - 10.6} ${cy - 10.6} L ${cx + 10.6} ${cy + 10.6} M ${cx + 10.6} ${cy - 10.6} L ${cx - 10.6} ${cy + 10.6}`}
         fill="none"
-        stroke={on ? "#a9710a" : "#b9b3a4"}
+        stroke={on && !over ? "#a9710a" : over ? HOT : forbid ? FORBID : LAMP_STROKE}
         strokeWidth={2}
         strokeLinecap="round"
       />
@@ -65,5 +68,3 @@ export function lampEl(x, y, c, on, bright, over) {
     </g>
   );
 }
-
-/* LED: Dreieck zeigt in Durchlassrichtung, Balken ist die Kathode */

@@ -3,6 +3,7 @@ import { LIVE, SWITCH_ON, SWITCH_OFF, INK } from "../../theme/colors";
 import { center } from "../geometry";
 import { box } from "./primitives";
 
+/* Wechselschalter: ein Anschluss (Wurzel), zwei Ausgänge */
 export function spdtEl(x, y, c, glow) {
   const cx = center(x),
     cy = center(y);

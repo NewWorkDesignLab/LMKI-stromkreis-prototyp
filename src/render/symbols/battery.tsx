@@ -75,8 +75,3 @@ export function batteryEl(x, y, c, active, hot) {
     </g>
   );
 }
-
-/* Schalter. `nc` macht daraus einen Öffner (Ruhekontakt) und ändert nur das
-   Symbol: `closed` heißt überall „leitet“, ein Öffner startet deshalb mit
-   closed: true. Der Querstrich am festen Anschluss – der Kontakt, gegen den der
-   Hebel drückt – ist die Unterscheidung zum Schließer. */
