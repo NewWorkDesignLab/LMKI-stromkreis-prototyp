@@ -7,6 +7,7 @@ import { messenLevels } from "./levels/messen";
 import { schaltplanLevels } from "./levels/schaltplan";
 import { erweiterungLevels } from "./levels/erweiterung";
 import { beispielLevels } from "./levels/beispiele";
+import { brettgroessenLevels } from "./levels/brettgroessen";
 
 /* Alle geschriebenen Level, unabhängig davon, ob der Lehrplan sie gerade
    verwendet. Neue Level kommen hier hinzu, ihre Einordnung steht in curriculum.ts.
@@ -21,4 +22,8 @@ const LEGACY_LEVELS: LevelDef[] = [
   ...erweiterungLevels,
 ].map(fromLegacyLevel);
 
-export const LEVEL_CATALOG: LevelDef[] = [...LEGACY_LEVELS, ...beispielLevels];
+export const LEVEL_CATALOG: LevelDef[] = [
+  ...LEGACY_LEVELS,
+  ...beispielLevels,
+  ...brettgroessenLevels,
+];

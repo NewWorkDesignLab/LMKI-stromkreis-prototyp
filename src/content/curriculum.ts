@@ -74,5 +74,10 @@ export const DEFAULT_CURRICULUM: Curriculum = {
       name: "Neu: Level mit Schritten",
       levelIds: ["lichterkette-in-reihe"],
     },
+    {
+      id: "demo-brettgroessen",
+      name: "Demo: Brettgrößen",
+      levelIds: ["demo-brett-klein", "demo-brett-breit", "demo-brett-maximal"],
+    },
   ],
 };

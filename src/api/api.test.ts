@@ -12,7 +12,7 @@ describe("API", () => {
   it("startet im ersten Level des Lehrplans", () => {
     const { api } = setup();
     expect(api.getSnapshot().currentLevelId).toBe("schliesse-den-stromkreis");
-    expect(api.getSnapshot().order).toHaveLength(26);
+    expect(api.getSnapshot().order).toHaveLength(29);
   });
 
   it("wechselt das Level und weist Unbekanntes ab", () => {
