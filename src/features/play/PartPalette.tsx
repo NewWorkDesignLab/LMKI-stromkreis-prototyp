@@ -1,4 +1,3 @@
-import { Cable, Eraser, RotateCw } from "lucide-react";
 import { useState } from "react";
 import type { Orient, ToolId } from "../../domain/types";
 import { PLACEABLE, newPart } from "../../engine/editing";
@@ -14,19 +13,16 @@ interface Props {
   setTool: (t: ToolId) => void;
   /** Materialvorrat: noch setzbare Teile je Werkzeug, null = unbegrenzt */
   left: (t: ToolId) => number | null;
+  /** Ausrichtung für die Vorschau der gewählten Kachel; gedreht wird in der ToolBar */
   orient: Orient;
-  toggleOrient: () => void;
 }
 
-const modeButton = (active: boolean) =>
-  `flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition ${active ? "bg-white text-stone-900 shadow" : "text-stone-500 hover:text-stone-800"}`;
-
-/* Linke Spalte: Werkzeug und Bauteile. tool ist EINE Auswahl – die Markierung wandert
-   zwischen Verdrahten/Löschen und den Bauteilen. Die Bauteile stehen nach Gruppen und
+/* Linke Spalte: die Bauteile. tool ist EINE Auswahl – die Markierung wandert zwischen
+   Verdrahten/Löschen (ToolBar am Brett) und den Bauteilen. Die Bauteile stehen nach Gruppen und
    farbig, damit man sie findet, ohne die Symbole schon zu kennen. Zwei Kacheln je Zeile,
    damit auch die volle Palette des freien Baumodus ohne Scrollen passt; die Kurzinfo
    steht darunter für das überfahrene bzw. gewählte Bauteil. */
-export function PartPalette({ palette, tool, setTool, orient, toggleOrient, left }: Props) {
+export function PartPalette({ palette, tool, setTool, orient, left }: Props) {
   const [hovered, setHovered] = useState<ToolId | null>(null);
   const parts = palette.filter((t) => PLACEABLE.has(t));
   const groups = GROUP_ORDER.map((g) => ({
@@ -38,34 +34,6 @@ export function PartPalette({ palette, tool, setTool, orient, toggleOrient, left
 
   return (
     <div className="flex flex-col gap-3">
-      <section aria-labelledby="tool-heading">
-        <h2 id="tool-heading" className={HEADING}>
-          Werkzeug
-        </h2>
-        <div className="flex gap-1 rounded-xl bg-stone-200 p-1">
-          <button
-            type="button"
-            onClick={() => setTool("wire")}
-            aria-pressed={tool === "wire"}
-            title="Verdrahten (Taste W oder Esc)"
-            className={modeButton(tool === "wire")}
-          >
-            <Cable size={18} aria-hidden="true" /> Verdrahten
-          </button>
-          {palette.includes("erase") && (
-            <button
-              type="button"
-              onClick={() => setTool("erase")}
-              aria-pressed={tool === "erase"}
-              title="Löschen (Taste E; Rechtsklick löscht mit jedem Werkzeug)"
-              className={modeButton(tool === "erase")}
-            >
-              <Eraser size={18} aria-hidden="true" /> {TOOLS.erase.label}
-            </button>
-          )}
-        </div>
-      </section>
-
       {groups.map(({ g, tools }) => (
         <section key={g} aria-labelledby={`group-${g}`}>
           <h2 id={`group-${g}`} className={`${HEADING} flex items-center gap-1.5`}>
@@ -117,18 +85,6 @@ export function PartPalette({ palette, tool, setTool, orient, toggleOrient, left
         <div className="rounded-xl border border-stone-200 bg-white px-3 py-2" aria-live="polite">
           <p className="text-sm font-semibold text-stone-800">{TOOLS[shown].label}</p>
           <p className="text-xs leading-snug text-stone-600">{TOOLS[shown].info}</p>
-          {placing && shown === tool && tool !== "cross" && (
-            <button
-              type="button"
-              onClick={toggleOrient}
-              aria-label={`Ausrichtung: ${orient === "h" ? "waagerecht" : "senkrecht"}. Drehen (Taste R)`}
-              className="mt-1.5 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-stone-300 px-3 text-sm font-medium text-stone-700 hover:bg-stone-50"
-            >
-              <RotateCw size={16} aria-hidden="true" />
-              {orient === "h" ? "Waagerecht ↔" : "Senkrecht ↕"}
-              <kbd className="rounded border border-stone-300 px-1 text-xs text-stone-500">R</kbd>
-            </button>
-          )}
         </div>
       )}
     </div>

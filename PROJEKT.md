@@ -244,9 +244,9 @@ achten muss, liegt in Leserichtung direkt am Brett, nicht in Seitenspalten („V
 
 **Bauschritt:**
 
-- **links** `PartPalette`: Verdrahten/Löschen, Bauteile nach Gruppen (Quellen, Schalten,
-  Verbraucher, Begrenzen & Schützen, Messen, Leitungen), farbig je Gruppe, darunter
-  Kurzinfo und Drehen fürs gewählte bzw. überfahrene Bauteil. **Farbe nur in der Palette**
+- **links** `PartPalette`: Bauteile nach Gruppen (Quellen, Schalten, Verbraucher,
+  Begrenzen & Schützen, Messen, Leitungen), farbig je Gruppe, darunter die Kurzinfo fürs
+  gewählte bzw. überfahrene Bauteil. **Farbe nur in der Palette**
   – auf dem Brett bleiben die Schaltzeichen normgerecht schwarz (entschieden 2026-10-23).
 - **Mitte** eine Spalte, so breit wie das Brett (mindestens 40 rem, damit die Aufgabe
   nicht in kurze Zeilen bricht), ab `xl` in der Fenstermitte:
@@ -256,7 +256,10 @@ achten muss, liegt in Leserichtung direkt am Brett, nicht in Seitenspalten („V
     mittig. Zoom und Verschieben erscheinen nur, wenn das Brett nicht hineinpasst (dann bis
     70 % verkleinert, `MIN_START_SCALE`, der Rest wird verschoben) und im freien Bauen, wo
     der Rahmen die Fläche füllt. Mausrad zoomt um den Zeiger, Leertaste oder mittlere
-    Maustaste verschiebt.
+    Maustaste verschiebt. Oben links schwebt die `ToolBar` mit Verdrahten (W), Löschen (E)
+    und Drehen (R), die Kürzel sichtbar im Knopf (entschieden 2026-10-23: vorher stand das
+    links in der Palette, bei normal breiten Brettern weit weg vom Brett). Sie hat ein
+    eigenes Band über dem Brett (`TOOLBAR_BAND`), damit sie nie einen Punkt verdeckt.
   - `StatusBar`: was die Schaltung tut, daneben Rückgängig, Wiederholen, Zurücksetzen
     (Frei bauen: Leeren).
   - `WinPanel` nach dem Lösen: „Geschafft“, der Merksatz klingt schon an, „Weiter“.

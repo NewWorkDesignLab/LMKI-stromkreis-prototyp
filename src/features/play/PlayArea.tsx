@@ -10,6 +10,7 @@ import { useTutorial } from "../tutorial/useTutorial";
 import { BoardViewport, TOOL_BUTTON } from "./BoardViewport";
 import { PartPalette } from "./PartPalette";
 import { StatusBar, TaskBar, WinPanel } from "./BuildPanels";
+import { ToolBar } from "./ToolBar";
 import { usePlaySession } from "./usePlaySession";
 import { useTaskIntro } from "./useTaskIntro";
 
@@ -33,8 +34,9 @@ interface Props {
    kurze Zeilen. */
 const MIN_COLUMN_PX = 640;
 
-/* Ein Bauschritt: links Werkzeug und Bauteile, in der Mitte eine Spalte aus Aufgabe mit
-   Zielen, Brett und Zustand – in Leserichtung untereinander, so breit wie das Brett.
+/* Ein Bauschritt: links die Bauteile, in der Mitte eine Spalte aus Aufgabe mit Zielen,
+   Brett (mit Werkzeugleiste oben links) und Zustand – in Leserichtung untereinander, so
+   breit wie das Brett.
    Im Level richtet sich das Brett nach seiner Größe; im freien Bauen füllt es die Fläche.
    Ab xl hält eine leere Gegenspalte die Mittelspalte in der Fenstermitte, unter lg steht
    alles untereinander (die eigentliche Mobilansicht kommt später). Gilt für genau einen
@@ -109,14 +111,13 @@ export function PlayArea({
 
   return (
     <div className="grid gap-3 lg:h-full lg:min-h-0 lg:grid-cols-[15.5rem_minmax(0,1fr)] xl:grid-cols-[15.5rem_minmax(0,1fr)_15.5rem]">
-      <aside aria-label="Werkzeug und Bauteile" className="lg:min-h-0 lg:overflow-y-auto lg:pr-1">
+      <aside aria-label="Bauteile" className="lg:min-h-0 lg:overflow-y-auto lg:pr-1">
         <PartPalette
           palette={step.palette}
           tool={s.tool}
           setTool={s.setTool}
           left={s.left}
           orient={s.orient}
-          toggleOrient={() => s.setOrient((o) => (o === "h" ? "v" : "h"))}
         />
       </aside>
 
@@ -137,7 +138,20 @@ export function PlayArea({
             intro={intro.intro}
             goalsEnter={intro.goalsEnter}
           />
-          <BoardViewport content={extent} fill={fill} solved={mode === "level" && s.won}>
+          <BoardViewport
+            content={extent}
+            fill={fill}
+            solved={mode === "level" && s.won}
+            toolbar={
+              <ToolBar
+                palette={step.palette}
+                tool={s.tool}
+                setTool={s.setTool}
+                orient={s.orient}
+                toggleOrient={() => s.setOrient((o) => (o === "h" ? "v" : "h"))}
+              />
+            }
+          >
             {({ width, height }) => (
               <Board
                 level={step}
