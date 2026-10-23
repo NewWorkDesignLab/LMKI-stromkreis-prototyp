@@ -11,11 +11,14 @@ import { Blocks } from "./Blocks";
 /* Querformat für Schritte ohne Brett: links die Bühne (Anschauung oder Schaltung), rechts
    der Text. So passt ein Alltagsbezug mit großem Bild ohne Scrollen auf den Bildschirm,
    und Vermutung, Frage und Merksatz stehen sichtbar neben der Schaltung, um die es geht.
-   Ohne Bühne bleibt es eine schmale, gut lesbare Textspalte. */
+   Ohne Bühne bleibt es eine schmale, gut lesbare Textspalte. Zwei gleich breite Spalten:
+   die Anschauung soll begleiten, nicht den Bildschirm füllen – und ein Brett aus dem
+   Level passt in Originalgröße gerade hinein. Der Text steht oben bündig, damit „Weiter“
+   in jedem Schritt an derselben Stelle beginnt. */
 export function StageLayout({ stage, children }: { stage: ReactNode; children: ReactNode }) {
   if (!stage) return <div className="mx-auto max-w-2xl">{children}</div>;
   return (
-    <div className="mx-auto grid max-w-6xl items-start gap-4 lg:items-center lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+    <div className="mx-auto grid max-w-5xl items-start gap-4 lg:grid-cols-2">
       {stage}
       {children}
     </div>
