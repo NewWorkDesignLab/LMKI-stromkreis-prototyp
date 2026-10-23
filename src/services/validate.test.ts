@@ -53,6 +53,22 @@ describe("Prüfung der Schritte", () => {
     expect(errorsOf([recall, predict])).toMatch(/recall/);
   });
 
+  it("lässt Vorrat nur für Werkzeuge der Palette und als ganze Zahl ab 1 zu", () => {
+    const build = (stock: unknown) => ({
+      kind: "build",
+      id: "bauen",
+      W: 3,
+      H: 3,
+      palette: ["wire", "lamp"],
+      task: "…",
+      circuit: { parts: {}, wires: {} },
+      stock,
+    });
+    expect(errorsOf([build({ lamp: 2 })])).toBe("");
+    expect(errorsOf([build({ motor: 1 })])).toMatch(/Palette/);
+    expect(errorsOf([build({ lamp: 0 })])).toMatch(/ganze Zahl/);
+  });
+
   it("kennt keine fremden Schrittarten", () => {
     expect(errorsOf([{ kind: "tanz", id: "x" }])).toMatch(/unbekannte Art/);
   });

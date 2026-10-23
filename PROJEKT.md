@@ -223,8 +223,10 @@ zwischen benachbarten Punkten (`domain/types.ts`, Hilfen in `engine/circuit.ts`)
   Sicherung) nicht; sie bleibt beim Rückgängigmachen erhalten (`carryOperatingState`).
 - **Bedienung am Brett:** Ziehen verbindet Punkt für Punkt, auch von einem Bauteil aus.
   Rechtsklick löscht mit jedem Werkzeug (nah am Punkt: Bauteil bzw. Knoten, sonst die
-  Leitung daneben). Strg+Z / Strg+Y, R dreht die Ausrichtung des gewählten Bauteils, Esc
-  springt zurück aufs Verdrahten. Unter dem Zeiger zeigt das Brett, was passieren wird
+  Leitung daneben). Strg+Z / Strg+Y, R dreht die Ausrichtung des gewählten Bauteils, W
+  oder Esc springt zurück aufs Verdrahten, E wählt Löschen. Bauteile haben bewusst keine
+  Tastenkürzel: es gibt mehr Bauteilarten als Zifferntasten, und je Level stünden sie an
+  anderer Stelle (entschieden 2026-10-23). Unter dem Zeiger zeigt das Brett, was passieren wird
   (Zielpunkt, Bauteilvorschau grün/rot, rot markierte Löschstelle).
 - **Ziehhilfe** (Einstellung, Standard aus): Jeder Punkt, den ein Leitungszug erreicht,
   wird sofort mit allen Bauteilanschlüssen verbunden, die auf ihn zeigen
@@ -269,9 +271,22 @@ Musterlösung, vor dem Bauen nur der Ausgangsaufbau (die Lösung vorab nähme da
 vorweg). Der Merksatz zeigt immer die Schaltung. Ein Einstieg ohne Anschauung bleibt eine
 schmale Textspalte.
 
+**Moment des Lösens:** Der Brettrahmen leuchtet einmal grün auf, erreichte Ziele haken
+sich mit einem kurzen Ploppen ab, „Geschafft“ gleitet unter dem Brett herein – bewusst
+einmalig und leise. Bei „Bewegung reduzieren“ (Systemeinstellung) bleibt nur der
+Farbwechsel. Später hängt sich hier der Ton an (Phase 6).
+
+**Aufgabe beim Start** (`useTaskIntro`, Einstellung, Standard an): Beim ersten Betreten eines
+Bauschritts ist die Aufgabenleiste an ihrem Platz leicht herausgehoben, und nur der
+Aufgabentext ist zu sehen – erst lesen, was zu tun ist. Das Brett bleibt frei sichtbar,
+weil manche Aufgaben („Der Kurzschluss“) erst mit Blick auf die Schaltung verständlich
+sind. Nach 7 Sekunden oder bei der ersten Eingabe setzt sich die Leiste, und die Ziele
+erscheinen nacheinander. Beim Zurückblättern kommt das nicht wieder.
+
 Unter `lg` steht alles vorläufig untereinander.
 
-**Einstellungen** (`services/settings.ts`): Ziehhilfe, Flussanimation, Ton und Lautstärke
+**Einstellungen** (`services/settings.ts`): Ziehhilfe, Flussanimation, Aufgabe beim Start
+hervorheben, Ton und Lautstärke
 (die Töne selbst fehlen noch, Phase 6). Sie ändern nie, was als gelöst gilt. Die Runtime
 hält sie im Zustand (`settings`, `setSettings`), gespeichert über einen austauschbaren
 `SettingsStore` – im Browser `localStorage`. Gespeicherte Werte gelten als Fremddaten:
@@ -372,6 +387,13 @@ Ein Bauschritt hat Feldgröße, Startschaltung, Werkzeugpalette, Aufgabe (`task`
 Ziele. `showValues: true` blendet Spannungen und Ströme ein. `labelSwitches: true` schreibt
 unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, weil dort der
 Öffner in der Palette liegt). `latch` siehe Zielsystem.
+
+`stock: { ammeter: 1 }` begrenzt das **Material**: so viele Teile dieses Werkzeugs dürfen
+gesetzt werden; Werkzeuge ohne Eintrag sind unbegrenzt, vorgegebene Bauteile zählen nicht
+mit, gelöschte gibt es zurück. Die Regel steht in `engine/editing.ts` (`remaining`,
+`canPlace`), die Palette zeigt „1×“ auf der Kachel. Heute nutzen ihn die Messgeräte-Level
+und „Knotenpunkt oder Kreuzung?“ (vier Kreuzungen); für schwerere Level ist er der Hebel,
+die Lösung über das Material einzugrenzen. Im freien Bauen gibt es keinen Vorrat.
 
 `contactLab: { closer: {contact, lamp}, opener: {contact, lamp} }` blendet unter dem Brett die **Funktionsansicht** ein: zwei
 aufgeschnittene Taster, in denen Stößel und Kontaktbrücke sich mitbewegen, dazu eine

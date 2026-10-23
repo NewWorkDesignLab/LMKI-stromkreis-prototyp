@@ -26,6 +26,12 @@ export function SettingsPanel() {
           checked={settings.flowAnimation}
           onChange={(flowAnimation) => rt.setSettings({ flowAnimation })}
         />
+        <Toggle
+          label="Aufgabe beim Start hervorheben"
+          description="Beim ersten Öffnen eines Bauschritts ist zuerst nur der Aufgabentext hervorgehoben; die Ziele erscheinen danach nacheinander."
+          checked={settings.taskIntro}
+          onChange={(taskIntro) => rt.setSettings({ taskIntro })}
+        />
       </section>
       <section>
         <h3 className={PANEL_HEADING}>Ton</h3>

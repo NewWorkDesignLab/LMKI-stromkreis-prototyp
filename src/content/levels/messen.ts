@@ -37,6 +37,7 @@ export const messenLevels: LegacyLevelDef[] = [
     W: 6,
     H: 3,
     palette: ["wire", "ammeter", "erase"],
+    stock: { ammeter: 1 },
     showValues: true,
     task: "Setze das Amperemeter so ein, dass es den Lampenstrom misst – und die Lampe weiter leuchtet.",
     lesson:
@@ -62,6 +63,7 @@ export const messenLevels: LegacyLevelDef[] = [
     W: 6,
     H: 4,
     palette: ["wire", "voltmeter", "erase"],
+    stock: { voltmeter: 1 },
     showValues: true,
     task: "Miss die Spannung an der Lampe. Das Voltmeter braucht einen eigenen Zweig neben der Lampe.",
     lesson:
@@ -87,6 +89,7 @@ export const messenLevels: LegacyLevelDef[] = [
     W: 5,
     H: 4,
     palette: ["wire", "voltmeter", "erase"],
+    stock: { voltmeter: 1 },
     showValues: true,
     task: "Zwei gleiche Lampen liegen in Reihe. Miss mit dem Voltmeter die Spannung an der linken Lampe.",
     lesson:
@@ -114,6 +117,7 @@ export const messenLevels: LegacyLevelDef[] = [
     W: 7,
     H: 3,
     palette: ["wire", "ammeter", "erase"],
+    stock: { ammeter: 1 },
     showValues: true,
     task: "Der Stromkreis ist fertig verdrahtet. Miss den Gesamtstrom: setze das Amperemeter in die Hauptleitung.",
     lesson:

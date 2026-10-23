@@ -12,6 +12,8 @@ interface Props {
   palette: ToolId[];
   tool: ToolId;
   setTool: (t: ToolId) => void;
+  /** Materialvorrat: noch setzbare Teile je Werkzeug, null = unbegrenzt */
+  left: (t: ToolId) => number | null;
   orient: Orient;
   toggleOrient: () => void;
 }
@@ -24,7 +26,7 @@ const modeButton = (active: boolean) =>
    farbig, damit man sie findet, ohne die Symbole schon zu kennen. Zwei Kacheln je Zeile,
    damit auch die volle Palette des freien Baumodus ohne Scrollen passt; die Kurzinfo
    steht darunter für das überfahrene bzw. gewählte Bauteil. */
-export function PartPalette({ palette, tool, setTool, orient, toggleOrient }: Props) {
+export function PartPalette({ palette, tool, setTool, orient, toggleOrient, left }: Props) {
   const [hovered, setHovered] = useState<ToolId | null>(null);
   const parts = palette.filter((t) => PLACEABLE.has(t));
   const groups = GROUP_ORDER.map((g) => ({
@@ -45,6 +47,7 @@ export function PartPalette({ palette, tool, setTool, orient, toggleOrient }: Pr
             type="button"
             onClick={() => setTool("wire")}
             aria-pressed={tool === "wire"}
+            title="Verdrahten (Taste W oder Esc)"
             className={modeButton(tool === "wire")}
           >
             <Cable size={18} aria-hidden="true" /> Verdrahten
@@ -54,7 +57,7 @@ export function PartPalette({ palette, tool, setTool, orient, toggleOrient }: Pr
               type="button"
               onClick={() => setTool("erase")}
               aria-pressed={tool === "erase"}
-              title="Löschen (Rechtsklick löscht mit jedem Werkzeug)"
+              title="Löschen (Taste E; Rechtsklick löscht mit jedem Werkzeug)"
               className={modeButton(tool === "erase")}
             >
               <Eraser size={18} aria-hidden="true" /> {TOOLS.erase.label}
@@ -73,6 +76,7 @@ export function PartPalette({ palette, tool, setTool, orient, toggleOrient }: Pr
             {tools.map((t) => {
               const active = tool === t;
               const preview = newPart(t, 0, 0, active ? orient : "h");
+              const n = left(t);
               return (
                 <button
                   key={t}
@@ -83,9 +87,19 @@ export function PartPalette({ palette, tool, setTool, orient, toggleOrient }: Pr
                   onFocus={() => setHovered(t)}
                   onBlur={() => setHovered(null)}
                   aria-pressed={active}
+                  aria-label={n === null ? undefined : `${TOOLS[t].label}, noch ${n} verfügbar`}
                   title={TOOLS[t].info}
-                  className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1 transition ${GROUPS[g].tile} ${active ? GROUPS[g].active : ""}`}
+                  className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1 transition ${GROUPS[g].tile} ${active ? GROUPS[g].active : ""} ${n === 0 ? "opacity-45" : ""}`}
                 >
+                  {/* Vorrat: wie viele davon man noch setzen darf */}
+                  {n !== null && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute right-1 top-1 rounded-md bg-white/90 px-1 text-[0.7rem] font-bold tabular-nums leading-4 text-stone-700 ring-1 ring-stone-200"
+                    >
+                      {n}×
+                    </span>
+                  )}
                   <svg viewBox="0 0 60 60" width={38} height={38} aria-hidden="true">
                     {partGlyph("vorschau", preview, EMPTY_SIM)}
                   </svg>

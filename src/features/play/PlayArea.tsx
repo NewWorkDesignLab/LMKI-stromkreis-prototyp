@@ -11,6 +11,7 @@ import { BoardViewport, TOOL_BUTTON } from "./BoardViewport";
 import { PartPalette } from "./PartPalette";
 import { StatusBar, TaskBar, WinPanel } from "./BuildPanels";
 import { usePlaySession } from "./usePlaySession";
+import { useTaskIntro } from "./useTaskIntro";
 
 interface Props {
   step: BuildStep;
@@ -55,11 +56,14 @@ export function PlayArea({
     snapWires: settings.snapWires,
   });
 
+  const intro = useTaskIntro(settings.taskIntro && mode === "level", active);
+
   const tutorial = useTutorial({
     level: step,
     circuit: s.circuit,
     won: s.won,
-    suppressed: !active || mode !== "level" || s.tool !== "wire" || overlayOpen || s.isDrawing,
+    suppressed:
+      !active || mode !== "level" || s.tool !== "wire" || overlayOpen || s.isDrawing || intro.intro,
   });
 
   const tools = (
@@ -110,6 +114,7 @@ export function PlayArea({
           palette={step.palette}
           tool={s.tool}
           setTool={s.setTool}
+          left={s.left}
           orient={s.orient}
           toggleOrient={() => s.setOrient((o) => (o === "h" ? "v" : "h"))}
         />
@@ -119,11 +124,20 @@ export function PlayArea({
           Mindesthöhe); steht ein Zusatzbaustein darunter, scrollt die Spalte. */}
       <div className="flex min-h-0 flex-col lg:overflow-y-auto">
         <div
-          className={`mx-auto flex min-h-0 w-full flex-col gap-3 ${fill ? "flex-1" : ""}`}
+          /* p-1: Luft für die herausgehobene Aufgabe (Schatten), sonst schnitte die
+             scrollende Spalte ihren Rand ab */
+          className={`mx-auto flex min-h-0 w-full flex-col gap-3 p-1 ${fill ? "flex-1" : ""}`}
           style={fill ? undefined : { maxWidth: columnWidth }}
         >
-          <TaskBar step={step} mode={mode} check={s.check} />
-          <BoardViewport content={extent} fill={fill}>
+          <TaskBar
+            step={step}
+            mode={mode}
+            check={s.check}
+            style={intro.taskStyle}
+            intro={intro.intro}
+            goalsEnter={intro.goalsEnter}
+          />
+          <BoardViewport content={extent} fill={fill} solved={mode === "level" && s.won}>
             {({ width, height }) => (
               <Board
                 level={step}

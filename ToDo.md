@@ -42,7 +42,9 @@ Schritte quer mit Bühne (entschieden 2026-10-23).
 - [x] Merksatz zeigt die eigene gelöste Schaltung; nach dem Lösen klingt er unter dem Brett an
 - [ ] Variante D für Sandkasten und große Level: Brett füllt das Fenster, Aufgabe schwebend,
       Bauteile als Dock
-- [ ] Ziele am Bauteil zeigen (z. B. „Ziel ≈ 4,5 V“ am Voltmeter)
+- [x] Moment des Lösens: Rahmen leuchtet auf, Häkchen ploppen, „Geschafft“ gleitet herein
+- [x] Aufgabe beim Start kurz hervorheben (abschaltbar)
+- [x] Materialvorrat je Werkzeug (`stock`), Anzahl auf der Kachel
 - [ ] Kurzer Übergang zwischen den Schritten, damit die Bühne als dieselbe wirkt
 - [x] Brett in Originalgröße (100 % = Prototyp), zu große Bretter bis 70 % verkleinert;
       Zoom (Mausrad) und Verschieben (Leertaste/mittlere Maustaste); Frei bauen auf 14 × 9
@@ -50,7 +52,7 @@ Schritte quer mit Bühne (entschieden 2026-10-23).
 - [x] Panels als eigenständige Bausteine, damit Mobil später anders anordnen kann
 - [x] Kopfleiste: Modus, Levelnavigation, Ton, Schaltzeichen, Einstellungen
 - [x] Einstellungen (gespeichert): Ziehhilfe, Flussanimation, Ton + Lautstärke
-- [x] Tasten R (drehen) und Esc (zurück zum Verdrahten)
+- [x] Tasten R (drehen), W/Esc (Verdrahten), E (Löschen); Bauteile bewusst ohne Kürzel
 - [ ] Bauteile verschieben (Ziehen mit Modifikator oder eigenes Werkzeug)
 - [ ] Messwerte als Liste (Spannung/Strom je Bauteil, nicht nur am Brett) – Platz dafür
       finden, ohne wieder eine Seitenspalte aufzumachen

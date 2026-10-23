@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Circle, Lightbulb } from "lucide-react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { BuildStep, CheckResult, SimResult } from "../../domain/types";
 import type { PlayMode } from "../../engine/editing";
 import { fmtA } from "../../engine/format";
@@ -9,32 +9,55 @@ import { ProceedButton } from "../lesson/stepViews";
    liegt direkt über oder unter dem Brett – eine Augenbewegung entfernt, nicht in einer
    Seitenspalte, in die man selten schaut. */
 
+/* Abstand, mit dem die Ziele nach der Einblendung nacheinander erscheinen: deutlich als
+   Folge erkennbar, aber nach einer halben Sekunde stehen auch drei Ziele da. */
+const GOAL_STAGGER_MS = 180;
+
 /** Über dem Brett: was zu tun ist und woran man merkt, dass es geschafft ist. */
 export function TaskBar({
   step,
   mode,
   check,
+  style,
+  intro = false,
+  goalsEnter = false,
 }: {
   step: BuildStep;
   mode: PlayMode;
   check: CheckResult;
+  /** Einblendung beim Start (useTaskIntro): herausgehoben, Ziele noch verborgen */
+  style?: CSSProperties;
+  intro?: boolean;
+  /** Ziele nach der Einblendung nacheinander erscheinen lassen */
+  goalsEnter?: boolean;
 }) {
   return (
-    <section aria-label="Aufgabe" className="rounded-xl border border-stone-200 bg-white px-4 py-3">
+    <section
+      aria-label="Aufgabe"
+      style={style}
+      className={`rounded-xl border bg-white px-4 py-3 ${intro ? "border-amber-300 shadow-lg" : "border-stone-200"}`}
+    >
       <p className="text-sm leading-relaxed text-stone-800">
         {mode === "sandbox"
           ? "Bauteile links wählen und aufs Brett setzen, Leitungen ziehen, Bauteile antippen zum Umschalten."
           : step.task}
       </p>
       {check.items.length > 0 && (
-        <ul aria-label="Ziele" className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+        /* Während der Einblendung unsichtbar, aber mit ihrem Platz – sonst rutschte das
+           Brett nach unten, wenn die Ziele erscheinen. */
+        <ul
+          aria-label="Ziele"
+          aria-hidden={intro || undefined}
+          className={`mt-2 flex flex-wrap gap-x-5 gap-y-1 ${intro ? "invisible" : ""}`}
+        >
           {check.items.map((it, i) => (
             <li
               key={i}
-              className={`flex items-start gap-1.5 text-sm ${it.ok ? "text-emerald-700" : "text-stone-600"}`}
+              style={goalsEnter ? { animationDelay: `${i * GOAL_STAGGER_MS}ms` } : undefined}
+              className={`flex items-start gap-1.5 text-sm ${it.ok ? "text-emerald-700" : "text-stone-600"} ${goalsEnter && !intro ? "goal-in" : ""}`}
             >
               {it.ok ? (
-                <CheckCircle2 size={17} className="mt-px shrink-0" aria-label="erreicht" />
+                <CheckCircle2 size={17} className="goal-pop mt-px shrink-0" aria-label="erreicht" />
               ) : (
                 <Circle size={17} className="mt-px shrink-0 text-stone-300" aria-label="offen" />
               )}
@@ -108,7 +131,7 @@ export function WinPanel({
   return (
     <section
       aria-live="polite"
-      className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3"
+      className="win-in flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3"
     >
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 font-semibold text-emerald-700">

@@ -22,6 +22,7 @@ import {
   newPart,
   place,
   release as releasePart,
+  remaining,
   removePart,
   snapToTerminals,
   type EditContext,
@@ -74,7 +75,7 @@ interface Gesture {
    selbst sind reine Funktionen in engine/editing.ts; hier steckt nur die Geste –
    was ein Tippen, was ein Zug und was ein Loslassen bedeutet – und der Verlauf. */
 export function useBoardEditor(
-  level: Pick<BuildStep, "W" | "H" | "walls" | "circuit">,
+  level: Pick<BuildStep, "W" | "H" | "walls" | "circuit" | "palette" | "stock">,
   mode: PlayMode,
   /** Tastenkürzel nur, solange das Brett sichtbar ist */
   active = true,
@@ -82,7 +83,12 @@ export function useBoardEditor(
   snapWires = false,
 ) {
   const { W, H, walls } = level;
-  const ctx: EditContext = useMemo(() => ({ board: { W, H, walls }, mode }), [W, H, walls, mode]);
+  const canErase = level.palette.includes("erase");
+  const { stock } = level;
+  const ctx: EditContext = useMemo(
+    () => ({ board: { W, H, walls }, mode, stock }),
+    [W, H, walls, mode, stock],
+  );
   const doc = useUndoable<Circuit>(() => cloneCircuit(level.circuit), carryOperatingState);
   const { present: circuit, apply, update, commit, begin, end, undo, redo } = doc;
 
@@ -279,9 +285,11 @@ export function useBoardEditor(
     onContextMenu: (e) => e.preventDefault(),
   };
 
-  /* Strg+Z / Strg+Y / Strg+Umschalt+Z, dazu R (Ausrichtung drehen) und Esc (zurück zum
-     Verdrahten). Nicht in Eingabefeldern – dort gehören die Tasten dem Text. Eine
-     laufende Geste wird vorher abgeschlossen. */
+  /* Strg+Z / Strg+Y / Strg+Umschalt+Z, dazu W bzw. Esc (Verdrahten), E (Löschen, wenn das
+     Level es erlaubt) und R (Ausrichtung drehen). Bauteile bekommen bewusst keine
+     Kürzel: es gibt mehr Bauteilarten als Zifferntasten, und je Level stünden sie anders.
+     Nicht in Eingabefeldern – dort gehören die Tasten dem Text. Eine laufende Geste wird
+     vorher abgeschlossen. */
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
@@ -289,8 +297,12 @@ export function useBoardEditor(
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       const k = e.key.toLowerCase();
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (k === "r") setOrient((o) => (o === "h" ? "v" : "h"));
-        else if (k === "escape") setTool("wire");
+        if (k === "r") return setOrient((o) => (o === "h" ? "v" : "h"));
+        const next = k === "w" || k === "escape" ? "wire" : k === "e" && canErase ? "erase" : null;
+        if (!next) return;
+        /* ein Werkzeugwechsel mitten im Zug schließt den Zug ab, statt ihn umzudeuten */
+        stop(false);
+        setTool(next);
         return;
       }
       if (e.altKey) return;
@@ -302,10 +314,12 @@ export function useBoardEditor(
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active, undo, redo, stop]);
+  }, [active, undo, redo, stop, canErase]);
 
   return {
     circuit,
+    /** wie viele Teile eines Werkzeugs noch gesetzt werden dürfen; null = unbegrenzt */
+    left: (t: ToolId) => remaining(circuit, ctx, t),
     /** Änderung ohne Verlaufseintrag */
     update,
     /** Änderung am Aufbau, mit Verlaufseintrag */

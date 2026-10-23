@@ -11,6 +11,7 @@ import {
   erasePoint,
   place,
   release,
+  remaining,
   removePart,
   snapToTerminals,
   type EditContext,
@@ -81,6 +82,34 @@ describe("Bauteile", () => {
     expect(n.wires[wireKey("1,0", "1,1")]).toBeUndefined();
     expect(n.wires[wireKey("0,0", "1,0")]).toBeDefined();
     expect(n.wires[wireKey("1,0", "2,0")]).toBeDefined();
+  });
+});
+
+describe("Materialvorrat", () => {
+  const stocked: EditContext = { ...level, stock: { lamp: 1, opener: 1 } };
+
+  it("lässt nur so viele Teile setzen, wie der Vorrat hergibt", () => {
+    const one = place(loop(), stocked, "1,2", "lamp", "h").circuit;
+    expect(remaining(one, stocked, "lamp")).toBe(0);
+    const two = place(one, stocked, "3,2", "lamp", "h");
+    expect(two.circuit).toBe(one);
+  });
+
+  it("zählt vorgegebene Teile nicht mit und gibt gelöschte zurück", () => {
+    expect(remaining(loop(), stocked, "lamp")).toBe(1); // E1 ist vorgegeben
+    const r = place(loop(), stocked, "1,2", "lamp", "h");
+    expect(remaining(removePart(r.circuit, stocked, r.id), stocked, "lamp")).toBe(1);
+  });
+
+  it("unterscheidet Öffner und Schalter, obwohl beide Schalter sind", () => {
+    const c = place(loop(), stocked, "1,2", "opener", "h").circuit;
+    expect(remaining(c, stocked, "opener")).toBe(0);
+    expect(remaining(c, stocked, "switch")).toBeNull();
+  });
+
+  it("begrenzt nichts ohne Vorrat und nichts im freien Bauen", () => {
+    expect(remaining(loop(), level, "lamp")).toBeNull();
+    expect(remaining(loop(), { ...stocked, mode: "sandbox" }, "lamp")).toBeNull();
   });
 });
 

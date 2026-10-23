@@ -27,6 +27,8 @@ interface Props {
   content: Size;
   /** füllt den verfügbaren Platz (freies Bauen); sonst so groß wie das Brett */
   fill?: boolean;
+  /** Ziele erreicht: der Rahmen leuchtet einmal auf (Klasse board-solved) */
+  solved?: boolean;
   /** zeichnet das Brett in der übergebenen Größe (Bildpunkte) */
   children: (size: { width: number; height: number }) => ReactNode;
 }
@@ -45,7 +47,7 @@ export const TOOL_BUTTON =
    Zoom und Verschieben gibt es erst, wenn das Brett nicht hineinpasst (große Level,
    schmales Fenster) oder im freien Bauen – dann mit dem Mausrad, gedrückter Leertaste
    oder mittlerer Maustaste. Linke und rechte Maustaste bleiben dem Brett. */
-export function BoardViewport({ content, fill = false, children }: Props) {
+export function BoardViewport({ content, fill = false, solved = false, children }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<Size>({ w: 0, h: 0 });
   /* null = Ausgangsansicht: folgt jeder Größenänderung des Fensters */
@@ -132,7 +134,7 @@ export function BoardViewport({ content, fill = false, children }: Props) {
   return (
     <div
       ref={boxRef}
-      className={`relative w-full overflow-hidden rounded-2xl border border-stone-200 ${fill ? "min-h-[24rem] flex-1" : "min-h-[16rem] shrink"}`}
+      className={`relative w-full overflow-hidden rounded-2xl border transition-colors ${solved ? "board-solved border-emerald-300" : "border-stone-200"} ${fill ? "min-h-[24rem] flex-1" : "min-h-[16rem] shrink"}`}
       style={{
         background: BG,
         cursor: spaceHeld ? "grab" : undefined,

@@ -14,6 +14,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     W: 7,
     H: 5,
     palette: ["cross", "wire", "erase"],
+    stock: { cross: 4 },
     showValues: true,
     task: "Zwei getrennte Stromkreise – trotzdem Kurzschluss. Die vier Knotenpunkte zeigen, wo die Leitungen elektrisch verbunden sind. Lösche sie und setze dort „Kreuzung“ ein.",
     lesson:
@@ -39,6 +40,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     W: 7,
     H: 5,
     palette: ["wire", "ammeter", "erase"],
+    stock: { ammeter: 1 },
     showValues: true,
     task: "Die Knotenpunkte aus dem letzten Level – hier sind sie gewollt. Setze das Amperemeter so ein, dass es nur den Strom durch die Lampe misst.",
     lesson:

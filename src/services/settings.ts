@@ -10,6 +10,8 @@ export interface Settings {
   volume: number;
   /** laufende Striche in stromführenden Leitungen */
   flowAnimation: boolean;
+  /** Aufgabe beim Betreten eines Bauschritts kurz hervorheben */
+  taskIntro: boolean;
 }
 
 /* Die Ziehhilfe ist aus: dass nur verbunden ist, was man selbst verbindet, ist die
@@ -19,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sound: true,
   volume: 0.6,
   flowAnimation: true,
+  taskIntro: true,
 };
 
 /* Gespeicherte Einstellungen sind Fremddaten (alter Stand, von Hand geändert). Jedes Feld
@@ -29,7 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
 export function readSettings(raw: unknown): Settings {
   // Objekt ist geprüft; jedes Feld wird unten einzeln auf seinen Typ geprüft
   const o = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
-  const bool = (k: "snapWires" | "sound" | "flowAnimation") =>
+  const bool = (k: "snapWires" | "sound" | "flowAnimation" | "taskIntro") =>
     typeof o[k] === "boolean" ? o[k] : DEFAULT_SETTINGS[k];
   const v = o.volume;
   return {
@@ -40,6 +43,7 @@ export function readSettings(raw: unknown): Settings {
         ? Math.min(1, Math.max(0, v))
         : DEFAULT_SETTINGS.volume,
     flowAnimation: bool("flowAnimation"),
+    taskIntro: bool("taskIntro"),
   };
 }
 

@@ -89,6 +89,9 @@ export interface Circuit {
 }
 
 /** Das Brett, auf dem eine Schaltung liegt: Größe in Punkten und gesperrte Punkte. */
+/** Höchstzahl selbst gesetzter Bauteile je Werkzeug (Bauschritt `stock`). */
+export type Stock = Partial<Record<ToolId, number>>;
+
 export interface BoardSpec {
   W: number;
   H: number;
@@ -263,6 +266,9 @@ export interface BuildStep extends StepBase {
   walls?: PointKey[];
   /** Zulässige Werkzeuge */
   palette: ToolId[];
+  /** Materialvorrat: wie viele Bauteile eines Werkzeugs gesetzt werden dürfen. Fehlt ein
+      Werkzeug hier, ist es unbegrenzt. Vorgegebene Bauteile zählen nicht mit. */
+  stock?: Stock;
   /** Aufgabentext über dem Brett */
   task: string;
   /** Vorgegebene Schaltung (Startzustand und „Zurücksetzen“) */

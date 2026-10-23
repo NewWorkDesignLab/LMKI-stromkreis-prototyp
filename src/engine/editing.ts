@@ -12,6 +12,7 @@ import type {
   PartType,
   PointKey,
   Side,
+  Stock,
   ToolId,
   WireKey,
 } from "../domain/types";
@@ -31,10 +32,12 @@ import { P, ROTATABLE, hasPort, portsOf } from "./parts";
 
 export type PlayMode = "level" | "sandbox";
 
-/** Wo und wie bearbeitet wird: Brett (Grenzen, Wände) und Modus (Schutz der Vorgaben). */
+/** Wo und wie bearbeitet wird: Brett (Grenzen, Wände), Modus (Schutz der Vorgaben) und
+    Materialvorrat des Bauschritts. */
 export interface EditContext {
   board: BoardSpec;
   mode: PlayMode;
+  stock?: Stock;
 }
 
 export const PLACEABLE = new Set<ToolId>([
@@ -142,6 +145,20 @@ export function newPart(tool: ToolId, x: number, y: number, orient: Orient): Par
   return part;
 }
 
+/** Mit welchem Werkzeug ein Bauteil gesetzt wurde – der Öffner ist ein Schalter mit nc. */
+export const toolOf = (part: Part): ToolId =>
+  part.type === "switch" && part.nc ? "opener" : part.type;
+
+/* Wie viele Teile eines Werkzeugs noch gesetzt werden dürfen; null = unbegrenzt. Gezählt
+   wird, was liegt: wer ein Teil wieder löscht (oder rückgängig macht), bekommt es zurück.
+   Im freien Bauen gibt es keinen Vorrat. */
+export function remaining(c: Circuit, ctx: EditContext, tool: ToolId): number | null {
+  const max = ctx.mode === "level" ? ctx.stock?.[tool] : undefined;
+  if (max === undefined) return null;
+  const used = Object.values(c.parts).filter((p) => p.user && toolOf(p) === tool).length;
+  return Math.max(0, max - used);
+}
+
 /* Ein Bauteil passt auf einen Punkt, wenn jede dort endende Leitung auf einen seiner
    Anschlüsse trifft. So lässt es sich in eine bestehende Leitung einsetzen, ohne sie
    erst zu löschen – die Ausrichtung wird dabei nicht erraten, sondern muss stimmen. */
@@ -158,6 +175,7 @@ export function canPlace(
   orient: Orient,
 ): boolean {
   if (!PLACEABLE.has(tool) || !isFree(ctx.board, p) || partAt(c, p)) return false;
+  if (remaining(c, ctx, tool) === 0) return false;
   const [x, y] = parsePoint(p);
   return fits(c, p, newPart(tool, x, y, orient));
 }

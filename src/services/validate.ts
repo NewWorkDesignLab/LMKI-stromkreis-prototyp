@@ -199,6 +199,15 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
 
   if (!Array.isArray(l.palette)) e("palette fehlt");
   else for (const t of l.palette) if (!TOOLS.has(t)) e(`unbekanntes Werkzeug „${t}“`);
+  if (l.stock !== undefined) {
+    if (!l.stock || typeof l.stock !== "object") e("stock muss ein Objekt sein");
+    else
+      for (const [t, n] of Object.entries(l.stock)) {
+        if (!Array.isArray(l.palette) || !l.palette.includes(t as ToolId))
+          e(`stock: „${t}“ steht nicht in der Palette`);
+        if (!Number.isInteger(n) || n < 1) e(`stock: „${t}“ braucht eine ganze Zahl ab 1`);
+      }
+  }
 
   const walls = new Set<string>();
   if (l.walls !== undefined) {

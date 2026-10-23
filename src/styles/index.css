@@ -104,12 +104,72 @@
   }
 }
 
+/* Moment des Lösens: der Brettrahmen leuchtet einmal grün auf, erreichte Ziele haken sich
+   mit einem kurzen Ploppen ab, „Geschafft“ gleitet unter dem Brett herein. Bewusst einmalig
+   und leise – Bestätigung, kein Feuerwerk. */
+.board-solved::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 3px #34d399,
+    inset 0 0 48px rgba(52, 211, 153, 0.35);
+  opacity: 0;
+  animation: solved-glow 1.4s ease-out;
+}
+@keyframes solved-glow {
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.goal-pop {
+  animation: goal-pop 0.35s ease-out;
+}
+@keyframes goal-pop {
+  0% {
+    transform: scale(0.5);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.goal-in {
+  animation: goal-in 0.35s ease-out both;
+}
+@keyframes goal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+.win-in {
+  animation: win-in 0.3s ease-out;
+}
+@keyframes win-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tutorial-demo {
     display: none;
   }
   .flow,
-  .lamp-on-glow {
+  .lamp-on-glow,
+  .board-solved::after,
+  .goal-pop,
+  .goal-in,
+  .win-in {
     animation: none;
   }
 }
