@@ -1,6 +1,6 @@
 import { useState, type ComponentType } from "react";
 import type { LevelDef, Step } from "../../domain/types";
-import { stepProgress } from "../../engine/lesson";
+import { stageOf, stepProgress } from "../../engine/lesson";
 import { StepBar } from "./StepBar";
 import { STEP_VIEWS, type StepViewProps } from "./stepViews";
 import { useLesson } from "./useLesson";
@@ -22,8 +22,10 @@ export function LessonView({ level, overlayOpen, hasNextLevel, onNextLevel }: Pr
   const [visited, setVisited] = useState(() => new Set([0]));
   if (!visited.has(state.index)) setVisited(new Set(visited).add(state.index));
 
+  /* Bauschritte füllen die Fläche; die übrigen ordnen sich selbst im Querformat an
+     (StageLayout) und scrollen nur, wenn es gar nicht anders geht. */
   return (
-    <>
+    <div className="flex flex-col gap-3 lg:h-full lg:min-h-0">
       <StepBar level={level} state={state} onPick={lesson.goTo} />
       {level.steps.map((step, i) => {
         if (!visited.has(i)) return null;
@@ -31,29 +33,40 @@ export function LessonView({ level, overlayOpen, hasNextLevel, onNextLevel }: Pr
            hier geht der Bezug beim Zugriff über eine Variable verloren. */
         const View = STEP_VIEWS[step.kind] as ComponentType<StepViewProps<Step>>;
         return (
-          <div key={step.id} hidden={i !== state.index}>
-            <View
-              step={step}
-              level={level}
-              lesson={state}
-              progress={stepProgress(state, step.id)}
-              active={i === state.index}
-              overlayOpen={overlayOpen}
-              proceed={lesson.proceed}
-              proceedLabel={
-                i < level.steps.length - 1
-                  ? "Weiter"
-                  : hasNextLevel
-                    ? "Nächstes Level"
-                    : "Abschließen"
-              }
-              complete={() => lesson.complete(step.id)}
-              submit={(v) => lesson.submit(step.id, v)}
-              onReset={lesson.reportReset}
-            />
+          <div
+            key={step.id}
+            hidden={i !== state.index}
+            className={
+              step.kind === "build"
+                ? "lg:min-h-0 lg:flex-1"
+                : "lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+            }
+          >
+            <div className={step.kind === "build" ? "lg:h-full" : "py-2 lg:py-4"}>
+              <View
+                step={step}
+                level={level}
+                lesson={state}
+                progress={stepProgress(state, step.id)}
+                active={i === state.index}
+                overlayOpen={overlayOpen}
+                proceed={lesson.proceed}
+                stage={step.kind === "build" ? null : stageOf(level, state, i)}
+                proceedLabel={
+                  i < level.steps.length - 1
+                    ? "Weiter"
+                    : hasNextLevel
+                      ? "Nächstes Level"
+                      : "Abschließen"
+                }
+                complete={(circuit) => lesson.complete(step.id, circuit)}
+                submit={(v) => lesson.submit(step.id, v)}
+                onReset={lesson.reportReset}
+              />
+            </div>
           </div>
         );
       })}
-    </>
+    </div>
   );
 }

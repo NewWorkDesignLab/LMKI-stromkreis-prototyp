@@ -14,7 +14,7 @@ import { fmtA, fmtR, fmtV } from "../engine/format";
 import { CONSUMER, P } from "../engine/parts";
 import { BG, DOT, FLOW, FORBID, HINT, HOT, INK, LIVE, MUTE, WIRE } from "../theme/colors";
 import { EMPTY_SIM } from "./emptySim";
-import { CELL, PAD_B, PAD_X, center } from "./geometry";
+import { CELL, PAD_X, boardExtent, center } from "./geometry";
 import { partGlyph } from "./symbols";
 import { wallEl } from "./symbols/wall";
 
@@ -42,21 +42,39 @@ interface Props {
   level: Pick<BuildStep, "W" | "H" | "walls" | "frames" | "showValues" | "labelSwitches">;
   circuit: Circuit;
   sim: SimResult;
-  tool: ToolId;
-  svgRef: RefObject<SVGSVGElement>;
-  handlers: BoardPointerHandlers;
+  /* Ohne Werkzeug und Zeigerereignisse ist das Brett nur zum Ansehen (Bühne neben
+     Vermutung, Frage und Merksatz): es schrumpft dann mit seinem Behälter mit. */
+  tool?: ToolId;
+  svgRef?: RefObject<SVGSVGElement>;
+  handlers?: BoardPointerHandlers;
   hint?: BoardHint | null;
   /** Zusätzliche Anzeige über allem (Einführung) */
   overlay?: ReactNode;
+  /** Darstellungsgröße in Bildpunkten; Zoom und Lage bestimmt der Rahmen (BoardViewport) */
+  width: number;
+  height: number;
+  /** laufende Striche in stromführenden Leitungen (Einstellung) */
+  flow: boolean;
 }
 
 const segEnds = (k: WireKey) => wireEnds(k).map(parsePoint);
 
 /* Das Spielfeld als SVG. Zeichnet nur: Zustand und Eingaben kommen von außen. */
-export function Board({ level: cfg, circuit, sim, tool, svgRef, handlers, hint, overlay }: Props) {
+export function Board({
+  level: cfg,
+  circuit,
+  sim,
+  tool,
+  svgRef,
+  handlers,
+  hint,
+  overlay,
+  width,
+  height,
+  flow: animate,
+}: Props) {
   const { W, H } = cfg;
-  const vbW = W * CELL + PAD_X * 2,
-    vbH = H * CELL + PAD_B;
+  const { w: vbW, h: vbH } = boardExtent(W, H);
 
   const dotEls: ReactNode[] = [],
     lineEls: ReactNode[] = [],
@@ -112,7 +130,7 @@ export function Board({ level: cfg, circuit, sim, tool, svgRef, handlers, hint, 
     );
     /* Ohne Strom keine laufenden Striche: die Leitung steht unter Spannung,
        aber ein Zweig ohne Strom bekäme sonst eine erfundene Richtung. */
-    if (flow.live && flow.dir)
+    if (animate && flow.live && flow.dir)
       flowEls.push(
         <line
           key={`fl${k}`}
@@ -188,33 +206,31 @@ export function Board({ level: cfg, circuit, sim, tool, svgRef, handlers, hint, 
   }
 
   return (
-    <div className="relative rounded-2xl p-2 shadow-inner" style={{ background: BG }}>
-      <svg
-        ref={svgRef}
-        viewBox={`${-PAD_X} 0 ${vbW} ${vbH}`}
-        className="block mx-auto select-none"
-        style={{
-          width: "100%",
-          maxWidth: Math.min(W * CELL, 560) + PAD_X * 2,
-          height: "auto",
-          touchAction: "none",
-          cursor: tool === "erase" ? "cell" : "pointer",
-        }}
-        {...handlers}
-      >
-        <rect x={0} y={0} width={W * CELL} height={H * CELL} fill={BG} rx={10} />
-        {dotEls}
-        {frameEls}
-        {wallEls}
-        {lineEls}
-        {flowEls}
-        {nodeEls}
-        {compEls}
-        {labelEls}
-        {hint && <HintLayer hint={hint} />}
-        {overlay}
-      </svg>
-    </div>
+    <svg
+      ref={svgRef}
+      viewBox={`${-PAD_X} 0 ${vbW} ${vbH}`}
+      width={width}
+      height={height}
+      className="block select-none"
+      style={
+        handlers
+          ? { touchAction: "none", cursor: tool === "erase" ? "cell" : "pointer" }
+          : { maxWidth: "100%", height: "auto" }
+      }
+      {...handlers}
+    >
+      <rect x={0} y={0} width={W * CELL} height={H * CELL} fill={BG} rx={10} />
+      {dotEls}
+      {frameEls}
+      {wallEls}
+      {lineEls}
+      {flowEls}
+      {nodeEls}
+      {compEls}
+      {labelEls}
+      {hint && <HintLayer hint={hint} />}
+      {overlay}
+    </svg>
   );
 }
 

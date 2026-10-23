@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AnswerValue, LevelDef, StepId } from "../../domain/types";
+import type { AnswerValue, Circuit, LevelDef, StepId } from "../../domain/types";
 import {
   advance,
   answer,
@@ -59,8 +59,8 @@ export function useLesson(level: LevelDef, hasNextLevel: boolean, onNextLevel: (
   return {
     state,
     goTo: (i: number) => commit(goTo(level, ref.current, i)),
-    /** Schritt erledigt, ohne weiterzugehen (Bauziel erreicht). */
-    complete: (id: StepId) => commit(complete(ref.current, id)),
+    /** Schritt erledigt, ohne weiterzugehen (Bauziel erreicht, mit der lösenden Schaltung). */
+    complete: (id: StepId, circuit?: Circuit) => commit(complete(ref.current, id, circuit)),
     /* Weiter: erledigt den aktuellen Schritt (Lesen bestätigt) und geht zum nächsten;
        am Ende ins nächste Level, sofern es eines gibt. */
     proceed: () => {

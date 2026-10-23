@@ -23,10 +23,11 @@ import {
   place,
   release as releasePart,
   removePart,
+  snapToTerminals,
   type EditContext,
   type PlayMode,
 } from "../../engine/editing";
-import { CELL, PAD_B, PAD_X } from "../../render/geometry";
+import { CELL, PAD_X, boardExtent } from "../../render/geometry";
 import type { BoardHint, BoardPointerHandlers } from "../../render/Board";
 import { useUndoable } from "./useUndoable";
 
@@ -77,6 +78,8 @@ export function useBoardEditor(
   mode: PlayMode,
   /** Tastenkürzel nur, solange das Brett sichtbar ist */
   active = true,
+  /** Ziehhilfe (Einstellung): erreichte Punkte schließen sich an Anschlüsse an */
+  snapWires = false,
 ) {
   const { W, H, walls } = level;
   const ctx: EditContext = useMemo(() => ({ board: { W, H, walls }, mode }), [W, H, walls, mode]);
@@ -91,8 +94,7 @@ export function useBoardEditor(
   const gesture = useRef<Gesture | null>(null);
   const pressed = useRef<PartId | null>(null);
 
-  const vbW = W * CELL + PAD_X * 2,
-    vbH = H * CELL + PAD_B;
+  const { w: vbW, h: vbH } = boardExtent(W, H);
 
   /* Die viewBox ist um den Beschriftungsrand größer als das Spielfeld und fängt
      links bei −PAD_X an – beides muss hier mitgerechnet werden, sonst liegt der
@@ -159,10 +161,17 @@ export function useBoardEditor(
     });
     g.last = p;
   };
+  /* Mit Ziehhilfe wird jeder erreichte Punkt sofort an die Anschlüsse daneben gelegt,
+     auch der Startpunkt – aber erst, wenn aus dem Tippen ein Zug wird. */
   const drawTo = (g: Gesture, p: PointKey) => {
     const path = steps(g.last, p);
     if (!path.length) return;
-    update((c) => path.reduce((n, [a, b]) => connect(n, ctx, a, b), c));
+    update((c) =>
+      path.reduce((n, [a, b]) => {
+        const linked = connect(n, ctx, a, b);
+        return snapWires ? snapToTerminals(snapToTerminals(linked, ctx, a), ctx, b) : linked;
+      }, c),
+    );
     g.last = p;
   };
 
@@ -270,15 +279,21 @@ export function useBoardEditor(
     onContextMenu: (e) => e.preventDefault(),
   };
 
-  /* Strg+Z / Strg+Y / Strg+Umschalt+Z. Nicht in Eingabefeldern – dort gehört Strg+Z
-     dem Text. Eine laufende Geste wird vorher abgeschlossen. */
+  /* Strg+Z / Strg+Y / Strg+Umschalt+Z, dazu R (Ausrichtung drehen) und Esc (zurück zum
+     Verdrahten). Nicht in Eingabefeldern – dort gehören die Tasten dem Text. Eine
+     laufende Geste wird vorher abgeschlossen. */
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       const k = e.key.toLowerCase();
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (k === "r") setOrient((o) => (o === "h" ? "v" : "h"));
+        else if (k === "escape") setTool("wire");
+        return;
+      }
+      if (e.altKey) return;
       const action = k === "z" ? (e.shiftKey ? redo : undo) : k === "y" ? redo : null;
       if (!action) return;
       e.preventDefault();

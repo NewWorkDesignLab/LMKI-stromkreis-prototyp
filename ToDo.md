@@ -29,12 +29,32 @@ Schritte wieder ansehbar, spätere gesperrt (entschieden 2026-10-22).
 
 ## 3. Desktop-Layout
 
-- [ ] Drei Spalten: links Bauteilpalette (farbig, mit Namen und Kurzinfo beim Überfahren),
-      Mitte großes Brett, rechts aktueller Schritt / Aufgabe / Checkliste / Messwerte
-- [ ] Obere Leiste: Rückgängig, Wiederholen, Zurücksetzen, Prüfen
-- [ ] Brett mit Zoom und Verschieben für große Felder; Deckel von 560 px aufheben
-- [ ] Panels als eigenständige Bausteine, damit Mobil später anders anordnen kann
+Farbe nur in der Palette, Brett bleibt normgerecht schwarz; Brett in Originalgröße, Zoom nur
+als Hilfe für große Schaltungen; Ziehhilfe verbindet live (entschieden 2026-10-23).
+Aufgabe und Ziele direkt am Brett statt in einer rechten Spalte („Variante B“), übrige
+Schritte quer mit Bühne (entschieden 2026-10-23).
+
+- [x] Links Bauteilpalette (farbig nach Gruppe, mit Namen und Kurzinfo), Mitte eine Spalte
+      aus Aufgabe + Ziele, Brett, Zustand + Rückgängig/Zurücksetzen (Prüfen kommt mit Phase 4)
+- [x] Brettrahmen wächst mit dem Level; Zoom nur, wenn das Brett nicht passt, und im
+      freien Bauen
+- [x] Alltag, Vermutung, Frage, Merksatz im Querformat: Anschauung bzw. Schaltung links
+- [x] Merksatz zeigt die eigene gelöste Schaltung; nach dem Lösen klingt er unter dem Brett an
+- [ ] Variante D für Sandkasten und große Level: Brett füllt das Fenster, Aufgabe schwebend,
+      Bauteile als Dock
+- [ ] Ziele am Bauteil zeigen (z. B. „Ziel ≈ 4,5 V“ am Voltmeter)
+- [ ] Kurzer Übergang zwischen den Schritten, damit die Bühne als dieselbe wirkt
+- [x] Brett in Originalgröße (100 % = Prototyp), zu große Bretter bis 70 % verkleinert;
+      Zoom (Mausrad) und Verschieben (Leertaste/mittlere Maustaste); Frei bauen auf 14 × 9
+- [ ] Zusatzbausteine (z. B. Funktionsansicht beim Öffner) ohne Scrollen unterbringen
+- [x] Panels als eigenständige Bausteine, damit Mobil später anders anordnen kann
+- [x] Kopfleiste: Modus, Levelnavigation, Ton, Schaltzeichen, Einstellungen
+- [x] Einstellungen (gespeichert): Ziehhilfe, Flussanimation, Ton + Lautstärke
+- [x] Tasten R (drehen) und Esc (zurück zum Verdrahten)
 - [ ] Bauteile verschieben (Ziehen mit Modifikator oder eigenes Werkzeug)
+- [ ] Messwerte als Liste (Spannung/Strom je Bauteil, nicht nur am Brett) – Platz dafür
+      finden, ohne wieder eine Seitenspalte aufzumachen
+- [ ] Linke Spalte bei Leveln ohne Bauteile sinnvoll nutzen (z. B. Schaltzeichen des Levels)
 
 ## 4. Versuche, Bewertung, Fehlerdiagnose
 
@@ -64,7 +84,8 @@ Schritte wieder ansehbar, spätere gesperrt (entschieden 2026-10-22).
 
 ## 6. Sounds
 
-- [ ] Dezente Effekte per Web Audio (kein Asset nötig), gut sichtbarer Stummschalter
+- [x] Stummschalter in der Kopfleiste und Lautstärke in den Einstellungen (ohne Töne)
+- [ ] Dezente Effekte per Web Audio (kein Asset nötig), an `settings.sound`/`volume` hängen
 
 ## Später / offen
 

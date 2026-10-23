@@ -12,6 +12,7 @@ import {
   place,
   release,
   removePart,
+  snapToTerminals,
   type EditContext,
 } from "./editing";
 
@@ -134,5 +135,41 @@ describe("Bedienzustand", () => {
     const back = carryOperatingState(before, now);
     expect(back.parts.S1.closed).toBe(true);
     expect(back.wires).toEqual(before.wires);
+  });
+});
+
+describe("Ziehhilfe", () => {
+  const board: EditContext = { board: { W: 5, H: 5 }, mode: "level" };
+  const lamp = (x: number, y: number, orient: "h" | "v") =>
+    ({ type: "lamp", x, y, orient, user: true }) as const;
+
+  it("verbindet einen Punkt mit dem Anschluss, der darauf zeigt", () => {
+    const c: Circuit = { parts: { E1: lamp(2, 1, "v") }, wires: wires(["0,2 2,2"]) };
+    expect(snapToTerminals(c, board, "2,2").wires[wireKey("2,1", "2,2")]).toEqual({});
+  });
+
+  it("schließt auch eine Leitung an, die nur vorbeiläuft", () => {
+    const c: Circuit = { parts: { E1: lamp(2, 1, "v") }, wires: wires(["0,2 4,2"]) };
+    expect(snapToTerminals(c, board, "2,2").wires[wireKey("2,1", "2,2")]).toEqual({});
+  });
+
+  it("verbindet alle Anschlüsse, die auf den Punkt zeigen", () => {
+    const c: Circuit = {
+      parts: { E1: lamp(2, 1, "v"), E2: lamp(2, 3, "v") },
+      wires: wires(["0,2 2,2"]),
+    };
+    const n = snapToTerminals(c, board, "2,2");
+    expect(n.wires[wireKey("2,1", "2,2")]).toEqual({});
+    expect(n.wires[wireKey("2,2", "2,3")]).toEqual({});
+  });
+
+  it("verbindet nichts, wenn kein Anschluss auf den Punkt zeigt", () => {
+    const c: Circuit = { parts: { E1: lamp(2, 1, "h") }, wires: wires(["0,2 2,2"]) };
+    expect(snapToTerminals(c, board, "2,2")).toBe(c);
+  });
+
+  it("verbindet keine Leitungen miteinander, die nur nebeneinander liegen", () => {
+    const c: Circuit = { parts: {}, wires: wires(["0,1 4,1", "0,2 4,2"]) };
+    expect(snapToTerminals(c, board, "2,2")).toBe(c);
   });
 });

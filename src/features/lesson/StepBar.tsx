@@ -14,8 +14,8 @@ interface Props {
 export function StepBar({ level, state, onPick }: Props) {
   if (level.steps.length < 2) return null;
   return (
-    <nav aria-label="Schritte dieses Levels" className="mb-3">
-      <ol className="flex items-center gap-1 overflow-x-auto pb-1">
+    <nav aria-label="Schritte dieses Levels">
+      <ol className="flex items-center justify-center gap-1 overflow-x-auto pb-1">
         {level.steps.map((st, i) => {
           const done = stepProgress(state, st.id).done;
           const current = i === state.index;
@@ -25,7 +25,7 @@ export function StepBar({ level, state, onPick }: Props) {
               {i > 0 && (
                 <span
                   aria-hidden="true"
-                  className={`h-px w-3 ${done || current ? "bg-stone-400" : "bg-stone-200"}`}
+                  className={`h-px w-5 ${done || current ? "bg-stone-400" : "bg-stone-200"}`}
                 />
               )}
               <button
@@ -34,7 +34,7 @@ export function StepBar({ level, state, onPick }: Props) {
                 disabled={!reachable}
                 aria-current={current ? "step" : undefined}
                 aria-label={`${i + 1}. ${st.title ?? KIND_LABEL[st.kind]}${done ? ", erledigt" : reachable ? "" : ", gesperrt"}`}
-                className={`flex min-h-9 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition ${
+                className={`flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition ${
                   current
                     ? "border-stone-800 bg-stone-800 text-white"
                     : done

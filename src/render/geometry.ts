@@ -7,3 +7,9 @@ export const CELL = 60;
 export const PAD_X = 20,
   PAD_B = 6;
 export const center = (i: number) => i * CELL + CELL / 2;
+
+/** Ausdehnung der viewBox eines Bretts mit W × H Punkten (samt Beschriftungsrand). */
+export const boardExtent = (W: number, H: number) => ({
+  w: W * CELL + PAD_X * 2,
+  h: H * CELL + PAD_B,
+});

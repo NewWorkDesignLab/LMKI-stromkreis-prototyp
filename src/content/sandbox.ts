@@ -27,13 +27,14 @@ export const SANDBOX: BuildStep = {
   palette: SANDBOX_PALETTE,
   task: "",
   labelSwitches: true,
-  W: 9,
-  H: 6,
+  /* Groß genug für mehrere Kreise nebeneinander; das Brett lässt sich zoomen. */
+  W: 14,
+  H: 9,
   showValues: true,
   circuit: {
     parts: {
-      G1: { type: "battery", x: 1, y: 2, orient: "v" },
-      E1: { type: "lamp", x: 7, y: 2, orient: "v" },
+      G1: { type: "battery", x: 2, y: 4, orient: "v" },
+      E1: { type: "lamp", x: 8, y: 4, orient: "v" },
     },
     wires: {},
   },

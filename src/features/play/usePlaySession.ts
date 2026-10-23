@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { BuildStep, CheckResult } from "../../domain/types";
+import type { BuildStep, CheckResult, Circuit } from "../../domain/types";
 import { cloneCircuit, emptyCircuit } from "../../engine/circuit";
 import { checkLevel } from "../../engine/goals";
 import { latchTripped, type PlayMode } from "../../engine/editing";
@@ -9,9 +9,12 @@ import { useBoardEditor } from "./useBoardEditor";
 
 const NOT_PLAYING: CheckResult = { items: [], won: false };
 
-interface Callbacks {
-  onSolved?: () => void;
+interface Options {
+  /** Ziele erreicht; mit der Schaltung, die sie erreicht hat */
+  onSolved?: (circuit: Circuit) => void;
   onReset?: () => void;
+  /** Ziehhilfe (Einstellung) */
+  snapWires?: boolean;
 }
 
 /* Ein Spielversuch an einem Bauschritt: Brett, Simulation, Zielprüfung und alles, was
@@ -21,9 +24,9 @@ export function usePlaySession(
   level: BuildStep,
   mode: PlayMode,
   active: boolean,
-  { onSolved, onReset }: Callbacks = {},
+  { onSolved, onReset, snapWires = false }: Options = {},
 ) {
-  const editor = useBoardEditor(level, mode, active);
+  const editor = useBoardEditor(level, mode, active, snapWires);
   const { circuit, update, commit } = editor;
   const [seen, setSeen] = useState(false);
 
@@ -46,7 +49,7 @@ export function usePlaySession(
   const won = check.won && (!level.contactLab || contactLab.done);
 
   useEffect(() => {
-    if (won && mode === "level") onSolved?.();
+    if (won && mode === "level") onSolved?.(circuit);
     // onSolved bewusst nicht in den Abhängigkeiten: gemeldet wird beim Übergang zu „gelöst“
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [won]);

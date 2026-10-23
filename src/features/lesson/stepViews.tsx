@@ -2,6 +2,8 @@ import { ArrowRight, CheckCircle2, CircleHelp, Lightbulb, XCircle } from "lucide
 import { useState, type ComponentType, type ReactNode } from "react";
 import type {
   AnswerValue,
+  Block,
+  Circuit,
   ContextStep,
   LevelDef,
   PredictStep,
@@ -14,11 +16,13 @@ import {
   stepProgress,
   type Evaluation,
   type LessonState,
+  type Stage,
   type StepProgress,
 } from "../../engine/lesson";
 import { unitAliases } from "../../engine/quantity";
 import { BuildStepView } from "./BuildStepView";
 import { Blocks } from "./Blocks";
+import { CircuitStage, StageLayout, VisualStage, splitVisual } from "./Stage";
 
 /** Was jede Schrittdarstellung bekommt. */
 export interface StepViewProps<S extends Step = Step> {
@@ -31,7 +35,10 @@ export interface StepViewProps<S extends Step = Step> {
   overlayOpen: boolean;
   proceed: () => void;
   proceedLabel: string;
-  complete: () => void;
+  /** Schaltung neben dem Text (stageOf); null, wenn das Level keinen Bauschritt hat */
+  stage: Stage | null;
+  /** Schritt erledigt; ein Bauschritt gibt die Schaltung mit, die ihn gelöst hat */
+  complete: (circuit?: Circuit) => void;
   submit: (value: AnswerValue) => Evaluation;
   onReset: () => void;
 }
@@ -73,15 +80,35 @@ function Card({ children }: { children: ReactNode }) {
   return <section className="rounded-2xl border border-stone-200 bg-white p-4">{children}</section>;
 }
 
+/* Was auf die Bühne kommt: eine Anschauung aus den eigenen Bausteinen hat Vorrang – sie
+   wurde für diesen Schritt ausgesucht –, sonst die Schaltung des Levels. Der Merksatz
+   zeigt immer die Schaltung, weil er sich auf sie bezieht. */
+function pickStage(
+  blocks: Block[] | undefined,
+  stage: Stage | null,
+  circuitFirst = false,
+): { el: ReactNode; rest: Block[] } {
+  const { visual, rest } = splitVisual(blocks);
+  const circuit = stage && <CircuitStage stage={stage} />;
+  if (circuitFirst && circuit) return { el: circuit, rest: blocks ?? [] };
+  return visual
+    ? { el: <VisualStage block={visual} />, rest }
+    : { el: circuit, rest: blocks ?? [] };
+}
+
 function ContextView({ step, proceed, proceedLabel }: StepViewProps<ContextStep>) {
+  /* Ein Einstieg zeigt nur, was er selbst mitbringt – die Schaltung kommt erst später. */
+  const { el, rest } = pickStage(step.blocks, null);
   return (
-    <Card>
-      {step.heading && <h2 className="mb-3 text-base font-semibold">{step.heading}</h2>}
-      <Blocks blocks={step.blocks} />
-      <div className="mt-4 flex">
-        <ProceedButton label={proceedLabel} onClick={proceed} />
-      </div>
-    </Card>
+    <StageLayout stage={el}>
+      <Card>
+        {step.heading && <h2 className="mb-3 text-base font-semibold">{step.heading}</h2>}
+        <Blocks blocks={rest} />
+        <div className="mt-4 flex">
+          <ProceedButton label={proceedLabel} onClick={proceed} />
+        </div>
+      </Card>
+    </StageLayout>
   );
 }
 
@@ -136,6 +163,7 @@ function ChoiceList({
 function PredictView({
   step,
   progress,
+  stage,
   submit,
   proceed,
   proceedLabel,
@@ -143,50 +171,60 @@ function PredictView({
   const chosen = progress.answer?.k === "choice" ? progress.answer.ids : [];
   const [sel, setSel] = useState<string[]>(chosen);
   const [error, setError] = useState<string | null>(null);
+  const { el, rest } = pickStage(step.blocks, stage);
   return (
-    <Card>
-      <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-400">
-        <CircleHelp size={14} aria-hidden="true" /> Deine Vermutung
-      </p>
-      <h2 className="mb-3 text-base font-semibold">{step.question}</h2>
-      <Blocks blocks={step.blocks} />
-      <div className="mt-3">
-        <ChoiceList
-          name={step.id}
-          choices={step.choices}
-          multiple={false}
-          selected={progress.done ? chosen : sel}
-          onChange={setSel}
-          disabled={progress.done}
-        />
-      </div>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-      <div className="mt-4 flex items-center gap-3">
-        {progress.done ? (
-          <>
-            <p className="text-sm text-stone-500">
-              Festgehalten. Ob du richtig liegst, siehst du am Ende.
-            </p>
-            <ProceedButton label={proceedLabel} onClick={proceed} />
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              const r = submit({ k: "choice", ids: sel });
-              setError("error" in r ? r.error : null);
-            }}
-            className="ml-auto min-h-11 rounded-lg bg-stone-800 px-4 text-sm font-medium text-white"
-          >
-            Vermutung festhalten
-          </button>
-        )}
-      </div>
-    </Card>
+    <StageLayout stage={el}>
+      <Card>
+        <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-stone-400">
+          <CircleHelp size={14} aria-hidden="true" /> Deine Vermutung
+        </p>
+        <h2 className="mb-3 text-base font-semibold">{step.question}</h2>
+        <Blocks blocks={rest} />
+        <div className="mt-3">
+          <ChoiceList
+            name={step.id}
+            choices={step.choices}
+            multiple={false}
+            selected={progress.done ? chosen : sel}
+            onChange={setSel}
+            disabled={progress.done}
+          />
+        </div>
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        <div className="mt-4 flex items-center gap-3">
+          {progress.done ? (
+            <>
+              <p className="text-sm text-stone-500">
+                Festgehalten. Ob du richtig liegst, siehst du am Ende.
+              </p>
+              <ProceedButton label={proceedLabel} onClick={proceed} />
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                const r = submit({ k: "choice", ids: sel });
+                setError("error" in r ? r.error : null);
+              }}
+              className="ml-auto min-h-11 rounded-lg bg-stone-800 px-4 text-sm font-medium text-white"
+            >
+              Vermutung festhalten
+            </button>
+          )}
+        </div>
+      </Card>
+    </StageLayout>
   );
 }
 
-function QuizView({ step, progress, submit, proceed, proceedLabel }: StepViewProps<QuizStep>) {
+function QuizView({
+  step,
+  progress,
+  stage,
+  submit,
+  proceed,
+  proceedLabel,
+}: StepViewProps<QuizStep>) {
   const spec = step.answer;
   const [sel, setSel] = useState<string[]>([]);
   const [text, setText] = useState("");
@@ -195,116 +233,134 @@ function QuizView({ step, progress, submit, proceed, proceedLabel }: StepViewPro
     setResult(submit(spec.k === "choice" ? { k: "choice", ids: sel } : { k: "number", text }));
   };
   const solved = progress.done;
+  const { el, rest } = pickStage(step.blocks, stage);
   return (
-    <Card>
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400">Frage</p>
-      <h2 className="mb-3 text-base font-semibold">{step.question}</h2>
-      <Blocks blocks={step.blocks} />
-      <form
-        className="mt-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          check();
-        }}
-      >
-        {spec.k === "choice" ? (
-          <ChoiceList
-            name={step.id}
-            choices={spec.choices}
-            multiple={spec.correct.length > 1}
-            selected={sel}
-            onChange={setSel}
-            disabled={solved}
-          />
-        ) : (
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              aria-label={`Antwort in ${unitAliases(spec.unit)[0]}`}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              inputMode="decimal"
+    <StageLayout stage={el}>
+      <Card>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400">Frage</p>
+        <h2 className="mb-3 text-base font-semibold">{step.question}</h2>
+        <Blocks blocks={rest} />
+        <form
+          className="mt-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            check();
+          }}
+        >
+          {spec.k === "choice" ? (
+            <ChoiceList
+              name={step.id}
+              choices={spec.choices}
+              multiple={spec.correct.length > 1}
+              selected={sel}
+              onChange={setSel}
               disabled={solved}
-              placeholder="Zahl eingeben"
-              className="min-h-11 w-40 rounded-lg border border-stone-300 px-3 text-base"
             />
-            <span className="font-medium text-stone-600">{unitAliases(spec.unit)[0]}</span>
-          </label>
-        )}
-        {!solved && (
-          <button
-            type="submit"
-            className="mt-3 min-h-11 rounded-lg bg-stone-800 px-4 text-sm font-medium text-white"
+          ) : (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                aria-label={`Antwort in ${unitAliases(spec.unit)[0]}`}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                inputMode="decimal"
+                disabled={solved}
+                placeholder="Zahl eingeben"
+                className="min-h-11 w-40 rounded-lg border border-stone-300 px-3 text-base"
+              />
+              <span className="font-medium text-stone-600">{unitAliases(spec.unit)[0]}</span>
+            </label>
+          )}
+          {!solved && (
+            <button
+              type="submit"
+              className="mt-3 min-h-11 rounded-lg bg-stone-800 px-4 text-sm font-medium text-white"
+            >
+              Prüfen
+            </button>
+          )}
+        </form>
+        <div aria-live="polite">
+          {result && "error" in result && (
+            <p className="mt-2 text-sm text-red-600">{result.error}</p>
+          )}
+          {result && "correct" in result && !result.correct && !solved && (
+            <p className="mt-2 flex items-center gap-1.5 text-sm text-amber-700">
+              <XCircle size={16} aria-hidden="true" /> Noch nicht richtig – prüfe deinen Weg und
+              versuche es noch einmal.
+            </p>
+          )}
+          {solved && (
+            <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+              <CheckCircle2 size={16} aria-hidden="true" /> Richtig!
+            </p>
+          )}
+        </div>
+        {/* Der Lösungsweg kommt erst nach dem ersten Versuch: wer ihn vorher liest,
+          rechnet nicht mehr selbst. */}
+        {step.explanation && progress.attempts > 0 && (
+          <details
+            className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3"
+            open={solved}
           >
-            Prüfen
-          </button>
-        )}
-      </form>
-      <div aria-live="polite">
-        {result && "error" in result && <p className="mt-2 text-sm text-red-600">{result.error}</p>}
-        {result && "correct" in result && !result.correct && !solved && (
-          <p className="mt-2 flex items-center gap-1.5 text-sm text-amber-700">
-            <XCircle size={16} aria-hidden="true" /> Noch nicht richtig – prüfe deinen Weg und
-            versuche es noch einmal.
-          </p>
+            <summary className="cursor-pointer text-sm font-medium">Lösungsweg</summary>
+            <div className="mt-2">
+              <Blocks blocks={step.explanation} />
+            </div>
+          </details>
         )}
         {solved && (
-          <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-emerald-700">
-            <CheckCircle2 size={16} aria-hidden="true" /> Richtig!
-          </p>
-        )}
-      </div>
-      {/* Der Lösungsweg kommt erst nach dem ersten Versuch: wer ihn vorher liest,
-          rechnet nicht mehr selbst. */}
-      {step.explanation && progress.attempts > 0 && (
-        <details className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3" open={solved}>
-          <summary className="cursor-pointer text-sm font-medium">Lösungsweg</summary>
-          <div className="mt-2">
-            <Blocks blocks={step.explanation} />
+          <div className="mt-4 flex">
+            <ProceedButton label={proceedLabel} onClick={proceed} />
           </div>
-        </details>
-      )}
-      {solved && (
-        <div className="mt-4 flex">
-          <ProceedButton label={proceedLabel} onClick={proceed} />
-        </div>
-      )}
-    </Card>
+        )}
+      </Card>
+    </StageLayout>
   );
 }
 
-function SummaryView({ step, level, lesson, proceed, proceedLabel }: StepViewProps<SummaryStep>) {
+function SummaryView({
+  step,
+  level,
+  lesson,
+  stage,
+  proceed,
+  proceedLabel,
+}: StepViewProps<SummaryStep>) {
   const predict = level.steps.find(
     (s): s is PredictStep => s.kind === "predict" && s.id === step.recall,
   );
   const said = predict && stepProgress(lesson, predict.id).answer;
   const text = (id: string) => predict?.choices.find((c) => c.id === id)?.text;
   const saidId = said?.k === "choice" ? said.ids[0] : undefined;
+  const { el, rest } = pickStage(step.blocks, stage, true);
   return (
-    <Card>
-      <p className="flex gap-2 text-base font-medium leading-snug text-emerald-900">
-        <Lightbulb size={20} className="mt-0.5 shrink-0 text-amber-500" aria-hidden="true" />
-        {step.lesson}
-      </p>
-      {predict && saidId && (
-        <div className="mt-3 rounded-lg bg-stone-50 p-3 text-sm">
-          <p>
-            Deine Vermutung: <strong>{text(saidId)}</strong>
-          </p>
-          {predict.correct && (
-            <p className="mt-1">
-              {saidId === predict.correct
-                ? "Genau so ist es."
-                : `Tatsächlich: ${text(predict.correct)}`}
+    <StageLayout stage={el}>
+      <Card>
+        <p className="flex gap-2 text-base font-medium leading-snug text-emerald-900">
+          <Lightbulb size={20} className="mt-0.5 shrink-0 text-amber-500" aria-hidden="true" />
+          {step.lesson}
+        </p>
+        {predict && saidId && (
+          <div className="mt-3 rounded-lg bg-stone-50 p-3 text-sm">
+            <p>
+              Deine Vermutung: <strong>{text(saidId)}</strong>
             </p>
-          )}
+            {predict.correct && (
+              <p className="mt-1">
+                {saidId === predict.correct
+                  ? "Genau so ist es."
+                  : `Tatsächlich: ${text(predict.correct)}`}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="mt-3">
+          <Blocks blocks={rest} />
         </div>
-      )}
-      <div className="mt-3">
-        <Blocks blocks={step.blocks} />
-      </div>
-      <div className="mt-4 flex">
-        <ProceedButton label={proceedLabel} onClick={proceed} />
-      </div>
-    </Card>
+        <div className="mt-4 flex">
+          <ProceedButton label={proceedLabel} onClick={proceed} />
+        </div>
+      </Card>
+    </StageLayout>
   );
 }

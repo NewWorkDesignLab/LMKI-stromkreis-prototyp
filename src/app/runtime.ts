@@ -9,6 +9,12 @@ import { ContentService } from "../services/content";
 import { EventBus, type LearningEvent } from "../services/events";
 import { MemoryProgressStore, type ProgressStore } from "../services/progress";
 import { linearSequencer, type LevelSequencer } from "../services/sequencer";
+import {
+  MemorySettingsStore,
+  readSettings,
+  type Settings,
+  type SettingsStore,
+} from "../services/settings";
 import { createStore, type Store } from "../services/store";
 
 /** Alles, was sich zwischen Spielzügen ändert und die Oberfläche steuert. */
@@ -22,6 +28,7 @@ export interface RuntimeState {
   themeId: string;
   /** Wird hochgezählt, wenn ein Thema ersetzt wird, damit die Oberfläche es neu anwendet */
   themeRevision: number;
+  settings: Settings;
 }
 
 /** Austauschbare Teile. Alles hat einen Standard; wer etwas anderes will, übergibt es hier. */
@@ -32,6 +39,7 @@ export interface RuntimeOptions {
   sequencer?: LevelSequencer;
   attemptPolicy?: AttemptPolicy;
   themes?: ThemeDef[];
+  settings?: SettingsStore;
 }
 
 /* Wurzel der Anwendungsschicht: hält Inhalt, Fortschritt, Bewertung und den
@@ -45,6 +53,7 @@ export class Runtime {
   readonly state: Store<RuntimeState>;
   sequencer: LevelSequencer;
   attemptPolicy: AttemptPolicy;
+  private settingsStore: SettingsStore;
   private themes = new Map<string, ThemeDef>();
 
   constructor(opts: RuntimeOptions = {}) {
@@ -53,6 +62,7 @@ export class Runtime {
     this.assessment = opts.assessment ?? new TallyAssessment();
     this.sequencer = opts.sequencer ?? linearSequencer;
     this.attemptPolicy = opts.attemptPolicy ?? unlimitedAttempts;
+    this.settingsStore = opts.settings ?? new MemorySettingsStore();
     for (const t of opts.themes ?? THEMES) this.themes.set(t.id, t);
 
     const order = this.content.defaultOrder();
@@ -63,6 +73,7 @@ export class Runtime {
       solved: this.progress.solvedIds(),
       themeId: DEFAULT_THEME.id,
       themeRevision: 0,
+      settings: this.settingsStore.load(),
     });
     this.report({ type: "level_started", levelId: order[0], at: Date.now() });
   }
@@ -152,6 +163,14 @@ export class Runtime {
     if (!this.themes.has(id)) return false;
     this.state.set({ themeId: id });
     return true;
+  }
+
+  /* ---- Einstellungen ---- */
+
+  setSettings(patch: Partial<Settings>) {
+    const settings = readSettings({ ...this.state.get().settings, ...patch });
+    this.settingsStore.save(settings);
+    this.state.set({ settings });
   }
 }
 

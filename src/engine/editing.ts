@@ -17,6 +17,8 @@ import type {
 } from "../domain/types";
 import {
   OPPOSITE,
+  SIDES,
+  neighbor,
   nextPartId,
   parsePoint,
   partAt,
@@ -25,7 +27,7 @@ import {
   wireKey,
   wiresAt,
 } from "./circuit";
-import { P, ROTATABLE, portsOf } from "./parts";
+import { P, ROTATABLE, hasPort, portsOf } from "./parts";
 
 export type PlayMode = "level" | "sandbox";
 
@@ -99,6 +101,21 @@ export function canConnect(c: Circuit, ctx: EditContext, a: PointKey, b: PointKe
 export function connect(c: Circuit, ctx: EditContext, a: PointKey, b: PointKey): Circuit {
   if (!canConnect(c, ctx, a, b)) return c;
   return { ...c, wires: { ...c.wires, [wireKey(a, b)]: {} } };
+}
+
+/* Ziehhilfe: ein Punkt, den eine Leitung erreicht, wird mit jedem Bauteilanschluss
+   verbunden, der genau auf ihn zeigt – man muss die Leitung nicht erst über das Bauteil
+   ziehen. Das ist das Gefühl des Prototyps, aber nur für Bauteilanschlüsse: Leitungen,
+   die nebeneinander liegen, verbinden sich weiterhin nicht. Bewusst auch beim Vorbeiziehen
+   (wer an einer Quelle entlangzieht, will sie meist anschließen); deshalb ist die
+   Ziehhilfe eine Einstellung und standardmäßig aus. */
+export function snapToTerminals(c: Circuit, ctx: EditContext, p: PointKey): Circuit {
+  if (partAt(c, p) || !isFree(ctx.board, p)) return c;
+  return SIDES.reduce((n, s) => {
+    const q = neighbor(p, s);
+    const id = partAt(n, q);
+    return id && hasPort(n.parts[id], OPPOSITE[s]) ? connect(n, ctx, p, q) : n;
+  }, c);
 }
 
 export function disconnect(c: Circuit, ctx: EditContext, k: WireKey): Circuit {

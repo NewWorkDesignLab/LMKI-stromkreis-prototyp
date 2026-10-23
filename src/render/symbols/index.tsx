@@ -10,8 +10,6 @@ import { buzzerEl, meterEl, motorEl } from "./round";
 import { spdtEl } from "./spdt";
 import { switchEl } from "./switch";
 
-export * from "./icons";
-
 export type GlyphSim = Pick<
   SimResult,
   "glow" | "crossLive" | "lit" | "bright" | "overload" | "tripped" | "short"

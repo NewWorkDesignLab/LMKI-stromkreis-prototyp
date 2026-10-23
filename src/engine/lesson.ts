@@ -1,7 +1,16 @@
 /* Ablauf eines Levels als reine Funktionen: welcher Schritt aktiv ist, welche erledigt
    sind, wohin man springen darf und wie eine Antwort ausfällt. Die Oberfläche hält nur
    den Zustand und meldet Ereignisse; die Regeln stehen hier und sind getestet. */
-import type { AnswerSpec, AnswerValue, LevelDef, Step, StepId } from "../domain/types";
+import type {
+  AnswerSpec,
+  AnswerValue,
+  BuildStep,
+  Circuit,
+  LevelDef,
+  Step,
+  StepId,
+  SummaryStep,
+} from "../domain/types";
 import { parseQuantity, withinTolerance } from "./quantity";
 
 export interface StepProgress {
@@ -11,6 +20,8 @@ export interface StepProgress {
   answer?: AnswerValue;
   /** letzte Antwort richtig; bei Vorhersagen ohne `correct` nicht gesetzt */
   correct?: boolean;
+  /** Bauschritt: die Schaltung im Moment des (letzten) Lösens, samt Schalterstellung */
+  circuit?: Circuit;
 }
 
 export interface LessonState {
@@ -56,13 +67,57 @@ const patch = (s: LessonState, id: StepId, p: Partial<StepProgress>): LessonStat
   progress: { ...s.progress, [id]: { ...stepProgress(s, id), ...p } },
 });
 
-/** Markiert einen Schritt als erledigt (Lesen bestätigt, Bauziel erreicht). */
-export function complete(s: LessonState, id: StepId): LessonState {
-  return stepProgress(s, id).done ? s : patch(s, id, { done: true });
+/* Markiert einen Schritt als erledigt (Lesen bestätigt, Bauziel erreicht). Ein Bauschritt
+   bringt die Schaltung mit, die ihn gelöst hat; wird er nach einem Umbau erneut gelöst,
+   gilt die neue – gezeigt wird, was zuletzt funktioniert hat. */
+export function complete(s: LessonState, id: StepId, circuit?: Circuit): LessonState {
+  const prev = stepProgress(s, id);
+  if (prev.done && (!circuit || circuit === prev.circuit)) return s;
+  return patch(s, id, { done: true, ...(circuit && { circuit }) });
 }
 
 export const isLessonDone = (level: Pick<LevelDef, "steps">, s: LessonState) =>
   level.steps.length > 0 && frontier(level, s) === level.steps.length;
+
+/* ---------- Bühne ---------- */
+
+/** Woher die Schaltung auf der Bühne stammt – die Oberfläche beschriftet danach. */
+export type StageSource = "own" | "solution" | "start";
+
+export interface Stage {
+  /** Bauschritt, zu dem die Schaltung gehört (Brettgröße, Wände, Anzeigeoptionen) */
+  build: BuildStep;
+  circuit: Circuit;
+  source: StageSource;
+}
+
+/* Welche Schaltung ein Schritt neben seinem Text zeigt, damit Vermutung, Frage und
+   Merksatz sichtbar beim Level bleiben. Nach einem Bauschritt ist es die eigene gelöste
+   Schaltung (nicht die Musterlösung: bei mehreren Lösungen soll man sehen, was man selbst
+   gebaut hat). Fehlt sie – etwa weil das Level offen ist und der Bauschritt übersprungen
+   wurde –, die Musterlösung, sonst der Ausgangsaufbau. Vor dem ersten Bauschritt immer der
+   Ausgangsaufbau des nächsten: die Lösung vorab zu zeigen, nähme das Bauen vorweg. */
+export function stageOf(level: Pick<LevelDef, "steps">, s: LessonState, i: number): Stage | null {
+  const isBuild = (st: Step): st is BuildStep => st.kind === "build";
+  const before = level.steps.slice(0, i).filter(isBuild).pop();
+  if (before) {
+    const own = stepProgress(s, before.id).circuit;
+    if (own) return { build: before, circuit: own, source: "own" };
+    if (before.solution) return { build: before, circuit: before.solution, source: "solution" };
+    return { build: before, circuit: before.circuit, source: "start" };
+  }
+  const after = level.steps.slice(i + 1).find(isBuild);
+  return after ? { build: after, circuit: after.circuit, source: "start" } : null;
+}
+
+/** Der Merksatz, auf den ein Bauschritt hinarbeitet: der nächste vor dem nächsten Bauen. */
+export function summaryAfter(level: Pick<LevelDef, "steps">, i: number): SummaryStep | null {
+  for (const st of level.steps.slice(i + 1)) {
+    if (st.kind === "summary") return st;
+    if (st.kind === "build") return null;
+  }
+  return null;
+}
 
 /* ---------- Antworten ---------- */
 

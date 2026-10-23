@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LevelDef, PredictStep, QuizStep } from "../domain/types";
+import type { BuildStep, Circuit, LevelDef, PredictStep, QuizStep } from "../domain/types";
 import {
   advance,
   answer,
@@ -8,7 +8,9 @@ import {
   goTo,
   isLessonDone,
   isReachable,
+  stageOf,
   startLesson,
+  summaryAfter,
 } from "./lesson";
 import { parseQuantity } from "./quantity";
 
@@ -63,6 +65,68 @@ describe("Ablauf", () => {
     for (const id of ["alltag", "vermutung", "rechnen"]) s = complete(s, id);
     expect(isLessonDone(level, s)).toBe(false);
     expect(isLessonDone(level, complete(s, "merksatz"))).toBe(true);
+  });
+});
+
+const start: Circuit = { parts: {}, wires: {} };
+const solution: Circuit = { parts: {}, wires: { "0,0|1,0": {} } };
+const bauen: BuildStep = {
+  kind: "build",
+  id: "bauen",
+  W: 2,
+  H: 1,
+  palette: ["wire"],
+  task: "…",
+  circuit: start,
+  solution,
+};
+const withBuild: Pick<LevelDef, "steps"> = {
+  steps: [
+    predict,
+    bauen,
+    quiz,
+    { kind: "summary", id: "merksatz", lesson: "Merke", recall: "vermutung" },
+  ],
+};
+
+describe("Bühne", () => {
+  it("zeigt vor dem Bauen den Ausgangsaufbau, nie die Lösung", () => {
+    expect(stageOf(withBuild, startLesson(), 0)).toEqual({
+      build: bauen,
+      circuit: start,
+      source: "start",
+    });
+  });
+
+  it("zeigt nach dem Bauen die eigene gelöste Schaltung", () => {
+    const own: Circuit = { parts: {}, wires: { "0,0|1,0": { lock: false } } };
+    const s = complete(startLesson(), "bauen", own);
+    expect(stageOf(withBuild, s, 3)).toMatchObject({ circuit: own, source: "own" });
+  });
+
+  it("greift ohne eigene Schaltung auf die Musterlösung zurück", () => {
+    expect(stageOf(withBuild, startLesson(true), 3)).toMatchObject({
+      circuit: solution,
+      source: "solution",
+    });
+  });
+
+  it("merkt sich beim erneuten Lösen die neue Schaltung, ohne den Schritt neu zu erledigen", () => {
+    const a: Circuit = { parts: {}, wires: {} };
+    const b: Circuit = { parts: {}, wires: {} };
+    const s = complete(startLesson(), "bauen", a);
+    expect(complete(s, "bauen", a)).toBe(s);
+    expect(complete(s, "bauen")).toBe(s);
+    expect(complete(s, "bauen", b).progress.bauen.circuit).toBe(b);
+  });
+
+  it("hat ohne Bauschritt keine Schaltung", () => {
+    expect(stageOf(level, startLesson(), 1)).toBeNull();
+  });
+
+  it("findet den Merksatz, auf den ein Bauschritt hinarbeitet", () => {
+    expect(summaryAfter(withBuild, 1)?.lesson).toBe("Merke");
+    expect(summaryAfter(withBuild, 3)).toBeNull();
   });
 });
 

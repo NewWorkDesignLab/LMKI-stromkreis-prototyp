@@ -30,7 +30,7 @@ Bei der Erweiterung fiel auf, dass dieses Modell zwei Dinge nicht abbilden kann:
   Ohmsches Gesetz oder Messgeräte.
 
 Die Entscheidung war deshalb **beides**: das topologische Modell bleibt (es treibt Glühen und
-Flussanimation), darunter liegt zusätzlich ein echter Gleichstrom-Löser. Bewusst *kein*
+Flussanimation), darunter liegt zusätzlich ein echter Gleichstrom-Löser. Bewusst _kein_
 SPICE-Nachbau — nur so viel Physik, wie die Lernziele brauchen.
 
 ## 3. Projektaufbau
@@ -60,6 +60,7 @@ src/
     assessment.ts       Bewertung: Ereignisse → Profil je Kompetenz
     sequencer.ts        welches Level als nächstes (Standard: linear)
     attempts.ts         Versuchs-Richtlinie (Platzhalter, noch ohne Wirkung)
+    settings.ts         Einstellungen (Ziehhilfe, Ton, Flussanimation) + SettingsStore
     validate.ts         validateLevel – Prüfung für von außen kommende Level
     events.ts, store.ts
   app/
@@ -68,13 +69,14 @@ src/
     App.tsx             Kopfzeile, Levelwahl, Overlays
   api/                  Schnittstelle für Fremdsteuerung (KI), window.stromkreis
   theme/                Farbtokens als CSS-Variablen, Themen
-  render/               SVG: Board.tsx, symbols/ (ein Bauteil je Datei)
+  render/               SVG: Board.tsx, symbols/ (ein Bauteil je Datei), viewport.ts (Zoom-Rechnung)
   features/
     lesson/             Level als Schrittfolge: Schrittleiste, Darstellung je Schrittart, Textbausteine
-    play/               Spielfläche eines Bauschritts (Hooks + Komponenten)
+    play/               Bauschritt: PartPalette | Aufgabe, Brett (BoardViewport), Zustand (BuildPanels)
+    settings/           Einstellungsdialog
     tutorial/           Einführungsanimationen
     widgets/            Anschauungen (URI-Dreieck, Kühlschrank, Lichtschalter) und Funktionsansicht
-  ui/                   allgemeine Bausteine (Overlay, LevelPicker, Werkzeugsymbole)
+  ui/                   allgemeine Bausteine (Overlay, Toggle, LevelPicker, Werkzeuganzeige)
   styles/index.css      Tailwind + Animationen
 index.html, vite.config.ts, tailwind.config.js, tsconfig.json
 ```
@@ -221,8 +223,59 @@ zwischen benachbarten Punkten (`domain/types.ts`, Hilfen in `engine/circuit.ts`)
   Sicherung) nicht; sie bleibt beim Rückgängigmachen erhalten (`carryOperatingState`).
 - **Bedienung am Brett:** Ziehen verbindet Punkt für Punkt, auch von einem Bauteil aus.
   Rechtsklick löscht mit jedem Werkzeug (nah am Punkt: Bauteil bzw. Knoten, sonst die
-  Leitung daneben). Strg+Z / Strg+Y. Unter dem Zeiger zeigt das Brett, was passieren wird
+  Leitung daneben). Strg+Z / Strg+Y, R dreht die Ausrichtung des gewählten Bauteils, Esc
+  springt zurück aufs Verdrahten. Unter dem Zeiger zeigt das Brett, was passieren wird
   (Zielpunkt, Bauteilvorschau grün/rot, rot markierte Löschstelle).
+- **Ziehhilfe** (Einstellung, Standard aus): Jeder Punkt, den ein Leitungszug erreicht,
+  wird sofort mit allen Bauteilanschlüssen verbunden, die auf ihn zeigen
+  (`snapToTerminals`) – auch beim Vorbeiziehen, live während des Zugs. Das fühlt sich an
+  wie der Prototyp, gilt aber nur für Bauteilanschlüsse: nebeneinanderliegende Leitungen
+  verbinden sich weiterhin nicht. Gehört zur Geste, ein Strg+Z nimmt alles zurück.
+  Standard aus, weil „nur verbunden ist, was man verbindet“ die Grundregel des Bretts ist.
+
+### Oberfläche (Desktop)
+
+Ab `lg` (1024 px) füllt die Anwendung das Fenster: Kopfleiste (Modus, Levelnavigation,
+Ton, Schaltzeichen, Einstellungen), darunter die Schrittleiste und der aktuelle Schritt.
+Entschieden 2026-10-23 nach dem Vergleich mit dem kompakten Prototyp: alles, worauf man
+achten muss, liegt in Leserichtung direkt am Brett, nicht in Seitenspalten („Variante B“).
+
+**Bauschritt:**
+
+- **links** `PartPalette`: Verdrahten/Löschen, Bauteile nach Gruppen (Quellen, Schalten,
+  Verbraucher, Begrenzen & Schützen, Messen, Leitungen), farbig je Gruppe, darunter
+  Kurzinfo und Drehen fürs gewählte bzw. überfahrene Bauteil. **Farbe nur in der Palette**
+  – auf dem Brett bleiben die Schaltzeichen normgerecht schwarz (entschieden 2026-10-23).
+- **Mitte** eine Spalte, so breit wie das Brett (mindestens 40 rem, damit die Aufgabe
+  nicht in kurze Zeilen bricht), ab `xl` in der Fenstermitte:
+  - `TaskBar`: Aufgabe und Ziele als Häkchenreihe.
+  - `BoardViewport`: Im Level ist der Rahmen **so groß wie das Brett** in Originalgröße
+    (100 % = 60 px je Punkt, wie im Prototyp) plus Rand – ein kleines Level bleibt klein und
+    mittig. Zoom und Verschieben erscheinen nur, wenn das Brett nicht hineinpasst (dann bis
+    70 % verkleinert, `MIN_START_SCALE`, der Rest wird verschoben) und im freien Bauen, wo
+    der Rahmen die Fläche füllt. Mausrad zoomt um den Zeiger, Leertaste oder mittlere
+    Maustaste verschiebt.
+  - `StatusBar`: was die Schaltung tut, daneben Rückgängig, Wiederholen, Zurücksetzen
+    (Frei bauen: Leeren).
+  - `WinPanel` nach dem Lösen: „Geschafft“, der Merksatz klingt schon an, „Weiter“.
+  - Zusatzbausteine wie die Funktionsansicht stehen darunter; dann scrollt die Spalte.
+
+**Übrige Schritte im Querformat** (`features/lesson/Stage.tsx`): links eine Bühne, rechts der
+Text. Auf der Bühne steht die erste Anschauung (Widget, Bild) aus den Bausteinen des
+Schritts, sonst die Schaltung des Levels zum Ansehen – mit Simulation, ohne Bedienung.
+Welche Schaltung, regelt `stageOf` (engine/lesson): nach dem Bauen die **eigene gelöste
+Schaltung** (bei mehreren Lösungen sieht man, was man selbst gebaut hat), ohne sie die
+Musterlösung, vor dem Bauen nur der Ausgangsaufbau (die Lösung vorab nähme das Bauen
+vorweg). Der Merksatz zeigt immer die Schaltung. Ein Einstieg ohne Anschauung bleibt eine
+schmale Textspalte.
+
+Unter `lg` steht alles vorläufig untereinander.
+
+**Einstellungen** (`services/settings.ts`): Ziehhilfe, Flussanimation, Ton und Lautstärke
+(die Töne selbst fehlen noch, Phase 6). Sie ändern nie, was als gelöst gilt. Die Runtime
+hält sie im Zustand (`settings`, `setSettings`), gespeichert über einen austauschbaren
+`SettingsStore` – im Browser `localStorage`. Gespeicherte Werte gelten als Fremddaten:
+jedes Feld wird geprüft, was nicht passt, bekommt seinen Standardwert.
 
 Bauteileigenschaften:
 
@@ -242,43 +295,43 @@ Bauteileigenschaften:
 
 ## 7. Level
 
-| # | Kapitel / Level | Konzept |
-|---|---|---|
-| | **Der Stromkreis** | |
-| 1 | Schließe den Stromkreis | geschlossener Stromkreis |
-| 2 | Der Schalter | gewollte Unterbrechung |
-| 3 | Reihenschaltung = UND | Reihe, UND-Logik |
-| 4 | Parallelschaltung – beide Lampen | Parallelzweige |
-| 5 | Wähle den Stromweg | eine Lampe muss aus bleiben |
-| | **Kurzschluss & Schutz** | |
-| 6 | Der Kurzschluss | überbrückte Lampe finden und löschen |
-| 7 | Die Sicherung | Überstromschutz |
-| 8 | Durchlass- und Sperrrichtung der LED | Durchlass- und Sperrrichtung |
-| 9 | Der Vorwiderstand | R = (Uq − UF) / I |
-| | **Schalter & Logik** | |
-| 10 | Der Taster | Schließer |
-| 11 | Parallelschaltung = ODER | ODER-Logik |
-| 12 | Der Wechselschalter | Umschalten statt Ein/Aus |
-| 13 | Die Wechselschaltung | Flurlicht, zwei korrespondierende Leitungen |
-| 14 | Motor und Summer | eigener Schalter je Zweig |
-| | **Größen & Messen** | |
-| 15 | Der Widerstand | Strombegrenzung |
-| 16 | Amperemeter in Reihe | richtige Einbauart |
-| 17 | Voltmeter parallel | richtige Einbauart |
-| 18 | Reihenschaltung teilt die Spannung | Spannungsteilung |
-| 19 | Parallelschaltung teilt den Strom | Stromteilung |
-| 20 | Ohmsches Gesetz | R = U / I rechnen |
-| | **Schaltplan lesen** | |
-| 21 | Knotenpunkt oder Kreuzung? | Knotenpunkt verbindet, Kreuzung nicht |
-| 22 | Am Knotenpunkt teilt sich der Strom | Knotenregel, Zweig- und Gesamtstrom |
-| 23 | Anders gezeichnet – UND | Topologie statt Geometrie |
-| 24 | Zwei Spannungsquellen in Reihe | Spannungen addieren sich bei richtiger Polung |
-| | **Neue Level (Test)** | *noch nicht einsortiert* |
-| 25 | Der Dimmer | Widerstand in Reihe regelt die Helligkeit |
-| 26 | Fehlersuche: Die Wechselschaltung | korrespondierende Leitungen gebrückt |
-| 27 | Das Licht im Schalter | LED parallel zum Schalter |
-| 28 | Drücken macht aus? | beide Kontaktarten im Vergleich, mit Funktionsansicht |
-| 29 | Der Not-Aus | Öffner in der Hauptleitung, Reihenfolge erzwungen |
+| #   | Kapitel / Level                      | Konzept                                               |
+| --- | ------------------------------------ | ----------------------------------------------------- |
+|     | **Der Stromkreis**                   |                                                       |
+| 1   | Schließe den Stromkreis              | geschlossener Stromkreis                              |
+| 2   | Der Schalter                         | gewollte Unterbrechung                                |
+| 3   | Reihenschaltung = UND                | Reihe, UND-Logik                                      |
+| 4   | Parallelschaltung – beide Lampen     | Parallelzweige                                        |
+| 5   | Wähle den Stromweg                   | eine Lampe muss aus bleiben                           |
+|     | **Kurzschluss & Schutz**             |                                                       |
+| 6   | Der Kurzschluss                      | überbrückte Lampe finden und löschen                  |
+| 7   | Die Sicherung                        | Überstromschutz                                       |
+| 8   | Durchlass- und Sperrrichtung der LED | Durchlass- und Sperrrichtung                          |
+| 9   | Der Vorwiderstand                    | R = (Uq − UF) / I                                     |
+|     | **Schalter & Logik**                 |                                                       |
+| 10  | Der Taster                           | Schließer                                             |
+| 11  | Parallelschaltung = ODER             | ODER-Logik                                            |
+| 12  | Der Wechselschalter                  | Umschalten statt Ein/Aus                              |
+| 13  | Die Wechselschaltung                 | Flurlicht, zwei korrespondierende Leitungen           |
+| 14  | Motor und Summer                     | eigener Schalter je Zweig                             |
+|     | **Größen & Messen**                  |                                                       |
+| 15  | Der Widerstand                       | Strombegrenzung                                       |
+| 16  | Amperemeter in Reihe                 | richtige Einbauart                                    |
+| 17  | Voltmeter parallel                   | richtige Einbauart                                    |
+| 18  | Reihenschaltung teilt die Spannung   | Spannungsteilung                                      |
+| 19  | Parallelschaltung teilt den Strom    | Stromteilung                                          |
+| 20  | Ohmsches Gesetz                      | R = U / I rechnen                                     |
+|     | **Schaltplan lesen**                 |                                                       |
+| 21  | Knotenpunkt oder Kreuzung?           | Knotenpunkt verbindet, Kreuzung nicht                 |
+| 22  | Am Knotenpunkt teilt sich der Strom  | Knotenregel, Zweig- und Gesamtstrom                   |
+| 23  | Anders gezeichnet – UND              | Topologie statt Geometrie                             |
+| 24  | Zwei Spannungsquellen in Reihe       | Spannungen addieren sich bei richtiger Polung         |
+|     | **Neue Level (Test)**                | _noch nicht einsortiert_                              |
+| 25  | Der Dimmer                           | Widerstand in Reihe regelt die Helligkeit             |
+| 26  | Fehlersuche: Die Wechselschaltung    | korrespondierende Leitungen gebrückt                  |
+| 27  | Das Licht im Schalter                | LED parallel zum Schalter                             |
+| 28  | Drücken macht aus?                   | beide Kontaktarten im Vergleich, mit Funktionsansicht |
+| 29  | Der Not-Aus                          | Öffner in der Hauptleitung, Reihenfolge erzwungen     |
 
 Kapitel 6 ist eine **Ablage**: die Level liegen hinter den 24 bestehenden, damit sie
 sich durchspielen lassen, ohne die vorhandene Reihenfolge zu verschieben. Welches
@@ -291,13 +344,13 @@ nacheinander; eine **Schrittleiste** zeigt, wo man steht. Erledigte Schritte las
 wieder öffnen, spätere erst, wenn der Weg dorthin frei ist (war das Level schon einmal
 gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt sind.
 
-| Art | Inhalt | erledigt, wenn … |
-|---|---|---|
-| `context` | Realitätsbezug/Erklärung aus Textbausteinen | „Weiter“ |
-| `predict` | Vorhersage mit Auswahl; festgehalten, nicht bewertet, danach unveränderlich | eine Antwort festgehalten |
-| `build` | das Brett (alles, was früher ein ganzes Level war) | die Ziele erreicht sind |
-| `quiz` | Auswahl (auch mehrere richtige) oder Zahl mit Einheit und Toleranz (Standard 2 %) | richtig beantwortet |
-| `summary` | Merksatz; `recall` löst eine frühere Vorhersage auf | „Weiter“ |
+| Art       | Inhalt                                                                            | erledigt, wenn …          |
+| --------- | --------------------------------------------------------------------------------- | ------------------------- |
+| `context` | Realitätsbezug/Erklärung aus Textbausteinen                                       | „Weiter“                  |
+| `predict` | Vorhersage mit Auswahl; festgehalten, nicht bewertet, danach unveränderlich       | eine Antwort festgehalten |
+| `build`   | das Brett (alles, was früher ein ganzes Level war)                                | die Ziele erreicht sind   |
+| `quiz`    | Auswahl (auch mehrere richtige) oder Zahl mit Einheit und Toleranz (Standard 2 %) | richtig beantwortet       |
+| `summary` | Merksatz; `recall` löst eine frühere Vorhersage auf                               | „Weiter“                  |
 
 - **Textbausteine statt HTML/Markdown** (`Block`: `p`, `list`, `formula`, `note`, `image`,
   `video`, `widget`). Level können über die API von außen kommen; Bausteine lassen sich
@@ -323,7 +376,7 @@ unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, 
 `contactLab: { closer: {contact, lamp}, opener: {contact, lamp} }` blendet unter dem Brett die **Funktionsansicht** ein: zwei
 aufgeschnittene Taster, in denen Stößel und Kontaktbrücke sich mitbewegen, dazu eine
 Schrittfolge, die zum Ausprobieren beider Kontakte auffordert. Sie zeigt den
-*Mechanismus*, den der Schaltplan grundsätzlich nicht zeigen kann — bewusst **neben**
+_Mechanismus_, den der Schaltplan grundsätzlich nicht zeigen kann — bewusst **neben**
 dem Brett und als „vereinfachte Funktionsansicht“ beschriftet, damit die Schaltplan-
 Sprache auf dem Brett unberührt bleibt. Das Muster taugt auch für den Wechselschalter
 oder später ein Relais.
@@ -347,7 +400,7 @@ gibt es die Falle nicht mehr.
 
 **Zwei benachbarte Zellen mit Anschlüssen sind elektrisch verbunden — immer.** Eine
 Rückleitung, die neben einem Abzweig verläuft, schließt ihn kurz. Level 12 war deshalb
-anfangs *unlösbar*: jeder mögliche Weg der Rückleitung berührte eine Stichleitung.
+anfangs _unlösbar_: jeder mögliche Weg der Rückleitung berührte eine Stichleitung.
 
 Beim Entwerfen also für jede Zelle der geplanten Lösung alle vier Nachbarn prüfen und
 Wände (`wall`) gezielt setzen. Faustregel: Abzweige so kurz wie möglich halten — im
@@ -359,15 +412,15 @@ dadurch gibt es keine Stichleitungen, die einen Korridor blockieren.
 Ziele stehen pro Level in `goals`; für Verbraucher ohne eigenes Ziel wird automatisch
 „leuchtet" bzw. „bleibt aus" ergänzt (gleichartige werden zu einer Zeile zusammengefasst).
 
-| Art | Bedeutung |
-|---|---|
-| `on` | Verbraucher an / aus |
-| `read` | Messgerät zeigt einen Wert im Bereich `min`–`max` |
-| `logic` | Lampe folgt `and` / `or` / `xor` / `id` / `not` über die genannten Schalter |
-| `toggle` | jeder einzelne Schalter kehrt den Zustand um (Wechselschaltung) |
-| `state` | die genannten Kontakte sind **jetzt** betätigt bzw. nicht betätigt |
-| `seen` | die in `latch` genannten Verbraucher liefen im Verlauf schon einmal gemeinsam |
-| `fuse` | die Sicherung hält |
+| Art      | Bedeutung                                                                     |
+| -------- | ----------------------------------------------------------------------------- |
+| `on`     | Verbraucher an / aus                                                          |
+| `read`   | Messgerät zeigt einen Wert im Bereich `min`–`max`                             |
+| `logic`  | Lampe folgt `and` / `or` / `xor` / `id` / `not` über die genannten Schalter   |
+| `toggle` | jeder einzelne Schalter kehrt den Zustand um (Wechselschaltung)               |
+| `state`  | die genannten Kontakte sind **jetzt** betätigt bzw. nicht betätigt            |
+| `seen`   | die in `latch` genannten Verbraucher liefen im Verlauf schon einmal gemeinsam |
+| `fuse`   | die Sicherung hält                                                            |
 
 `logic` und `toggle` **simulieren alle Schalterkombinationen durch**, nicht nur den aktuellen
 Zustand. Dadurch wird wirklich die Verdrahtung geprüft.
@@ -382,7 +435,7 @@ ließe sich sonst lösen, indem man erst den Not-Aus drückt und dann die Schalt
 die Anlage hätte nie gelaufen. `latch: { lit: [...] }` am Level merkt sich, dass die
 genannten Verbraucher einmal gemeinsam liefen; der Merker wird beim Levelwechsel **und**
 beim Zurücksetzen gelöscht. `toggle` gibt es, weil eine
-Wechselschaltung je nach Verdrahtung XOR *oder* XNOR ergibt — beides ist richtig, das
+Wechselschaltung je nach Verdrahtung XOR _oder_ XNOR ergibt — beides ist richtig, das
 gemeinsame Merkmal ist das Umschalten.
 
 Messgeräte-Level brauchen keine Sonderregel: wer ein Amperemeter parallel schaltet, macht
@@ -402,10 +455,10 @@ Kurzschluss und Überlastung lassen ein Level immer scheitern.
   es `link`); daran scheitert es auch nicht. Es scheitert am Platz: der Kreuzschalter
   allein braucht einen Block von rund 5 × 5 Zellen samt einer `cross`-Zelle, dazu
   kommen die zwei korrespondierenden Leitungen auf jeder Seite und die beiden
-  Wechselschalter. Das ergibt etwa 10 × 6 Zellen — das Brett wird bei 560 px
-  gedeckelt, die Symbole würden also spürbar schrumpfen. Machbar, aber ein eigener
-  Schritt, kein Beiwerk.
-- **Kein gespeicherter Fortschritt.** Der Zähler „x/24 gelöst" gilt nur für die laufende
+  Wechselschalter. Das ergibt etwa 10 × 6 Zellen. Seit dem Desktop-Layout (Oktober 2026)
+  füllt das Brett die Mitte und lässt sich zoomen, der Platz ist also kein Hindernis
+  mehr. Machbar, aber ein eigener Schritt, kein Beiwerk.
+- **Kein gespeicherter Fortschritt.** Gespeichert werden bisher nur die Einstellungen. Der Zähler „x/24 gelöst" gilt nur für die laufende
   Sitzung und wird bei jedem Neuladen zurückgesetzt. Das bleibt erstmal so festgeschrieben.
 - **Wenige automatisierte Tests.** `npm test` (vitest) prüft Grundfälle der Simulation und
   des Editierens, die Inhalts-Integrität und die API. Dass jedes Level lösbar ist, prüft noch
