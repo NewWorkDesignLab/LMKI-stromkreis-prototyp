@@ -41,6 +41,15 @@ interface Pos {
 
 type EraseTarget = { kind: "point"; at: PointKey } | { kind: "wire"; key: WireKey };
 
+/* Worauf der Zeiger zielt: der nächste Punkt und, fürs Löschen, Punkt oder Leitung. Nur das
+   wird gespeichert – der Hinweis daraus wird bei jedem Zeichnen neu abgeleitet, damit er
+   Drehen (R), Werkzeugwechsel und Änderungen am Brett sofort zeigt, ohne dass sich die Maus
+   bewegen muss. */
+interface Aim {
+  at: PointKey;
+  erase: EraseTarget;
+}
+
 /* Wie nah am Punkt der Zeiger sein muss, damit der Punkt gemeint ist und nicht die
    Leitung daneben – in Punktabständen. Deutlich unter 0,5, damit zwischen zwei Punkten
    sicher die Leitung getroffen wird. */
@@ -95,7 +104,7 @@ export function useBoardEditor(
   const [tool, setTool] = useState<ToolId>("wire");
   const [orient, setOrient] = useState<Orient>("h");
   const [isDrawing, setIsDrawing] = useState(false);
-  const [hint, setHint] = useState<BoardHint | null>(null);
+  const [aim, setAim] = useState<Aim | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
   const pressed = useRef<PartId | null>(null);
@@ -182,10 +191,8 @@ export function useBoardEditor(
   };
 
   /* ---- Hinweis unter dem Zeiger ---- */
-  const hintFor = (pos: Pos, erasing: boolean): BoardHint | null => {
-    const p = nearest(pos);
+  const hintFor = ({ at: p, erase: t }: Aim, erasing: boolean): BoardHint | null => {
     if (erasing) {
-      const t = eraseTarget(pos);
       if (t.kind === "wire") return circuit.wires[t.key] ? { kind: "eraseWire", key: t.key } : null;
       return erasePoint(circuit, ctx, t.at) !== circuit ? { kind: "erasePoint", at: t.at } : null;
     }
@@ -200,8 +207,13 @@ export function useBoardEditor(
     }
     return tool === "wire" || gesture.current?.kind === "draw" ? { kind: "point", at: p } : null;
   };
-  const showHint = (h: BoardHint | null) =>
-    setHint((old) => (JSON.stringify(old) === JSON.stringify(h) ? old : h));
+  /* neu zeichnen nur, wenn sich das Ziel ändert, nicht bei jedem Zeigerereignis */
+  const aimAt = (pos: Pos | null) => {
+    const a = pos && { at: nearest(pos), erase: eraseTarget(pos) };
+    setAim((old) => (JSON.stringify(old) === JSON.stringify(a) ? old : a));
+  };
+  const g = gesture.current;
+  const hint = aim && hintFor(aim, g ? g.kind === "erase" : tool === "erase");
 
   /* ---- Gesten ---- */
   const onDown = (e: PointerEvent<SVGSVGElement>) => {
@@ -248,9 +260,8 @@ export function useBoardEditor(
   const onMove = (e: PointerEvent<SVGSVGElement>) => {
     const pos = eventPos(e);
     const g = gesture.current;
-    if (!pos) return showHint(null);
-    showHint(hintFor(pos, g ? g.kind === "erase" : tool === "erase"));
-    if (!g) return;
+    aimAt(pos);
+    if (!pos || !g) return;
     const p = nearest(pos);
     if (g.kind === "erase") return eraseDrag(g, pos);
     /* verlässt der Zeiger den Startpunkt, ist es ein Zug und kein Tippen */
@@ -278,7 +289,7 @@ export function useBoardEditor(
     onPointerMove: onMove,
     onPointerUp: () => stop(true),
     onPointerLeave: () => {
-      showHint(null);
+      aimAt(null);
       stop(false);
     },
     onPointerCancel: () => stop(false),
