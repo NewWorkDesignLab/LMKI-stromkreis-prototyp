@@ -10,6 +10,7 @@ import type {
   SimResult,
 } from "../domain/types";
 import { cloneCircuit } from "./circuit";
+import { fmtA, fmtV } from "./format";
 import { CONSUMER } from "./parts";
 import { parseQuantity, withinTolerance } from "./quantity";
 import { simulate } from "./simulate";
@@ -97,6 +98,27 @@ export function measuredValue(
       circuit.parts[k].type === meter && withinTolerance(Math.abs(table[k] || 0), target, 1e-6),
   );
   return hit ? target : null;
+}
+
+/* Die Ziele eines gelösten Aufbaus im Rückblick (Merksatz-Schritt). Eigene Eingaben werden
+   nicht aufgehoben, deshalb liest die Rückschau Messwerte so ab, wie das Messgerät sie zeigt,
+   und nennt sie im Text. Ziele, die der Aufbau nicht (mehr) erfüllt, bleiben offen – etwa wenn
+   statt der eigenen Schaltung die Musterlösung gezeigt wird. `seen` gilt als erreicht: wer
+   den Schritt gelöst hat, hat die Reihenfolge eingehalten. */
+export function reviewGoals(level: Pick<BuildStep, "goals">, circuit: Circuit): CheckItem[] {
+  const sim = simulate(circuit);
+  const readings: Readings = {};
+  const shown: Record<string, string> = {};
+  for (const g of level.goals ?? []) {
+    if (g.k !== "measure") continue;
+    const v = measuredValue(g, circuit, sim);
+    if (v === null) continue;
+    readings[g.id] = String(v);
+    shown[g.id] = g.quantity === "current" ? fmtA(v) : fmtV(v);
+  }
+  return checkLevel(level, circuit, sim, true, readings).items.map((it) =>
+    it.measure && shown[it.measure.id] ? { ...it, t: `${it.t}: ${shown[it.measure.id]}` } : it,
+  );
 }
 
 export function checkLevel(

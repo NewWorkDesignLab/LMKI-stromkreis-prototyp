@@ -13,6 +13,14 @@ export const messenLevels: LegacyLevelDef[] = [
     showValues: true,
     task: "Verdrahte den Stromkreis. Der Widerstand begrenzt den Strom – lies am Amperemeter ab, wie viel fließt, und achte auf die Helligkeit.",
     lesson: "Ein Widerstand begrenzt den Strom. Mehr Widerstand im Stromkreis heißt weniger Strom.",
+    explanation: [
+      {
+        k: "p",
+        text: "Widerstand und Lampe liegen in Reihe, ihre Widerstände addieren sich. Bei gleicher Spannung fließt dadurch weniger Strom als mit der Lampe allein.",
+      },
+      { k: "formula", text: "I = U / R_ges = 9 V / (100 Ω + 90 Ω) ≈ 47 mA" },
+      { k: "p", text: "Weniger Strom heißt: Die Lampe leuchtet dunkler." },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "6,1": { type: "lamp", orient: "v" },
@@ -42,6 +50,16 @@ export const messenLevels: LegacyLevelDef[] = [
     task: "Wie viel Strom fließt durch die Lampe? Miss ihn, ohne dass die Lampe ausgeht, und trage den Wert ein.",
     lesson:
       "Ein Amperemeter wird IN REIHE eingebaut. Parallel geschaltet würde sein sehr kleiner Innenwiderstand den Verbraucher kurzschließen.",
+    explanation: [
+      {
+        k: "p",
+        text: "Der Strom hat nur einen Weg: von der Batterie durch die Lampe und zurück. Das Amperemeter sitzt auf diesem Weg und wird vom selben Strom durchflossen – es zeigt deshalb genau den Lampenstrom.",
+      },
+      {
+        k: "p",
+        text: "Sein Innenwiderstand ist sehr klein, der Stromkreis verändert sich durch den Einbau kaum. Die Lampe leuchtet weiter.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "4,1": { type: "lamp", orient: "v" },
@@ -68,6 +86,16 @@ export const messenLevels: LegacyLevelDef[] = [
     task: "Welche Spannung liegt an der Lampe? Miss sie und trage den Wert ein.",
     lesson:
       "Ein Voltmeter wird PARALLEL zum Bauteil geschaltet. In Reihe sperrt sein hoher Innenwiderstand den Stromkreis nahezu.",
+    explanation: [
+      {
+        k: "p",
+        text: "Spannung liegt zwischen zwei Punkten an. Das Voltmeter wird deshalb an beide Anschlüsse der Lampe gelegt – parallel. Dort liegt dieselbe Spannung an wie an der Lampe, hier die volle Quellenspannung.",
+      },
+      {
+        k: "p",
+        text: "Sein Innenwiderstand ist sehr hoch: Es zieht kaum Strom aus dem Stromkreis und verfälscht die Messung nicht.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "4,1": { type: "lamp", orient: "v" },
@@ -94,6 +122,15 @@ export const messenLevels: LegacyLevelDef[] = [
     task: "Zwei gleiche Lampen liegen in Reihe. Welche Spannung liegt an der linken? Miss sie und trage den Wert ein.",
     lesson:
       "In der Reihenschaltung teilt sich die Spannung auf die Verbraucher auf – bei zwei gleichen Lampen je die Hälfte.",
+    explanation: [
+      {
+        k: "p",
+        text: "Durch beide Lampen fließt derselbe Strom. Haben sie gleiche Widerstände, fällt an beiden die gleiche Spannung ab.",
+      },
+      { k: "formula", text: "U_1 = U_2 = U_ges / 2 = 4,5 V" },
+      { k: "p", text: "Die Teilspannungen ergeben zusammen wieder die Quellenspannung." },
+      { k: "formula", text: "U_ges = U_1 + U_2" },
+    ],
     cells: {
       "1,1": { type: "lamp", orient: "h" },
       "3,1": { type: "lamp", orient: "h" },
@@ -122,6 +159,17 @@ export const messenLevels: LegacyLevelDef[] = [
     task: "Der Stromkreis ist fertig verdrahtet. Wie viel Strom liefert die Batterie insgesamt? Miss ihn und trage den Wert ein.",
     lesson:
       "In der Parallelschaltung teilt sich der Strom auf die Zweige auf – der Gesamtstrom ist die Summe.",
+    explanation: [
+      {
+        k: "p",
+        text: "Am Knotenpunkt teilt sich der Strom auf beide Lampen auf. In der Hauptleitung fließt der Strom aller Zweige zusammen – dort misst das Amperemeter den Gesamtstrom, den die Batterie liefert.",
+      },
+      { k: "formula", text: "I_ges = I_1 + I_2 ≈ 100 mA + 100 mA = 200 mA" },
+      {
+        k: "p",
+        text: "Säße das Amperemeter in einem Zweig, zeigte es nur dessen Teilstrom.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "3,1": { type: "lamp", orient: "v" },

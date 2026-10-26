@@ -9,7 +9,6 @@ import type {
   LevelDef,
   Step,
   StepId,
-  SummaryStep,
 } from "../domain/types";
 import { parseQuantity, withinTolerance } from "./quantity";
 
@@ -108,15 +107,6 @@ export function stageOf(level: Pick<LevelDef, "steps">, s: LessonState, i: numbe
   }
   const after = level.steps.slice(i + 1).find(isBuild);
   return after ? { build: after, circuit: after.circuit, source: "start" } : null;
-}
-
-/** Der Merksatz, auf den ein Bauschritt hinarbeitet: der nächste vor dem nächsten Bauen. */
-export function summaryAfter(level: Pick<LevelDef, "steps">, i: number): SummaryStep | null {
-  for (const st of level.steps.slice(i + 1)) {
-    if (st.kind === "summary") return st;
-    if (st.kind === "build") return null;
-  }
-  return null;
 }
 
 /* ---------- Antworten ---------- */

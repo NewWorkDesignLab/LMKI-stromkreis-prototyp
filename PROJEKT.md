@@ -269,7 +269,8 @@ Ergänzt 2026-10-26: Bauteilfach und Ziele stehen ab `xl` unmittelbar neben der 
     eigenes Band über dem Brett (`TOOLBAR_BAND`), damit sie nie einen Punkt verdeckt.
   - `StatusBar`: was die Schaltung tut, daneben Rückgängig, Wiederholen, Zurücksetzen
     (Frei bauen: Leeren).
-  - `WinPanel` nach dem Lösen: „Geschafft“, der Merksatz klingt schon an, „Weiter“.
+  - `WinPanel` nach dem Lösen, unter den Zielen in der rechten Spalte: „Geschafft“ und
+    „Weiter“. Der Merksatz steht bewusst nicht hier, sondern im nächsten Schritt.
   - Zusatzbausteine wie die Funktionsansicht stehen darunter; dann scrollt die Spalte.
 
 **Übrige Schritte im Querformat** (`features/lesson/Stage.tsx`): links eine Bühne, rechts der
@@ -278,7 +279,9 @@ Schritts, sonst die Schaltung des Levels zum Ansehen – mit Simulation, ohne Be
 Welche Schaltung, regelt `stageOf` (engine/lesson): nach dem Bauen die **eigene gelöste
 Schaltung** (bei mehreren Lösungen sieht man, was man selbst gebaut hat), ohne sie die
 Musterlösung, vor dem Bauen nur der Ausgangsaufbau (die Lösung vorab nähme das Bauen
-vorweg). Der Merksatz zeigt immer die Schaltung. Ein Einstieg ohne Anschauung bleibt eine
+vorweg). Der Merksatz zeigt immer die Schaltung; Schalter, Taster und Wechselschalter lassen
+sich dort bedienen (`useOperableBoard`), alles Übrige bleibt Ansicht, und der Zustand
+bleibt in dieser Ansicht. Ein Einstieg ohne Anschauung bleibt eine
 schmale Textspalte.
 
 **Moment des Lösens:** Der Brettrahmen leuchtet einmal grün auf, erreichte Ziele haken
@@ -375,7 +378,7 @@ gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt si
 | `predict` | Vorhersage mit Auswahl; festgehalten, nicht bewertet, danach unveränderlich       | eine Antwort festgehalten |
 | `build`   | das Brett (alles, was früher ein ganzes Level war)                                | die Ziele erreicht sind   |
 | `quiz`    | Auswahl (auch mehrere richtige) oder Zahl mit Einheit und Toleranz (Standard 2 %) | richtig beantwortet       |
-| `summary` | Merksatz; `recall` löst eine frühere Vorhersage auf                               | „Weiter“                  |
+| `summary` | Rückblick: Aufgabe und erreichte Ziele (`reviewGoals`), Merksatz, `recall` löst eine Vorhersage auf, `blocks` erklären | „Weiter“ |
 
 - **Textbausteine statt HTML/Markdown** (`Block`: `p`, `list`, `formula`, `note`, `image`,
   `video`, `widget`). Level können über die API von außen kommen; Bausteine lassen sich
@@ -386,6 +389,10 @@ gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt si
 - Zahleneingaben verstehen Komma und Vorsätze: „29 mA“, „0,22 kΩ“, „220 Ohm“, „0,22k“.
 - Verborgene Schritte bleiben eingehängt: ein halb verdrahtetes Brett übersteht das
   Zurückblättern. Tastenkürzel (Strg+Z) wirken nur auf das sichtbare Brett.
+- Der Merksatz-Schritt ordnet sich so: _Das war die Aufgabe_ mit den abgehakten Zielen
+  (Messwerte so, wie das Messgerät sie zeigt), _Merke_, die Vermutung, dann _Warum das so
+  ist_ aus `blocks`. Im Altformat steht diese Erklärung in `explanation`; bisher haben sie
+  die Level in `levels/messen.ts`, die übrigen folgen.
 - Die Prototyp-Level werden zu „Bauen“ + „Merksatz“ übersetzt; `before` stellt Schritte im
   heutigen Format davor. So heißt es bei „Ohmsches Gesetz“ jetzt „erst rechnen, dann
   bauen“, und „Das Licht im Schalter“ und „Der Öffner“ zeigen ihren Alltagsbezug als

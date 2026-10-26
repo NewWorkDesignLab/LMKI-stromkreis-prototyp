@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Circuit, Goal } from "../domain/types";
 import { wires } from "../content/helpers";
-import { checkLevel } from "./goals";
+import { checkLevel, reviewGoals } from "./goals";
 import { simulate } from "./simulate";
 
 /* Quelle links, Lampe rechts – wie in simulate.test.ts. */
@@ -39,6 +39,19 @@ const run = (goal: Goal, c: Circuit, readings: Record<string, string> = {}) =>
   checkLevel({ goals: [goal] }, c, simulate(c), false, readings);
 
 const measureItem = (r: ReturnType<typeof run>) => r.items.find((i) => i.measure)!;
+
+describe("Rückblick auf die Ziele", () => {
+  it("hakt alle Ziele eines gelösten Aufbaus ab und nennt den gemessenen Wert", () => {
+    const items = reviewGoals({ goals: [strom] }, withAmmeter());
+    expect(items.every((i) => i.ok)).toBe(true);
+    expect(items.find((i) => i.measure)!.t).toMatch(/^Strom: \d+ mA$/);
+  });
+
+  it("lässt ein Messziel offen, solange kein Messgerät so sitzt", () => {
+    const items = reviewGoals({ goals: [strom] }, loop());
+    expect(items.find((i) => i.measure)!.ok).toBe(false);
+  });
+});
 
 describe("Messaufgabe", () => {
   it("bleibt offen, solange kein Amperemeter den Strom der Lampe führt", () => {

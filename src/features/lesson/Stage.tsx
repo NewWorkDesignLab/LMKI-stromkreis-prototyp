@@ -7,6 +7,7 @@ import { Board } from "../../render/Board";
 import { boardExtent } from "../../render/geometry";
 import { BG } from "../../theme/colors";
 import { Blocks } from "./Blocks";
+import { useOperableBoard } from "./useOperableBoard";
 
 /* Querformat für Schritte ohne Brett: links die Bühne (Anschauung oder Schaltung), rechts
    der Text. So passt ein Alltagsbezug mit großem Bild ohne Scrollen auf den Bildschirm,
@@ -50,20 +51,28 @@ const CAPTION: Record<StageSource, string> = {
   start: "Der Aufbau",
 };
 
+const OPERABLE = new Set(["switch", "button", "spdt"]);
+
 /* Die Schaltung eines Bauschritts zum Ansehen: mit Simulation (Lampen leuchten, Messwerte
-   stehen da), aber ohne Werkzeuge und Bedienung. Originalgröße wie beim Bauen; ist die
+   stehen da), ohne Werkzeuge. Schalter und Taster lassen sich bedienen, damit man die eigene
+   Schaltung ausprobieren kann (useOperableBoard). Originalgröße wie beim Bauen; ist die
    Spalte schmaler, schrumpft sie mit. */
 export function CircuitStage({ stage }: { stage: Stage }) {
   const { settings } = useRuntimeState();
-  const sim = useMemo(() => simulate(stage.circuit), [stage.circuit]);
+  const board = useOperableBoard(stage.circuit, stage.build);
+  const sim = useMemo(() => simulate(board.circuit), [board.circuit]);
   const { w, h } = boardExtent(stage.build.W, stage.build.H);
+  const operable = Object.values(stage.circuit.parts).some((p) => OPERABLE.has(p.type));
   return (
     <figure className="rounded-2xl border border-stone-200 p-4" style={{ background: BG }}>
       <div className="flex justify-center">
         <Board
           level={stage.build}
-          circuit={stage.circuit}
+          circuit={board.circuit}
           sim={sim}
+          svgRef={board.svgRef}
+          handlers={operable ? board.handlers : undefined}
+          fit
           width={w}
           height={h}
           flow={settings.flowAnimation}

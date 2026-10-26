@@ -28,16 +28,9 @@ import {
   type EditContext,
   type PlayMode,
 } from "../../engine/editing";
-import { CELL, PAD_X, boardExtent } from "../../render/geometry";
+import { boardPos, type Pos } from "../../render/geometry";
 import type { BoardHint, BoardPointerHandlers } from "../../render/Board";
 import { useUndoable } from "./useUndoable";
-
-/* Lage des Zeigers in Punktkoordinaten, mit Bruchteil: (0,0) ist der erste Punkt,
-   0,5 liegt genau zwischen zwei Punkten. */
-interface Pos {
-  fx: number;
-  fy: number;
-}
 
 type EraseTarget = { kind: "point"; at: PointKey } | { kind: "wire"; key: WireKey };
 
@@ -109,22 +102,8 @@ export function useBoardEditor(
   const gesture = useRef<Gesture | null>(null);
   const pressed = useRef<PartId | null>(null);
 
-  const { w: vbW, h: vbH } = boardExtent(W, H);
-
-  /* Die viewBox ist um den Beschriftungsrand größer als das Spielfeld und fängt
-     links bei −PAD_X an – beides muss hier mitgerechnet werden, sonst liegt der
-     getroffene Punkt daneben. */
-  const eventPos = (e: PointerEvent): Pos | null => {
-    const svg = svgRef.current;
-    if (!svg) return null;
-    const r = svg.getBoundingClientRect();
-    const vx = ((e.clientX - r.left) / r.width) * vbW - PAD_X;
-    const vy = ((e.clientY - r.top) / r.height) * vbH;
-    const fx = vx / CELL - 0.5,
-      fy = vy / CELL - 0.5;
-    if (fx < -0.5 || fy < -0.5 || fx > W - 0.5 || fy > H - 0.5) return null;
-    return { fx, fy };
-  };
+  const eventPos = (e: PointerEvent): Pos | null =>
+    svgRef.current ? boardPos(svgRef.current, e, W, H) : null;
 
   const eraseTarget = (pos: Pos): EraseTarget => {
     const px = Math.round(pos.fx),

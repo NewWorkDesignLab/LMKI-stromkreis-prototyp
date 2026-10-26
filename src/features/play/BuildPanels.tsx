@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Circle, Lightbulb } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Circle } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import type { BuildStep, CheckResult, Readings, SimResult } from "../../domain/types";
 import type { PlayMode } from "../../engine/editing";
@@ -64,7 +64,7 @@ export function GoalList({
     <section
       aria-label="Ziele"
       aria-hidden={intro || undefined}
-      className={`rounded-xl border border-stone-200 bg-white px-4 py-3 xl:absolute xl:left-full xl:top-0 xl:ml-2 xl:w-64 ${intro ? "invisible" : ""}`}
+      className={`rounded-xl border border-stone-200 bg-white px-4 py-3 ${intro ? "invisible" : ""}`}
     >
       <h2 className={PANEL_HEADING}>Ziele</h2>
       <ul className="flex flex-col gap-2">
@@ -177,34 +177,18 @@ export function StatusBar({
   );
 }
 
-/* Erscheint unter dem Brett, sobald die Ziele erreicht sind – dort, wo der Blick ohnehin
-   ist. Der Merksatz klingt schon an; ausführlich mit der eigenen Schaltung und der
-   Auflösung der Vermutung steht er im eigenen Schritt. */
-export function WinPanel({
-  proceed,
-  teaser,
-}: {
-  proceed: { label: string; onClick: () => void };
-  /** Merksatz des Levels, falls einer folgt */
-  teaser?: string;
-}) {
+/* Erscheint direkt unter den Zielen, sobald alle erreicht sind. Der Merksatz kommt bewusst
+   erst im nächsten Schritt: dort steht er mit den erreichten Zielen und der eigenen Schaltung. */
+export function WinPanel({ proceed }: { proceed: { label: string; onClick: () => void } }) {
   return (
     <section
       aria-live="polite"
-      className="win-in flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3"
+      className="win-in flex flex-col gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3"
     >
-      <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1.5 font-semibold text-emerald-700">
-          <CheckCircle2 size={18} aria-hidden="true" /> Geschafft!
-        </p>
-        {teaser && (
-          <p className="mt-1 flex gap-1.5 text-sm leading-snug text-emerald-900">
-            <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-500" aria-hidden="true" />
-            {teaser}
-          </p>
-        )}
-      </div>
-      <ProceedButton label={proceed.label} onClick={proceed.onClick} />
+      <p className="flex items-center gap-1.5 font-semibold text-emerald-700">
+        <CheckCircle2 size={18} aria-hidden="true" /> Geschafft!
+      </p>
+      <ProceedButton label={proceed.label} onClick={proceed.onClick} className="justify-center" />
     </section>
   );
 }

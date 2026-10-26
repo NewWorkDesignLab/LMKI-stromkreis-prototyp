@@ -258,7 +258,8 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
       else if (measureIds.has(g.id)) e(`Ziel „measure“: id „${g.id}“ kommt doppelt vor`);
       else measureIds.add(g.id);
       if (!isText(g.label)) e("Ziel „measure“: label fehlt");
-      const meter = g.quantity === "current" ? "ammeter" : g.quantity === "voltage" ? "voltmeter" : null;
+      const meter =
+        g.quantity === "current" ? "ammeter" : g.quantity === "voltage" ? "voltmeter" : null;
       if (!meter) e(`Ziel „measure“: quantity „${g.quantity}“ ist weder current noch voltage`);
       else if (!l.palette?.includes(meter) && !Object.values(parts).some((p) => p.type === meter))
         e(`Ziel „measure“ braucht ein ${meter}, das weder in der Palette noch im Brett liegt`);

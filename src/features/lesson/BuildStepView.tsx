@@ -1,5 +1,4 @@
 import type { BuildStep } from "../../domain/types";
-import { summaryAfter } from "../../engine/lesson";
 import { PlayArea } from "../play/PlayArea";
 import type { StepViewProps } from "./stepViews";
 
@@ -8,7 +7,6 @@ import type { StepViewProps } from "./stepViews";
    lösende Schaltung geht mit in den Ablauf – Merksatz und spätere Fragen zeigen sie. */
 export function BuildStepView({
   step,
-  level,
   active,
   overlayOpen,
   complete,
@@ -25,7 +23,6 @@ export function BuildStepView({
       onSolved={complete}
       onReset={onReset}
       proceed={{ label: proceedLabel, onClick: proceed }}
-      teaser={summaryAfter(level, level.steps.indexOf(step))?.lesson}
     />
   );
 }

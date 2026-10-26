@@ -26,8 +26,6 @@ interface Props {
   onReset?: () => void;
   /** Knopf nach dem Lösen */
   proceed?: { label: string; onClick: () => void };
-  /** Merksatz, der nach dem Lösen anklingt */
-  teaser?: string;
 }
 
 /* Die Mittelspalte ist so breit wie das Brett, aber nie schmaler als eine gut lesbare
@@ -49,7 +47,6 @@ export function PlayArea({
   onSolved,
   onReset,
   proceed,
-  teaser,
 }: Props) {
   const { settings } = useRuntimeState();
   const s = usePlaySession(step, mode, active, {
@@ -165,14 +162,16 @@ export function PlayArea({
             </BoardViewport>
           </div>
           <StatusBar sim={s.sim} mode={mode} tools={tools} />
-          <GoalList
-            check={s.check}
-            readings={s.readings}
-            onReading={s.setReading}
-            intro={intro.intro}
-            goalsEnter={intro.goalsEnter}
-          />
-          {mode === "level" && s.won && proceed && <WinPanel proceed={proceed} teaser={teaser} />}
+          <div className="flex flex-col gap-3 xl:absolute xl:left-full xl:top-0 xl:ml-2 xl:w-64">
+            <GoalList
+              check={s.check}
+              readings={s.readings}
+              onReading={s.setReading}
+              intro={intro.intro}
+              goalsEnter={intro.goalsEnter}
+            />
+            {mode === "level" && s.won && proceed && <WinPanel proceed={proceed} />}
+          </div>
           {step.contactLab && (
             <ContactLab
               config={step.contactLab}

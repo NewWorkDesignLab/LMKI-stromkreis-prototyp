@@ -20,7 +20,7 @@ import { wallEl } from "./symbols/wall";
 
 export interface BoardPointerHandlers {
   onPointerDown: PointerEventHandler<SVGSVGElement>;
-  onPointerMove: PointerEventHandler<SVGSVGElement>;
+  onPointerMove?: PointerEventHandler<SVGSVGElement>;
   onPointerUp: PointerEventHandler<SVGSVGElement>;
   onPointerLeave: PointerEventHandler<SVGSVGElement>;
   onPointerCancel: PointerEventHandler<SVGSVGElement>;
@@ -43,8 +43,11 @@ interface Props {
   circuit: Circuit;
   sim: SimResult;
   /* Ohne Werkzeug und Zeigerereignisse ist das Brett nur zum Ansehen (Bühne neben
-     Vermutung, Frage und Merksatz): es schrumpft dann mit seinem Behälter mit. */
+     Vermutung, Frage und Merksatz). */
   tool?: ToolId;
+  /** schrumpft mit dem Behälter mit; Standard: ja, wenn das Brett nicht bedient wird (der
+      Rahmen im Bauschritt bestimmt dort die Größe selbst) */
+  fit?: boolean;
   svgRef?: RefObject<SVGSVGElement>;
   handlers?: BoardPointerHandlers;
   hint?: BoardHint | null;
@@ -65,6 +68,7 @@ export function Board({
   circuit,
   sim,
   tool,
+  fit,
   svgRef,
   handlers,
   hint,
@@ -212,11 +216,10 @@ export function Board({
       width={width}
       height={height}
       className="block select-none"
-      style={
-        handlers
-          ? { touchAction: "none", cursor: tool === "erase" ? "cell" : "pointer" }
-          : { maxWidth: "100%", height: "auto" }
-      }
+      style={{
+        ...(handlers && { touchAction: "none", cursor: tool === "erase" ? "cell" : "pointer" }),
+        ...((fit ?? !handlers) && { maxWidth: "100%", height: "auto" }),
+      }}
       {...handlers}
     >
       <rect x={0} y={0} width={W * CELL} height={H * CELL} fill={BG} rx={10} />

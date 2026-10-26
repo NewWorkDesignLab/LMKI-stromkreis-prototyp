@@ -10,7 +10,6 @@ import {
   isReachable,
   stageOf,
   startLesson,
-  summaryAfter,
 } from "./lesson";
 import { parseQuantity } from "./quantity";
 
@@ -122,11 +121,6 @@ describe("Bühne", () => {
 
   it("hat ohne Bauschritt keine Schaltung", () => {
     expect(stageOf(level, startLesson(), 1)).toBeNull();
-  });
-
-  it("findet den Merksatz, auf den ein Bauschritt hinarbeitet", () => {
-    expect(summaryAfter(withBuild, 1)?.lesson).toBe("Merke");
-    expect(summaryAfter(withBuild, 3)).toBeNull();
   });
 });
 

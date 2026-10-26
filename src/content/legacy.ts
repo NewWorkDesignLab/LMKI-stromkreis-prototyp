@@ -12,6 +12,7 @@
    daraus die Schritte „Bauen“ und „Merksatz“; `before` stellt Schritte im heutigen
    Format davor (Realitätsbezug, Rechnen vor dem Bauen). */
 import type {
+  Block,
   BuildStep,
   Circuit,
   ConceptId,
@@ -48,6 +49,8 @@ export interface LegacyLevelDef extends Omit<
   name: string;
   concepts?: ConceptId[];
   lesson: string;
+  /** Erklärung im Merksatz-Schritt: wie das Gebaute und der Merksatz zusammenhängen */
+  explanation?: Block[];
   cells: LegacyGrid;
   /** Schritte im heutigen Format vor dem Bauen */
   before?: Step[];
@@ -108,6 +111,7 @@ export function fromLegacyLevel(l: LegacyLevelDef): LevelDef {
     name,
     concepts,
     lesson,
+    explanation,
     before,
     cells,
     contactLab,
@@ -162,6 +166,10 @@ export function fromLegacyLevel(l: LegacyLevelDef): LevelDef {
     id: levelId,
     name,
     ...(concepts && { concepts }),
-    steps: [...(before ?? []), build, { kind: "summary", id: "merksatz", lesson }],
+    steps: [
+      ...(before ?? []),
+      build,
+      { kind: "summary", id: "merksatz", lesson, ...(explanation && { blocks: explanation }) },
+    ],
   };
 }

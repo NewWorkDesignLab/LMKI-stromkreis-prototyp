@@ -1,5 +1,5 @@
-import { ArrowRight, CheckCircle2, CircleHelp, Lightbulb, XCircle } from "lucide-react";
-import { useState, type ComponentType, type ReactNode } from "react";
+import { ArrowRight, CheckCircle2, Circle, CircleHelp, Lightbulb, XCircle } from "lucide-react";
+import { useMemo, useState, type ComponentType, type ReactNode } from "react";
 import type {
   AnswerValue,
   Block,
@@ -19,7 +19,9 @@ import {
   type Stage,
   type StepProgress,
 } from "../../engine/lesson";
+import { reviewGoals } from "../../engine/goals";
 import { unitAliases } from "../../engine/quantity";
+import { PANEL_HEADING } from "../../ui/heading";
 import { BuildStepView } from "./BuildStepView";
 import { Blocks } from "./Blocks";
 import { CircuitStage, StageLayout, VisualStage, splitVisual } from "./Stage";
@@ -64,12 +66,21 @@ export const KIND_LABEL: Record<StepKind, string> = {
   summary: "Merksatz",
 };
 
-export function ProceedButton({ label, onClick }: { label: string; onClick: () => void }) {
+export function ProceedButton({
+  label,
+  onClick,
+  className = "ml-auto",
+}: {
+  label: string;
+  onClick: () => void;
+  /** Platzierung; Standard: rechtsbündig in einer Zeile */
+  className?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="ml-auto flex min-h-11 items-center gap-1.5 rounded-lg bg-stone-800 px-4 text-sm font-medium text-white hover:bg-stone-900"
+      className={`flex min-h-11 items-center gap-1.5 rounded-lg bg-stone-800 px-4 text-sm font-medium text-white hover:bg-stone-900 ${className}`}
     >
       {label} <ArrowRight size={16} aria-hidden="true" />
     </button>
@@ -333,13 +344,51 @@ function SummaryView({
   const text = (id: string) => predict?.choices.find((c) => c.id === id)?.text;
   const saidId = said?.k === "choice" ? said.ids[0] : undefined;
   const { el, rest } = pickStage(step.blocks, stage, true);
+  /* Rückblick: die Aufgabe und was davon erreicht ist, dann der Merksatz, dann die
+     Erklärung. So entsteht der Zusammenhang Aufgabe → Tun → Erkenntnis auf einer Seite. */
+  const items = useMemo(() => (stage ? reviewGoals(stage.build, stage.circuit) : []), [stage]);
   return (
     <StageLayout stage={el}>
       <Card>
-        <p className="flex gap-2 text-base font-medium leading-snug text-emerald-900">
-          <Lightbulb size={20} className="mt-0.5 shrink-0 text-amber-500" aria-hidden="true" />
-          {step.lesson}
-        </p>
+        {stage && (
+          <section aria-label="Rückblick">
+            <h2 className={`${PANEL_HEADING} flex items-center gap-1.5`}>
+              <CheckCircle2 size={15} className="text-emerald-600" aria-hidden="true" /> Das war die
+              Aufgabe
+            </h2>
+            <p className="text-sm leading-relaxed text-stone-700">{stage.build.task}</p>
+            {items.length > 0 && (
+              <ul aria-label="Ziele" className="mt-2 flex flex-col gap-1">
+                {items.map((it, i) => (
+                  <li
+                    key={i}
+                    className={`flex items-start gap-1.5 text-sm ${it.ok ? "text-emerald-700" : "text-stone-600"}`}
+                  >
+                    {it.ok ? (
+                      <CheckCircle2 size={17} className="mt-px shrink-0" aria-label="erreicht" />
+                    ) : (
+                      <Circle
+                        size={17}
+                        className="mt-px shrink-0 text-stone-300"
+                        aria-label="offen"
+                      />
+                    )}
+                    <span>{it.t}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+        <section
+          aria-label="Merksatz"
+          className={`rounded-xl border border-amber-200 bg-amber-50 p-3 ${stage ? "mt-4" : ""}`}
+        >
+          <h2 className={`${PANEL_HEADING} flex items-center gap-1.5 text-amber-800`}>
+            <Lightbulb size={15} className="text-amber-500" aria-hidden="true" /> Merke
+          </h2>
+          <p className="text-base font-medium leading-snug text-stone-900">{step.lesson}</p>
+        </section>
         {predict && saidId && (
           <div className="mt-3 rounded-lg bg-stone-50 p-3 text-sm">
             <p>
@@ -354,9 +403,12 @@ function SummaryView({
             )}
           </div>
         )}
-        <div className="mt-3">
-          <Blocks blocks={rest} />
-        </div>
+        {rest.length > 0 && (
+          <section aria-label="Erklärung" className="mt-4">
+            <h2 className={PANEL_HEADING}>Warum das so ist</h2>
+            <Blocks blocks={rest} />
+          </section>
+        )}
         <div className="mt-4 flex">
           <ProceedButton label={proceedLabel} onClick={proceed} />
         </div>
