@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Circuit, Goal } from "../domain/types";
 import { wires } from "../content/helpers";
+import { shownA, shownV } from "./format";
 import { checkLevel, reviewGoals } from "./goals";
 import { simulate } from "./simulate";
 
@@ -26,12 +27,21 @@ const withVoltmeter = (): Circuit => {
   return c;
 };
 
-const strom: Goal = { k: "measure", id: "strom", quantity: "current", of: "E1", label: "Strom" };
+const strom: Goal = {
+  k: "measure",
+  id: "strom",
+  quantity: "current",
+  of: "E1",
+  unit: "mA",
+  label: "Strom",
+};
+const stromInA: Goal = { ...strom, unit: "A" };
 const spannung: Goal = {
   k: "measure",
   id: "spannung",
   quantity: "voltage",
   of: "E1",
+  unit: "V",
   label: "Spannung",
 };
 
@@ -39,12 +49,21 @@ const run = (goal: Goal, c: Circuit, readings: Record<string, string> = {}) =>
   checkLevel({ goals: [goal] }, c, simulate(c), false, readings);
 
 const measureItem = (r: ReturnType<typeof run>) => r.items.find((i) => i.measure)!;
+const ok = (goal: Goal, c: Circuit, id: string, text: string) =>
+  measureItem(run(goal, c, { [id]: text })).ok;
+
+/* der Strom der Lampe, wie das Amperemeter ihn in mA anzeigt */
+const anzeigeMA = (c: Circuit) => Math.round(Math.abs(simulate(c).cur.A1) * 1000);
 
 describe("Rückblick auf die Ziele", () => {
   it("hakt alle Ziele eines gelösten Aufbaus ab und nennt den gemessenen Wert", () => {
     const items = reviewGoals({ goals: [strom] }, withAmmeter());
     expect(items.every((i) => i.ok)).toBe(true);
-    expect(items.find((i) => i.measure)!.t).toMatch(/^Strom: \d+ mA$/);
+    expect(items.find((i) => i.measure)!.t).toMatch(/^Strom: d+ mA$/);
+  });
+
+  it("hakt auch ein Messziel in A ab", () => {
+    expect(reviewGoals({ goals: [stromInA] }, withAmmeter()).every((i) => i.ok)).toBe(true);
   });
 
   it("lässt ein Messziel offen, solange kein Messgerät so sitzt", () => {
@@ -56,45 +75,68 @@ describe("Rückblick auf die Ziele", () => {
 describe("Messaufgabe", () => {
   it("bleibt offen, solange kein Amperemeter den Strom der Lampe führt", () => {
     const c = loop();
-    const shown = Math.abs(simulate(c).cur.E1) * 1000;
-    expect(measureItem(run(strom, c, { strom: `${shown} mA` })).ok).toBe(false);
+    const mA = Math.round(Math.abs(simulate(c).cur.E1) * 1000);
+    expect(ok(strom, c, "strom", String(mA))).toBe(false);
   });
 
-  it("verlangt den Wert, den das Amperemeter in Reihe wirklich zeigt", () => {
+  it("verlangt genau den Wert, den das Amperemeter in Reihe anzeigt", () => {
     const c = withAmmeter();
-    const shown = Math.abs(simulate(c).cur.A1);
     expect(measureItem(run(strom, c)).ok).toBe(false);
-    expect(measureItem(run(strom, c, { strom: "50 mA" })).ok).toBe(false);
-    expect(measureItem(run(strom, c, { strom: `${shown * 1000} mA` })).ok).toBe(true);
+    expect(ok(strom, c, "strom", String(anzeigeMA(c)))).toBe(true);
   });
 
-  it("nimmt die Zahl in der Grundeinheit und mit Dezimalkomma", () => {
+  it("lässt keine Toleranz zu: ein mA daneben ist falsch", () => {
     const c = withAmmeter();
-    const shown = Math.abs(simulate(c).cur.A1);
-    expect(measureItem(run(strom, c, { strom: String(shown).replace(".", ",") })).ok).toBe(true);
+    expect(ok(strom, c, "strom", String(anzeigeMA(c) - 1))).toBe(false);
+    expect(ok(strom, c, "strom", String(anzeigeMA(c) + 1))).toBe(false);
   });
 
-  it("lehnt eine Einheit der falschen Größe ab", () => {
+  it("vergleicht mit der Anzeige, nicht mit dem ungerundeten Wert", () => {
     const c = withAmmeter();
-    const shown = Math.abs(simulate(c).cur.A1);
-    expect(measureItem(run(strom, c, { strom: `${shown} V` })).ok).toBe(false);
+    const exact = Math.abs(simulate(c).cur.A1) * 1000;
+    expect(exact).not.toBe(anzeigeMA(c));
+    expect(ok(strom, c, "strom", String(exact))).toBe(false);
+  });
+
+  it("rechnet nicht um: verlangt mA, gilt nur die Zahl in mA", () => {
+    const c = withAmmeter();
+    expect(ok(strom, c, "strom", String(anzeigeMA(c) / 1000))).toBe(false);
+  });
+
+  it("verlangt bei einer Aufgabe in A die Zahl in A, mit Dezimalkomma", () => {
+    const c = withAmmeter();
+    const inA = String(shownA(Math.abs(simulate(c).cur.A1))).replace(".", ",");
+    expect(ok(stromInA, c, "strom", inA)).toBe(true);
+    expect(ok(stromInA, c, "strom", String(anzeigeMA(c)))).toBe(false);
+  });
+
+  it("nimmt nur die Zahl: Vorsatz oder Einheit im Feld sind keine gültige Eingabe", () => {
+    const c = withAmmeter();
+    const n = anzeigeMA(c);
+    for (const text of [`${n} m`, `${n} mA`, `${n}mA`, "", "viel"])
+      expect(ok(strom, c, "strom", text), text).toBe(false);
   });
 
   it("gilt für die Spannung nur bei einem Voltmeter parallel zur Lampe", () => {
     const c = withVoltmeter();
-    const shown = Math.abs(simulate(c).volt.V1);
+    const shown = shownV(simulate(c).volt.V1);
     expect(shown).toBeGreaterThan(8);
-    expect(measureItem(run(spannung, c, { spannung: `${shown} V` })).ok).toBe(true);
-    expect(measureItem(run(spannung, loop(), { spannung: `${shown} V` })).ok).toBe(false);
+    expect(ok(spannung, c, "spannung", String(shown))).toBe(true);
+    expect(ok(spannung, loop(), "spannung", String(shown))).toBe(false);
+  });
+
+  it("lässt bei der Spannung kein hundertstel Volt Abweichung zu", () => {
+    const c = withVoltmeter();
+    const off = (shownV(simulate(c).volt.V1) - 0.01).toFixed(2);
+    expect(ok(spannung, c, "spannung", off)).toBe(false);
   });
 
   it("zählt ein Amperemeter nicht als Spannungsmessung", () => {
-    const c = withAmmeter();
-    expect(measureItem(run(spannung, c, { spannung: "9 V" })).ok).toBe(false);
+    expect(ok(spannung, withAmmeter(), "spannung", "9")).toBe(false);
   });
 
-  it("gibt dem Listeneintrag Größe und Einheit für das Eingabefeld mit", () => {
-    expect(measureItem(run(strom, loop())).measure).toEqual({ id: "strom", unit: "A" });
+  it("gibt dem Listeneintrag die Einheit für das Eingabefeld mit", () => {
+    expect(measureItem(run(strom, loop())).measure).toEqual({ id: "strom", unit: "mA" });
     expect(measureItem(run(spannung, loop())).measure).toEqual({ id: "spannung", unit: "V" });
   });
 });

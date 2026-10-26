@@ -5,14 +5,15 @@ import type {
   Goal,
   BuildStep,
   LogicExpr,
+  MeasureUnit,
   PartType,
   Readings,
   SimResult,
 } from "../domain/types";
 import { cloneCircuit } from "./circuit";
-import { fmtA, fmtV } from "./format";
+import { fmtA, fmtV, shownA, shownV } from "./format";
 import { CONSUMER } from "./parts";
-import { parseQuantity, withinTolerance } from "./quantity";
+import { parsePlainNumber, withinTolerance } from "./quantity";
 import { simulate } from "./simulate";
 
 /* ================= Ziele ================= */
@@ -78,7 +79,15 @@ export function simulateAllClosed(circuit: Circuit): SimResult {
   return simulate(c2);
 }
 
-const MEASURE_UNIT = { current: "A", voltage: "V" } as const;
+const UNIT_FACTOR: Record<MeasureUnit, number> = { A: 1, mA: 1e-3, V: 1, mV: 1e-3 };
+
+/* Der Wert, den man vom Messgerät ablesen und in der Einheit der Aufgabe eintragen muss: die
+   Anzeige (gerundet wie am Gerät), umgerechnet in `unit`. 12 Stellen fangen nur die
+   Gleitkomma-Ungenauigkeit der Umrechnung ab (0,099 / 0,001), keine Messabweichung. */
+export function expectedReading(g: Extract<Goal, { k: "measure" }>, measured: number): number {
+  const base = g.quantity === "current" ? shownA(measured) : shownV(measured);
+  return Number((base / UNIT_FACTOR[g.unit]).toPrecision(12));
+}
 
 /* Was zeigt ein Messgerät, das die Größe an `of` misst? null, wenn keines so sitzt. Erkannt
    wird das am Wert: Ein Amperemeter in Reihe führt genau den Strom von `of`, ein Voltmeter
@@ -102,9 +111,9 @@ export function measuredValue(
 
 /* Die Ziele eines gelösten Aufbaus im Rückblick (Merksatz-Schritt). Eigene Eingaben werden
    nicht aufgehoben, deshalb liest die Rückschau Messwerte so ab, wie das Messgerät sie zeigt,
-   und nennt sie im Text. Ziele, die der Aufbau nicht (mehr) erfüllt, bleiben offen – etwa wenn
-   statt der eigenen Schaltung die Musterlösung gezeigt wird. `seen` gilt als erreicht: wer
-   den Schritt gelöst hat, hat die Reihenfolge eingehalten. */
+   und nennt sie im Text. Ziele, die der Aufbau nicht (mehr) erfüllt, bleiben offen – etwa
+   wenn statt der eigenen Schaltung die Musterlösung gezeigt wird. `seen` gilt als erreicht:
+   wer den Schritt gelöst hat, hat die Reihenfolge eingehalten. */
 export function reviewGoals(level: Pick<BuildStep, "goals">, circuit: Circuit): CheckItem[] {
   const sim = simulate(circuit);
   const readings: Readings = {};
@@ -113,8 +122,8 @@ export function reviewGoals(level: Pick<BuildStep, "goals">, circuit: Circuit): 
     if (g.k !== "measure") continue;
     const v = measuredValue(g, circuit, sim);
     if (v === null) continue;
-    readings[g.id] = String(v);
     shown[g.id] = g.quantity === "current" ? fmtA(v) : fmtV(v);
+    readings[g.id] = String(expectedReading(g, v));
   }
   return checkLevel(level, circuit, sim, true, readings).items.map((it) =>
     it.measure && shown[it.measure.id] ? { ...it, t: `${it.t}: ${shown[it.measure.id]}` } : it,
@@ -191,10 +200,11 @@ export function checkLevel(
       });
       items.push({ t: g.label, ok });
     } else if (g.k === "measure") {
-      const shown = measuredValue(g, circuit, sim);
-      const typed = parseQuantity(readings[g.id] ?? "", MEASURE_UNIT[g.quantity]);
-      const ok = shown !== null && "value" in typed && withinTolerance(typed.value, shown);
-      items.push({ t: g.label, ok, measure: { id: g.id, unit: MEASURE_UNIT[g.quantity] } });
+      const measured = measuredValue(g, circuit, sim);
+      /* Nur die Zahl, in der Einheit am Eingabefeld – ohne Toleranz: 98 mA ist nicht 99 mA. */
+      const typed = parsePlainNumber(readings[g.id] ?? "");
+      const ok = measured !== null && typed !== null && typed === expectedReading(g, measured);
+      items.push({ t: g.label, ok, measure: { id: g.id, unit: g.unit } });
     } else if (g.k === "logic") {
       const ix = g.inputs.map((key) => [inputs.indexOf(bareKey(key)), key[0] === "!"]);
       /* live: zusätzlich muss die Schaltung gerade wirklich durchgeschaltet sein */

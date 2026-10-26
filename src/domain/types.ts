@@ -153,7 +153,16 @@ export type Goal =
   /** Messaufgabe: Lernende bauen das Messgerät so ein, dass es die Größe an `of` misst, und
       tragen den abgelesenen Wert selbst ein. Der Sollwert ist der, den das Messgerät in der
       Simulation zeigt – keine zweite Zahl in den Leveldaten. */
-  | { k: "measure"; id: string; quantity: Quantity; of: PartId; label: string }
+  | {
+      k: "measure";
+      id: string;
+      quantity: Quantity;
+      of: PartId;
+      /** Einheit der Eingabe; passt zur Messgröße (A/mA bzw. V/mV). Gerechnet wird nicht
+          um: wer mA verlangt, bekommt mA. */
+      unit: MeasureUnit;
+      label: string;
+    }
   | {
       k: "logic";
       at: PartId;
@@ -172,6 +181,8 @@ export type Goal =
 /** Messgröße einer Messaufgabe: Strom durch ein Bauteil (Amperemeter) oder Spannung an ihm (Voltmeter). */
 export type Quantity = "current" | "voltage";
 
+export type MeasureUnit = "A" | "mA" | "V" | "mV";
+
 /** Eingetragene Messwerte je Messaufgabe (`measure.id`), als getippter Text. */
 export type Readings = Record<string, string>;
 
@@ -180,7 +191,7 @@ export interface CheckItem {
   t: string;
   ok: boolean;
   /** Messaufgabe: hier trägt man den abgelesenen Wert ein */
-  measure?: { id: string; unit: "A" | "V" };
+  measure?: { id: string; unit: MeasureUnit };
 }
 
 export interface CheckResult {

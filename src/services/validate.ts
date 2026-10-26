@@ -263,6 +263,11 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
       if (!meter) e(`Ziel „measure“: quantity „${g.quantity}“ ist weder current noch voltage`);
       else if (!l.palette?.includes(meter) && !Object.values(parts).some((p) => p.type === meter))
         e(`Ziel „measure“ braucht ein ${meter}, das weder in der Palette noch im Brett liegt`);
+      const units = g.quantity === "current" ? ["A", "mA"] : ["V", "mV"];
+      if (!units.includes(g.unit))
+        e(
+          `Ziel „measure“: unit „${g.unit}“ passt nicht zu ${g.quantity} (${units.join(" oder ")})`,
+        );
     }
   }
   for (const id of l.latch?.lit ?? []) ref(id, "latch");

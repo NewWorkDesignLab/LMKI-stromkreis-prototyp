@@ -35,6 +35,13 @@ export function parseQuantity(text: string, unit: string): Parsed {
   return { error: `Die Einheit „${suffix}“ passt nicht – gefragt ist ${unit}.` };
 }
 
+/** Eine Zahl ohne Einheit und Vorsatz, mit Komma oder Punkt. Die Einheit steht am Eingabefeld;
+    was dort nicht steht, wird nicht umgedeutet („99 m“ ist keine Zahl). */
+export function parsePlainNumber(text: string): number | null {
+  const t = text.trim();
+  return /^[+-]?(\d+([.,]\d+)?|[.,]\d+)$/.test(t) ? Number(t.replace(",", ".")) : null;
+}
+
 /** Standardtoleranz: 2 % – genug für Rundung auf ganze Stellen, zu eng für Raten. */
 export const DEFAULT_TOLERANCE = 0.02;
 

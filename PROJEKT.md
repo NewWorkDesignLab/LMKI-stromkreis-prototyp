@@ -251,7 +251,8 @@ Ergänzt 2026-10-26: Bauteilfach und Ziele stehen ab `xl` unmittelbar neben der 
   Palette Bauteile enthält. Unter `xl` steht es als aufklappbare Leiste über dem Brett.
   Bauteile als Karten nach Gruppen (Quellen, Schalten, Verbraucher, Begrenzen & Schützen,
   Messen, Leitungen), Symbol auf getöntem Grund, Vorrat als „1×“-Marke, darunter die
-  Kurzinfo fürs gewählte bzw. überfahrene Bauteil. **Farbe nur in der Palette**
+  Kurzinfo nur als Tooltip (nichts erscheint beim Überfahren, sonst ändert sich die Höhe
+  der Liste). **Farbe nur in der Palette**
   – auf dem Brett bleiben die Schaltzeichen normgerecht schwarz (entschieden 2026-10-23).
 - **rechts neben dem Brett** `GoalList`: die Ziele untereinander, bei Messaufgaben mit Feld
   für den abgelesenen Wert; unter `xl` unter dem Brett.
@@ -484,12 +485,17 @@ erzwingt die richtige Einbauart selbst.
 
 **Messen ist eine Aufgabe, kein Zustand** (entschieden 2026-10-26). „Das Amperemeter zeigt
 etwa 100 mA“ ließ sich erfüllen, ohne je etwas zu messen. Ein `measure`-Ziel
-(`{ id, quantity: "current" | "voltage", of, label }`) verlangt dagegen zweierlei: ein
+(`{ id, quantity: "current" | "voltage", of, unit, label }`) verlangt dagegen zweierlei: ein
 Messgerät sitzt so, dass es die Größe an `of` misst, **und** die Lernenden tragen den
-abgelesenen Wert ins Feld der Ziel-Liste ein (`Readings`, Text wie getippt, mit oder
-ohne Vorsatz, 2 % Toleranz). Der Sollwert ist das, was das Messgerät in der Simulation
-zeigt – keine zweite Zahl in den Leveldaten. `of` ist beim Strom das Bauteil, durch das er
-fließt (bei der Quelle: der Gesamtstrom), bei der Spannung das Bauteil, an dem sie liegt.
+abgelesenen Wert ins Feld der Ziel-Liste ein (`Readings`, Text wie getippt). Das Feld
+nimmt **nur die Zahl** in der Einheit, die daneben steht (`unit`: A oder mA, V oder mV, vom
+Aufgabenautor gewählt). Gerechnet wird nicht um und kein Vorsatz gedeutet: „99 m“ ist
+keine gültige Eingabe, bei einer Aufgabe in A gilt 0,099, nicht 99. Es gibt **keine
+Toleranz**: verlangt ist genau die Anzeige des Messgeräts (`shownA`/`shownV`, auf die
+angezeigten Stellen gerundet) – 98 mA sind nicht 99 mA. Der Sollwert ist das, was das
+Messgerät in der Simulation zeigt, keine zweite Zahl in den Leveldaten. `of` ist beim Strom
+das Bauteil, durch das er fließt (bei der Quelle: der Gesamtstrom), bei der Spannung das
+Bauteil, an dem sie liegt.
 `label` ist die Aufgabe („Miss die Spannung an der Lampe“), sie verrät nicht, wie.
 `read` bleibt für Ziele, bei denen der **Aufbau** den Wert bestimmen soll (Widerstand
 wählen, LED-Strom einstellen).
