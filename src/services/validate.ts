@@ -45,7 +45,17 @@ const TOOLS: ReadonlySet<string> = new Set<ToolId>([
   "opener",
   "erase",
 ]);
-const GOAL_KINDS = new Set(["on", "wired", "read", "logic", "toggle", "state", "seen", "fuse"]);
+const GOAL_KINDS = new Set([
+  "on",
+  "wired",
+  "read",
+  "measure",
+  "logic",
+  "toggle",
+  "state",
+  "seen",
+  "fuse",
+]);
 const SIDE_SET = new Set(["N", "E", "S", "W"]);
 /** Größtes Brett je Richtung; größere Felder sind im Rework vorgesehen, aber nicht grenzenlos. */
 export const MAX_BOARD = 40;
@@ -63,6 +73,8 @@ function goalRefs(g: Goal): string[] {
       return [...(g.at ? [g.at] : []), ...(g.ats ?? [])];
     case "read":
       return g.at ? [g.at] : [];
+    case "measure":
+      return [g.of];
     case "logic":
       return [g.at, ...g.inputs.map((k) => (k[0] === "!" ? k.slice(1) : k))];
     case "toggle":
@@ -234,12 +246,23 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
   const ref = (id: string, what: string) => {
     if (!parts[id]) e(`${what} verweist auf unbekanntes Bauteil „${id}“`);
   };
+  const measureIds = new Set<string>();
   for (const g of l.goals ?? []) {
     if (!g || !GOAL_KINDS.has(g.k)) {
       e(`unbekanntes Ziel „${(g as { k?: string })?.k}“`);
       continue;
     }
     for (const id of goalRefs(g)) ref(id, `Ziel „${g.k}“`);
+    if (g.k === "measure") {
+      if (!isText(g.id)) e("Ziel „measure“: id fehlt");
+      else if (measureIds.has(g.id)) e(`Ziel „measure“: id „${g.id}“ kommt doppelt vor`);
+      else measureIds.add(g.id);
+      if (!isText(g.label)) e("Ziel „measure“: label fehlt");
+      const meter = g.quantity === "current" ? "ammeter" : g.quantity === "voltage" ? "voltmeter" : null;
+      if (!meter) e(`Ziel „measure“: quantity „${g.quantity}“ ist weder current noch voltage`);
+      else if (!l.palette?.includes(meter) && !Object.values(parts).some((p) => p.type === meter))
+        e(`Ziel „measure“ braucht ein ${meter}, das weder in der Palette noch im Brett liegt`);
+    }
   }
   for (const id of l.latch?.lit ?? []) ref(id, "latch");
   if (l.contactLab)

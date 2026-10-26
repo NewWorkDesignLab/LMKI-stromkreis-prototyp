@@ -8,8 +8,9 @@ import { FRAME_PAD, NATURAL_SCALE } from "../../render/viewport";
 import { ContactLab } from "../widgets/ContactLab";
 import { useTutorial } from "../tutorial/useTutorial";
 import { BoardViewport, TOOL_BUTTON } from "./BoardViewport";
-import { PartPalette } from "./PartPalette";
-import { StatusBar, TaskBar, WinPanel } from "./BuildPanels";
+import { PartDrawer } from "./PartDrawer";
+import { hasParts } from "./PartPalette";
+import { GoalList, StatusBar, TaskBar, WinPanel } from "./BuildPanels";
 import { ToolBar } from "./ToolBar";
 import { usePlaySession } from "./usePlaySession";
 import { useTaskIntro } from "./useTaskIntro";
@@ -34,13 +35,12 @@ interface Props {
    kurze Zeilen. */
 const MIN_COLUMN_PX = 640;
 
-/* Ein Bauschritt: links die Bauteile, in der Mitte eine Spalte aus Aufgabe mit Zielen,
-   Brett (mit Werkzeugleiste oben links) und Zustand – in Leserichtung untereinander, so
-   breit wie das Brett.
+/* Ein Bauschritt: eine Spalte aus Aufgabe, Brett (mit Werkzeugleiste oben links) und
+   Zustand – in Leserichtung untereinander, so breit wie das Brett. Ab xl stehen das
+   aufklappbare Bauteilfach links und die Ziele rechts neben dieser Spalte, darunter vor
+   und nach dem Brett (die eigentliche Mobilansicht kommt später).
    Im Level richtet sich das Brett nach seiner Größe; im freien Bauen füllt es die Fläche.
-   Ab xl hält eine leere Gegenspalte die Mittelspalte in der Fenstermitte, unter lg steht
-   alles untereinander (die eigentliche Mobilansicht kommt später). Gilt für genau einen
-   Schritt – der Aufrufer hängt es je Schritt mit eigenem key ein. */
+   Gilt für genau einen Schritt – der Aufrufer hängt es je Schritt mit eigenem key ein. */
 export function PlayArea({
   step,
   mode,
@@ -110,65 +110,68 @@ export function PlayArea({
   const columnWidth = Math.max(MIN_COLUMN_PX, extent.w * NATURAL_SCALE + 2 * FRAME_PAD);
 
   return (
-    <div className="grid gap-3 lg:h-full lg:min-h-0 lg:grid-cols-[15.5rem_minmax(0,1fr)] xl:grid-cols-[15.5rem_minmax(0,1fr)_15.5rem]">
-      <aside aria-label="Bauteile" className="lg:min-h-0 lg:overflow-y-auto lg:pr-1">
-        <PartPalette
-          palette={step.palette}
-          tool={s.tool}
-          setTool={s.setTool}
-          left={s.left}
-          orient={s.orient}
-        />
-      </aside>
-
+    <div className="flex min-h-0 flex-col lg:h-full">
       {/* Reicht die Höhe nicht, schrumpft zuerst der Brettrahmen (bis zu seiner
-          Mindesthöhe); steht ein Zusatzbaustein darunter, scrollt die Spalte. */}
-      <div className="flex min-h-0 flex-col lg:overflow-y-auto">
+          Mindesthöhe); steht ein Zusatzbaustein darunter, scrollt die Spalte. Der seitliche
+          Rand ab xl hält Platz für Bauteilfach links und Ziele rechts, die neben der
+          Brettspalte stehen. */}
+      <div className="flex min-h-0 flex-1 flex-col lg:overflow-y-auto xl:px-[18.5rem]">
         <div
           /* p-1: Luft für die herausgehobene Aufgabe (Schatten), sonst schnitte die
              scrollende Spalte ihren Rand ab */
-          className={`mx-auto flex min-h-0 w-full flex-col gap-3 p-1 ${fill ? "flex-1" : ""}`}
+          className={`relative mx-auto flex min-h-0 w-full flex-col gap-3 p-1 ${fill ? "flex-1" : ""}`}
           style={fill ? undefined : { maxWidth: columnWidth }}
         >
-          <TaskBar
-            step={step}
-            mode={mode}
-            check={s.check}
-            style={intro.taskStyle}
-            intro={intro.intro}
-            goalsEnter={intro.goalsEnter}
-          />
-          <BoardViewport
-            content={extent}
-            fill={fill}
-            solved={mode === "level" && s.won}
-            toolbar={
-              <ToolBar
+          <TaskBar step={step} mode={mode} style={intro.taskStyle} intro={intro.intro} />
+          <div className={`relative flex min-h-0 flex-col gap-3 ${fill ? "flex-1" : ""}`}>
+            {hasParts(step.palette) && (
+              <PartDrawer
                 palette={step.palette}
                 tool={s.tool}
                 setTool={s.setTool}
+                left={s.left}
                 orient={s.orient}
-                toggleOrient={() => s.setOrient((o) => (o === "h" ? "v" : "h"))}
-              />
-            }
-          >
-            {({ width, height }) => (
-              <Board
-                level={step}
-                circuit={s.circuit}
-                sim={s.sim}
-                tool={s.tool}
-                svgRef={s.svgRef}
-                handlers={s.handlers}
-                hint={s.hint}
-                overlay={tutorial}
-                width={width}
-                height={height}
-                flow={settings.flowAnimation}
               />
             )}
-          </BoardViewport>
+            <BoardViewport
+              content={extent}
+              fill={fill}
+              solved={mode === "level" && s.won}
+              toolbar={
+                <ToolBar
+                  palette={step.palette}
+                  tool={s.tool}
+                  setTool={s.setTool}
+                  orient={s.orient}
+                  toggleOrient={() => s.setOrient((o) => (o === "h" ? "v" : "h"))}
+                />
+              }
+            >
+              {({ width, height }) => (
+                <Board
+                  level={step}
+                  circuit={s.circuit}
+                  sim={s.sim}
+                  tool={s.tool}
+                  svgRef={s.svgRef}
+                  handlers={s.handlers}
+                  hint={s.hint}
+                  overlay={tutorial}
+                  width={width}
+                  height={height}
+                  flow={settings.flowAnimation}
+                />
+              )}
+            </BoardViewport>
+          </div>
           <StatusBar sim={s.sim} mode={mode} tools={tools} />
+          <GoalList
+            check={s.check}
+            readings={s.readings}
+            onReading={s.setReading}
+            intro={intro.intro}
+            goalsEnter={intro.goalsEnter}
+          />
           {mode === "level" && s.won && proceed && <WinPanel proceed={proceed} teaser={teaser} />}
           {step.contactLab && (
             <ContactLab
@@ -184,8 +187,6 @@ export function PlayArea({
           )}
         </div>
       </div>
-
-      <div aria-hidden="true" className="hidden xl:block" />
     </div>
   );
 }

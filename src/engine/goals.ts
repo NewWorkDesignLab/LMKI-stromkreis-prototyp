@@ -6,10 +6,12 @@ import type {
   BuildStep,
   LogicExpr,
   PartType,
+  Readings,
   SimResult,
 } from "../domain/types";
 import { cloneCircuit } from "./circuit";
 import { CONSUMER } from "./parts";
+import { parseQuantity, withinTolerance } from "./quantity";
 import { simulate } from "./simulate";
 
 /* ================= Ziele ================= */
@@ -75,11 +77,34 @@ export function simulateAllClosed(circuit: Circuit): SimResult {
   return simulate(c2);
 }
 
+const MEASURE_UNIT = { current: "A", voltage: "V" } as const;
+
+/* Was zeigt ein Messgerät, das die Größe an `of` misst? null, wenn keines so sitzt. Erkannt
+   wird das am Wert: Ein Amperemeter in Reihe führt genau den Strom von `of`, ein Voltmeter
+   parallel liegt an genau dessen Spannung. Bewusste Grenze: Gleiche Werte in einem anderen
+   Zweig (zwei gleiche Lampen parallel) gelten auch – physikalisch käme dasselbe heraus. */
+export function measuredValue(
+  g: Extract<Goal, { k: "measure" }>,
+  circuit: Circuit,
+  sim: SimResult,
+): number | null {
+  const [meter, table] =
+    g.quantity === "current" ? (["ammeter", sim.cur] as const) : (["voltmeter", sim.volt] as const);
+  const target = Math.abs(table[g.of] || 0);
+  if (target === 0) return null;
+  const hit = Object.keys(circuit.parts).some(
+    (k) =>
+      circuit.parts[k].type === meter && withinTolerance(Math.abs(table[k] || 0), target, 1e-6),
+  );
+  return hit ? target : null;
+}
+
 export function checkLevel(
   level: Pick<BuildStep, "goals">,
   circuit: Circuit,
   sim: SimResult,
   seen = false,
+  readings: Readings = {},
 ): CheckResult {
   const parts = circuit.parts;
   const goals = deriveGoals(level, circuit);
@@ -143,6 +168,11 @@ export function checkLevel(
         return v >= g.min && v <= g.max;
       });
       items.push({ t: g.label, ok });
+    } else if (g.k === "measure") {
+      const shown = measuredValue(g, circuit, sim);
+      const typed = parseQuantity(readings[g.id] ?? "", MEASURE_UNIT[g.quantity]);
+      const ok = shown !== null && "value" in typed && withinTolerance(typed.value, shown);
+      items.push({ t: g.label, ok, measure: { id: g.id, unit: MEASURE_UNIT[g.quantity] } });
     } else if (g.k === "logic") {
       const ix = g.inputs.map((key) => [inputs.indexOf(bareKey(key)), key[0] === "!"]);
       /* live: zusätzlich muss die Schaltung gerade wirklich durchgeschaltet sein */

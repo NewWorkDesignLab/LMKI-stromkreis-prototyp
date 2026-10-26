@@ -150,6 +150,10 @@ export type Goal =
   | { k: "on"; at?: PartId; ats?: PartId[]; on?: boolean; type?: PartType; label?: string }
   | { k: "wired"; at?: PartId; ats?: PartId[]; label?: string }
   | { k: "read"; at?: PartId; type?: PartType; min: number; max: number; label: string }
+  /** Messaufgabe: Lernende bauen das Messgerät so ein, dass es die Größe an `of` misst, und
+      tragen den abgelesenen Wert selbst ein. Der Sollwert ist der, den das Messgerät in der
+      Simulation zeigt – keine zweite Zahl in den Leveldaten. */
+  | { k: "measure"; id: string; quantity: Quantity; of: PartId; label: string }
   | {
       k: "logic";
       at: PartId;
@@ -165,10 +169,18 @@ export type Goal =
   | { k: "seen"; label: string }
   | { k: "fuse"; label?: string };
 
+/** Messgröße einer Messaufgabe: Strom durch ein Bauteil (Amperemeter) oder Spannung an ihm (Voltmeter). */
+export type Quantity = "current" | "voltage";
+
+/** Eingetragene Messwerte je Messaufgabe (`measure.id`), als getippter Text. */
+export type Readings = Record<string, string>;
+
 export interface CheckItem {
   /** Text der Checkliste */
   t: string;
   ok: boolean;
+  /** Messaufgabe: hier trägt man den abgelesenen Wert ein */
+  measure?: { id: string; unit: "A" | "V" };
 }
 
 export interface CheckResult {

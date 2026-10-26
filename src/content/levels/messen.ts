@@ -11,7 +11,7 @@ export const messenLevels: LegacyLevelDef[] = [
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Verdrahte den Stromkreis. Der Widerstand begrenzt den Strom – beobachte Amperemeter und Helligkeit.",
+    task: "Verdrahte den Stromkreis. Der Widerstand begrenzt den Strom – lies am Amperemeter ab, wie viel fließt, und achte auf die Helligkeit.",
     lesson: "Ein Widerstand begrenzt den Strom. Mehr Widerstand im Stromkreis heißt weniger Strom.",
     cells: {
       "0,1": { type: "battery", orient: "v" },
@@ -22,11 +22,11 @@ export const messenLevels: LegacyLevelDef[] = [
     },
     goals: [
       {
-        k: "read",
-        type: "ammeter",
-        min: 0.04,
-        max: 0.055,
-        label: "Das Amperemeter zeigt etwa 47 mA",
+        k: "measure",
+        id: "strom",
+        quantity: "current",
+        of: "6,1",
+        label: "Lies die Stromstärke ab",
       },
     ],
   },
@@ -39,7 +39,7 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: ["wire", "ammeter", "erase"],
     stock: { ammeter: 1 },
     showValues: true,
-    task: "Setze das Amperemeter so ein, dass es den Lampenstrom misst – und die Lampe weiter leuchtet.",
+    task: "Wie viel Strom fließt durch die Lampe? Miss ihn, ohne dass die Lampe ausgeht, und trage den Wert ein.",
     lesson:
       "Ein Amperemeter wird IN REIHE eingebaut. Parallel geschaltet würde sein sehr kleiner Innenwiderstand den Verbraucher kurzschließen.",
     cells: {
@@ -48,11 +48,11 @@ export const messenLevels: LegacyLevelDef[] = [
     },
     goals: [
       {
-        k: "read",
-        type: "ammeter",
-        min: 0.09,
-        max: 0.11,
-        label: "Das Amperemeter zeigt etwa 100 mA",
+        k: "measure",
+        id: "strom",
+        quantity: "current",
+        of: "4,1",
+        label: "Miss die Stromstärke durch die Lampe",
       },
     ],
   },
@@ -65,7 +65,7 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: ["wire", "voltmeter", "erase"],
     stock: { voltmeter: 1 },
     showValues: true,
-    task: "Miss die Spannung an der Lampe. Das Voltmeter braucht einen eigenen Zweig neben der Lampe.",
+    task: "Welche Spannung liegt an der Lampe? Miss sie und trage den Wert ein.",
     lesson:
       "Ein Voltmeter wird PARALLEL zum Bauteil geschaltet. In Reihe sperrt sein hoher Innenwiderstand den Stromkreis nahezu.",
     cells: {
@@ -74,11 +74,11 @@ export const messenLevels: LegacyLevelDef[] = [
     },
     goals: [
       {
-        k: "read",
-        type: "voltmeter",
-        min: 8.4,
-        max: 9.05,
-        label: "Das Voltmeter zeigt die Lampenspannung (≈ 9 V)",
+        k: "measure",
+        id: "spannung",
+        quantity: "voltage",
+        of: "4,1",
+        label: "Miss die Spannung an der Lampe",
       },
     ],
   },
@@ -91,7 +91,7 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: ["wire", "voltmeter", "erase"],
     stock: { voltmeter: 1 },
     showValues: true,
-    task: "Zwei gleiche Lampen liegen in Reihe. Miss mit dem Voltmeter die Spannung an der linken Lampe.",
+    task: "Zwei gleiche Lampen liegen in Reihe. Welche Spannung liegt an der linken? Miss sie und trage den Wert ein.",
     lesson:
       "In der Reihenschaltung teilt sich die Spannung auf die Verbraucher auf – bei zwei gleichen Lampen je die Hälfte.",
     cells: {
@@ -102,11 +102,11 @@ export const messenLevels: LegacyLevelDef[] = [
     },
     goals: [
       {
-        k: "read",
-        type: "voltmeter",
-        min: 3.9,
-        max: 4.9,
-        label: "Das Voltmeter zeigt etwa 4,5 V – die halbe Quellenspannung",
+        k: "measure",
+        id: "spannung",
+        quantity: "voltage",
+        of: "1,1",
+        label: "Miss die Spannung an der linken Lampe",
       },
     ],
   },
@@ -119,7 +119,7 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: ["wire", "ammeter", "erase"],
     stock: { ammeter: 1 },
     showValues: true,
-    task: "Der Stromkreis ist fertig verdrahtet. Miss den Gesamtstrom: setze das Amperemeter in die Hauptleitung.",
+    task: "Der Stromkreis ist fertig verdrahtet. Wie viel Strom liefert die Batterie insgesamt? Miss ihn und trage den Wert ein.",
     lesson:
       "In der Parallelschaltung teilt sich der Strom auf die Zweige auf – der Gesamtstrom ist die Summe.",
     cells: {
@@ -131,11 +131,11 @@ export const messenLevels: LegacyLevelDef[] = [
     },
     goals: [
       {
-        k: "read",
-        type: "ammeter",
-        min: 0.17,
-        max: 0.22,
-        label: "Das Amperemeter zeigt den Gesamtstrom (≈ 200 mA)",
+        k: "measure",
+        id: "gesamtstrom",
+        quantity: "current",
+        of: "0,1",
+        label: "Miss den Gesamtstrom, den die Batterie liefert",
       },
     ],
   },

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { BuildStep, CheckResult, Circuit } from "../../domain/types";
+import type { BuildStep, CheckResult, Circuit, Readings } from "../../domain/types";
 import { cloneCircuit, emptyCircuit } from "../../engine/circuit";
 import { checkLevel } from "../../engine/goals";
 import { latchTripped, type PlayMode } from "../../engine/editing";
@@ -40,9 +40,13 @@ export function usePlaySession(
     if (level.latch.lit.every((id) => sim.lit.has(id))) setSeen(true);
   }, [level, sim, seen]);
 
+  /* Abgelesene Werte der Messaufgaben, so getippt – ob sie stimmen, prüft checkLevel */
+  const [readings, setReadings] = useState<Readings>({});
+  const setReading = (id: string, text: string) => setReadings((r) => ({ ...r, [id]: text }));
+
   const check = useMemo(
-    () => (mode === "level" ? checkLevel(level, circuit, sim, seen) : NOT_PLAYING),
-    [mode, level, circuit, sim, seen],
+    () => (mode === "level" ? checkLevel(level, circuit, sim, seen, readings) : NOT_PLAYING),
+    [mode, level, circuit, sim, seen, readings],
   );
 
   const contactLab = useContactLab(level.contactLab, circuit, check.won);
@@ -65,10 +69,11 @@ export function usePlaySession(
     editor.cancelGesture();
     contactLab.reset();
     setSeen(false); // sonst bliebe „lief schon mal“ über das Zurücksetzen hinweg stehen
+    setReadings({});
     commit(() => cloneCircuit(level.circuit));
     onReset?.();
   };
   const clear = () => commit(() => emptyCircuit());
 
-  return { ...editor, sim, check, won, contactLab, reset, clear };
+  return { ...editor, sim, check, won, readings, setReading, contactLab, reset, clear };
 }

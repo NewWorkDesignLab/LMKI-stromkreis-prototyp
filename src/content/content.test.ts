@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { BuildStep, LevelDef } from "../domain/types";
+import type { BuildStep, LevelDef, Readings } from "../domain/types";
 import { CONCEPTS } from "./concepts";
 import { LEVEL_CATALOG } from "./catalog";
 import { DEFAULT_CURRICULUM } from "./curriculum";
 import { TUTORIALS } from "./tutorials";
 import { validateLevel } from "../services/validate";
-import { checkLevel } from "../engine/goals";
+import { checkLevel, measuredValue } from "../engine/goals";
 import { simulate } from "../engine/simulate";
 import { circuitFromCells, fromLegacyLevel } from "./legacy";
 import { lockw, wire } from "./helpers";
@@ -72,8 +72,14 @@ describe("Inhalte", () => {
   it("erreicht mit jeder Musterlösung die Ziele ihres Bauschritts", () => {
     for (const l of LEVEL_CATALOG)
       for (const b of builds(l))
-        if (b.solution)
-          expect(checkLevel(b, b.solution, simulate(b.solution)).won, `${l.id}/${b.id}`).toBe(true);
+        if (b.solution) {
+          const sim = simulate(b.solution);
+          /* Messaufgaben brauchen den abgelesenen Wert; die Musterlösung liest ihn exakt ab */
+          const readings: Readings = {};
+          for (const g of b.goals ?? [])
+            if (g.k === "measure") readings[g.id] = String(measuredValue(g, b.solution, sim));
+          expect(checkLevel(b, b.solution, sim, false, readings).won, `${l.id}/${b.id}`).toBe(true);
+        }
   });
 });
 

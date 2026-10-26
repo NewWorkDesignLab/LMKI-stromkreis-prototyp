@@ -17,11 +17,13 @@ interface Props {
   orient: Orient;
 }
 
-/* Linke Spalte: die Bauteile. tool ist EINE Auswahl – die Markierung wandert zwischen
-   Verdrahten/Löschen (ToolBar am Brett) und den Bauteilen. Die Bauteile stehen nach Gruppen und
-   farbig, damit man sie findet, ohne die Symbole schon zu kennen. Zwei Kacheln je Zeile,
-   damit auch die volle Palette des freien Baumodus ohne Scrollen passt; die Kurzinfo
+/* Die Bauteile (im aufklappbaren PartDrawer). tool ist EINE Auswahl – die Markierung wandert
+   zwischen Verdrahten/Löschen (ToolBar am Brett) und den Bauteilen. Die Bauteile stehen nach
+   Gruppen und farbig, damit man sie findet, ohne die Symbole schon zu kennen; die Kurzinfo
    steht darunter für das überfahrene bzw. gewählte Bauteil. */
+/** Ob die Palette überhaupt Bauteile enthält (Verdrahten und Löschen liegen in der ToolBar). */
+export const hasParts = (palette: ToolId[]) => palette.some((t) => PLACEABLE.has(t));
+
 export function PartPalette({ palette, tool, setTool, orient, left }: Props) {
   const [hovered, setHovered] = useState<ToolId | null>(null);
   const parts = palette.filter((t) => PLACEABLE.has(t));
@@ -37,10 +39,10 @@ export function PartPalette({ palette, tool, setTool, orient, left }: Props) {
       {groups.map(({ g, tools }) => (
         <section key={g} aria-labelledby={`group-${g}`}>
           <h2 id={`group-${g}`} className={`${HEADING} flex items-center gap-1.5`}>
-            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${GROUPS[g].dot}`} />
+            <span aria-hidden="true" className={`h-3.5 w-1 rounded-full ${GROUPS[g].dot}`} />
             {GROUPS[g].label}
           </h2>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
             {tools.map((t) => {
               const active = tool === t;
               const preview = newPart(t, 0, 0, active ? orient : "h");
@@ -57,21 +59,25 @@ export function PartPalette({ palette, tool, setTool, orient, left }: Props) {
                   aria-pressed={active}
                   aria-label={n === null ? undefined : `${TOOLS[t].label}, noch ${n} verfügbar`}
                   title={TOOLS[t].info}
-                  className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1 transition ${GROUPS[g].tile} ${active ? GROUPS[g].active : ""} ${n === 0 ? "opacity-45" : ""}`}
+                  /* Eine Karte wie ein Bauteil aus dem Lagerkasten: Symbol auf getöntem Grund,
+                     darunter das Etikett. Die Gruppenfarbe tönt nur den Grund. */
+                  className={`relative flex min-h-24 flex-col overflow-hidden rounded-xl border shadow-sm transition hover:-translate-y-px hover:shadow-md ${GROUPS[g].tile} ${active ? GROUPS[g].active : ""} ${n === 0 ? "opacity-50" : ""}`}
                 >
                   {/* Vorrat: wie viele davon man noch setzen darf */}
                   {n !== null && (
                     <span
                       aria-hidden="true"
-                      className="absolute right-1 top-1 rounded-md bg-white/90 px-1 text-[0.7rem] font-bold tabular-nums leading-4 text-stone-700 ring-1 ring-stone-200"
+                      className={`absolute right-1.5 top-1.5 rounded-full px-1.5 text-xs font-bold tabular-nums leading-5 text-white ${n === 0 ? "bg-stone-400" : GROUPS[g].dot}`}
                     >
                       {n}×
                     </span>
                   )}
-                  <svg viewBox="0 0 60 60" width={38} height={38} aria-hidden="true">
-                    {partGlyph("vorschau", preview, EMPTY_SIM)}
-                  </svg>
-                  <span className="text-center text-xs font-semibold leading-tight">
+                  <span className="flex flex-1 items-center justify-center px-1 pt-2">
+                    <svg viewBox="0 0 60 60" width={46} height={46} aria-hidden="true">
+                      {partGlyph("vorschau", preview, EMPTY_SIM)}
+                    </svg>
+                  </span>
+                  <span className="border-t border-stone-200/80 bg-white px-1 py-1 text-center text-xs font-semibold leading-tight">
                     {TOOLS[t].label}
                   </span>
                 </button>

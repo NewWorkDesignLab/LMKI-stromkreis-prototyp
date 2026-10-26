@@ -72,7 +72,7 @@ src/
   render/               SVG: Board.tsx, symbols/ (ein Bauteil je Datei), viewport.ts (Zoom-Rechnung)
   features/
     lesson/             Level als Schrittfolge: Schrittleiste, Darstellung je Schrittart, Textbausteine
-    play/               Bauschritt: PartPalette | Aufgabe, Brett (BoardViewport), Zustand (BuildPanels)
+    play/               Bauschritt: PartDrawer (PartPalette) | Aufgabe, Brett (BoardViewport), Zustand, Ziele (BuildPanels)
     settings/           Einstellungsdialog
     tutorial/           Einführungsanimationen
     widgets/            Anschauungen (URI-Dreieck, Kühlschrank, Lichtschalter) und Funktionsansicht
@@ -241,16 +241,23 @@ Ab `lg` (1024 px) füllt die Anwendung das Fenster: Kopfleiste (Modus, Levelnavi
 Ton, Schaltzeichen, Einstellungen), darunter die Schrittleiste und der aktuelle Schritt.
 Entschieden 2026-10-23 nach dem Vergleich mit dem kompakten Prototyp: alles, worauf man
 achten muss, liegt in Leserichtung direkt am Brett, nicht in Seitenspalten („Variante B“).
+Ergänzt 2026-10-26: Bauteilfach und Ziele stehen ab `xl` unmittelbar neben der Brettspalte
+(das Fach klappt bei Bedarf weg), nicht mehr als eigene Rasterspalten am Fensterrand.
 
 **Bauschritt:**
 
-- **links** `PartPalette`: Bauteile nach Gruppen (Quellen, Schalten, Verbraucher,
-  Begrenzen & Schützen, Messen, Leitungen), farbig je Gruppe, darunter die Kurzinfo fürs
-  gewählte bzw. überfahrene Bauteil. **Farbe nur in der Palette**
+- **links neben dem Brett** `PartDrawer` mit `PartPalette`: ein schmaler, hoher Griff
+  (Dreieck, `aria-expanded`), aus dem das Fach nach links aufgeht; es startet offen, wenn die
+  Palette Bauteile enthält. Unter `xl` steht es als aufklappbare Leiste über dem Brett.
+  Bauteile als Karten nach Gruppen (Quellen, Schalten, Verbraucher, Begrenzen & Schützen,
+  Messen, Leitungen), Symbol auf getöntem Grund, Vorrat als „1×“-Marke, darunter die
+  Kurzinfo fürs gewählte bzw. überfahrene Bauteil. **Farbe nur in der Palette**
   – auf dem Brett bleiben die Schaltzeichen normgerecht schwarz (entschieden 2026-10-23).
+- **rechts neben dem Brett** `GoalList`: die Ziele untereinander, bei Messaufgaben mit Feld
+  für den abgelesenen Wert; unter `xl` unter dem Brett.
 - **Mitte** eine Spalte, so breit wie das Brett (mindestens 40 rem, damit die Aufgabe
   nicht in kurze Zeilen bricht), ab `xl` in der Fenstermitte:
-  - `TaskBar`: Aufgabe und Ziele als Häkchenreihe.
+  - `TaskBar`: die Aufgabe.
   - `BoardViewport`: Im Level ist der Rahmen **so groß wie das Brett** in Originalgröße
     (100 % = 60 px je Punkt, wie im Prototyp) plus Rand – ein kleines Level bleibt klein und
     mittig. Zoom und Verschieben erscheinen nur, wenn das Brett nicht hineinpasst (dann bis
@@ -440,7 +447,8 @@ Ziele stehen pro Level in `goals`; für Verbraucher ohne eigenes Ziel wird autom
 | Art      | Bedeutung                                                                     |
 | -------- | ----------------------------------------------------------------------------- |
 | `on`     | Verbraucher an / aus                                                          |
-| `read`   | Messgerät zeigt einen Wert im Bereich `min`–`max`                             |
+| `read`   | Messgerät zeigt einen Wert im Bereich `min`–`max` (Aufbau-Ziel, kein Ablesen) |
+| `measure`| Messaufgabe: Größe an `of` messen, abgelesenen Wert eintragen                 |
 | `logic`  | Lampe folgt `and` / `or` / `xor` / `id` / `not` über die genannten Schalter   |
 | `toggle` | jeder einzelne Schalter kehrt den Zustand um (Wechselschaltung)               |
 | `state`  | die genannten Kontakte sind **jetzt** betätigt bzw. nicht betätigt            |
@@ -467,6 +475,18 @@ Messgeräte-Level brauchen keine Sonderregel: wer ein Amperemeter parallel schal
 den Verbraucher dunkel; wer ein Voltmeter in Reihe schaltet, sperrt den Stromkreis. Die Physik
 erzwingt die richtige Einbauart selbst.
 
+**Messen ist eine Aufgabe, kein Zustand** (entschieden 2026-10-26). „Das Amperemeter zeigt
+etwa 100 mA“ ließ sich erfüllen, ohne je etwas zu messen. Ein `measure`-Ziel
+(`{ id, quantity: "current" | "voltage", of, label }`) verlangt dagegen zweierlei: ein
+Messgerät sitzt so, dass es die Größe an `of` misst, **und** die Lernenden tragen den
+abgelesenen Wert ins Feld der Ziel-Liste ein (`Readings`, Text wie getippt, mit oder
+ohne Vorsatz, 2 % Toleranz). Der Sollwert ist das, was das Messgerät in der Simulation
+zeigt – keine zweite Zahl in den Leveldaten. `of` ist beim Strom das Bauteil, durch das er
+fließt (bei der Quelle: der Gesamtstrom), bei der Spannung das Bauteil, an dem sie liegt.
+`label` ist die Aufgabe („Miss die Spannung an der Lampe“), sie verrät nicht, wie.
+`read` bleibt für Ziele, bei denen der **Aufbau** den Wert bestimmen soll (Widerstand
+wählen, LED-Strom einstellen).
+
 Kurzschluss und Überlastung lassen ein Level immer scheitern.
 
 ## 9. Bewusste Grenzen
@@ -483,6 +503,11 @@ Kurzschluss und Überlastung lassen ein Level immer scheitern.
   Wechselschalter. Das ergibt etwa 10 × 6 Zellen. Seit dem Desktop-Layout (Oktober 2026)
   füllt das Brett die Mitte und lässt sich zoomen, der Platz ist also kein Hindernis
   mehr. Machbar, aber ein eigener Schritt, kein Beiwerk.
+- **Messaufgaben erkennen das Messgerät am Wert.** Ein Amperemeter „misst“ `of`, wenn es
+  denselben Strom führt, ein Voltmeter, wenn es an derselben Spannung liegt (`measuredValue`).
+  Zeigt ein anderer Zweig zufällig denselben Wert (zwei gleiche Lampen parallel), gilt das
+  auch – physikalisch käme dasselbe heraus. Das Eintragen eines Messwerts wird noch nicht als
+  `LearningEvent` gemeldet.
 - **Kein gespeicherter Fortschritt.** Gespeichert werden bisher nur die Einstellungen. Der Zähler „x/24 gelöst" gilt nur für die laufende
   Sitzung und wird bei jedem Neuladen zurückgesetzt. Das bleibt erstmal so festgeschrieben.
 - **Wenige automatisierte Tests.** `npm test` (vitest) prüft Grundfälle der Simulation und
@@ -503,11 +528,10 @@ Diese vier Fehler erklären, warum der Code an manchen Stellen so aussieht, wie 
 4. **Flussanimation lief nicht in Stromrichtung** — sie hing an der Zeichenreihenfolge der
    SVG-Linie, nicht am tatsächlichen Stromweg.
 
-5. **Ein Werkzeug ohne Schaltzeichen blieb leer.** Die Bauteil-Kacheln zeichnen nicht
-   das lucide-Icon aus `TOOLS`, sondern `cellGlyph` mit einer Vorschauzelle. „opener“ ist
-   aber kein Zelltyp, sondern ein `switch` mit `nc` — die Kachel war deshalb leer. Dafür
-   gibt es jetzt `previewCell(t, orient)`, das beide Palettenstellen benutzen. Bei jedem
-   weiteren Pseudo-Werkzeug daran denken.
+5. **Ein Werkzeug ohne Schaltzeichen blieb leer.** Die Bauteil-Karten zeichnen nicht
+   das lucide-Icon aus `TOOLS`, sondern `partGlyph` mit einem Vorschauteil aus `newPart`.
+   „opener“ ist aber kein Bauteiltyp, sondern ein `switch` mit `nc` — `newPart` kennt das.
+   Bei jedem weiteren Pseudo-Werkzeug daran denken.
 6. **Die Beschriftung lag auf dem Türblatt.** `label()` nimmt jetzt einen Abstand als
    dritten Parameter; die Tür setzt ihn auf 31, weil ihr Blatt in geschlossener Stellung
    genau dort liegt, wo Messwerte sonst stehen.
