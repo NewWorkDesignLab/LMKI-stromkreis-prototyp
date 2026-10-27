@@ -1,4 +1,7 @@
 import { Fragment, useState, useEffect, useRef, useMemo } from "react";
+import logoEsfEu from "./assets/funding/esf-eu.webp";
+import logoEu from "./assets/funding/eu.webp";
+import logoSachsen from "./assets/funding/freistaat-sachsen.webp";
 import {
   Pencil,
   Cable,
@@ -3980,6 +3983,13 @@ export default function App() {
           </div>
         </div>
       )}
+      <footer className="mt-auto pt-6 w-full max-w-5xl">
+        <div className="bg-white rounded-xl px-4 py-2 flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+          <img src={logoEu} alt="Kofinanziert von der Europäischen Union" className="h-12 w-auto" />
+          <img src={logoEsfEu} alt="Europa fördert Sachsen – ESF" className="h-14 w-auto" />
+          <img src={logoSachsen} alt="Freistaat Sachsen – mitfinanziert durch Steuermittel" className="h-12 w-auto" />
+        </div>
+      </footer>
     </div>
   );
 }
