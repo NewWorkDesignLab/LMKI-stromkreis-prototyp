@@ -11,7 +11,7 @@ export const schutzLevels: LegacyLevelDef[] = [
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Die Lampe bleibt dunkel, obwohl der Stromkreis geschlossen ist. Eine Leitung überbrückt sie – finde und lösche sie.",
+    task: "Die Lampe bleibt dunkel, obwohl der Stromkreis geschlossen ist. Finde den Kurzschluss und beseitige ihn.",
     lesson:
       "Ein Kurzschluss verbindet + und − ohne Verbraucher. Die Brücke hat keinen Widerstand: an der Lampe liegt keine Spannung mehr, also fließt durch sie kein Strom.",
     cells: {
@@ -29,7 +29,7 @@ export const schutzLevels: LegacyLevelDef[] = [
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Die Sicherung hat ausgelöst und trennt den Stromkreis. Beseitige die Ursache und tippe sie an, um sie wieder einzuschalten.",
+    task: "Die Sicherung hat ausgelöst. Beseitige die Ursache und schalte die Sicherung wieder ein.",
     lesson:
       "Eine Sicherung trennt den Stromkreis bei Überstrom – sie schützt Leitung und Spannungsquelle. Einschalten hilft erst, wenn die Ursache weg ist.",
     cells: {
@@ -49,7 +49,7 @@ export const schutzLevels: LegacyLevelDef[] = [
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Verdrahte den Stromkreis. Eine LED leitet nur in Durchlassrichtung – tippe sie an, um sie zu drehen.",
+    task: "Verdrahte den Stromkreis und baue die LED in Durchlassrichtung ein.",
     lesson:
       "Die LED leitet nur von Anode zur Kathode (Balken). Falsch gepolt sperrt sie vollständig.",
     cells: {
@@ -67,7 +67,7 @@ export const schutzLevels: LegacyLevelDef[] = [
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Der Durchlassstrom der LED darf höchstens 30 mA betragen. Verdrahte den Stromkreis und tippe den Widerstand an, um seinen Wert zu wechseln – gesucht sind 12–18 mA.",
+    task: "Verdrahte den Stromkreis und wähle den Vorwiderstand so, dass ein LED-Strom zwischen 12 mA und 18 mA fließt. Mehr als 30 mA verträgt die LED nicht.",
     lesson: "Eine LED braucht immer einen Vorwiderstand: R = (Uq − UF) / I.",
     cells: {
       "0,1": { type: "battery", orient: "v" },
@@ -87,7 +87,7 @@ export const schutzLevels: LegacyLevelDef[] = [
         type: "ammeter",
         min: 0.012,
         max: 0.018,
-        label: "Der LED-Strom liegt zwischen 12 und 18 mA",
+        label: "Der LED-Strom liegt zwischen 12 mA und 18 mA",
       },
     ],
   },

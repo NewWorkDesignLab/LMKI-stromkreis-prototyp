@@ -11,7 +11,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     W: 5,
     H: 3,
     palette: BASE,
-    task: "Ziehe Leitungen, sodass ein geschlossener Stromkreis von + über die Lampe zurück zu − entsteht. Nur dann fließt Strom.",
+    task: "Verbinde Spannungsquelle und Lampe zu einem geschlossenen Stromkreis.",
     lesson: "Strom fließt nur im geschlossenen Stromkreis.",
     cells: {
       "0,1": { type: "battery", orient: "v" },
@@ -26,7 +26,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     W: 5,
     H: 3,
     palette: BASE,
-    task: "Ein Schalter unterbricht den Stromkreis. Verdrahte ihn und tippe ihn an.",
+    task: "Baue den Schalter in den Stromkreis ein und schalte die Lampe ein.",
     lesson: "Ein Schalter ist eine gewollte Unterbrechung des Stromkreises.",
     cells: {
       "0,1": { type: "battery", orient: "v" },
@@ -42,7 +42,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     W: 7,
     H: 3,
     palette: BASE,
-    task: "Zwei Schalter in Reihe. Verdrahte sie und prüfe alle vier Schalterstellungen.",
+    task: "Schalte die beiden Schalter in Reihe und prüfe alle vier Schalterkombinationen.",
     lesson:
       "In Reihe geschaltete Schalter wirken wie UND: nur wenn alle geschlossen sind, fließt Strom.",
     cells: {
@@ -59,7 +59,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
         expr: "and",
         inputs: ["2,0", "4,0"],
         live: true,
-        label: "Lampe leuchtet nur, wenn BEIDE Schalter geschlossen sind",
+        label: "Die Lampe leuchtet nur, wenn beide Schalter geschlossen sind",
       },
     ],
   },
@@ -70,7 +70,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     W: 7,
     H: 3,
     palette: BASE,
-    task: "Beide Lampen liegen an derselben Plus- und derselben Minusleitung. Verbinde die obere (+) und die untere (−) Leitung.",
+    task: "Schließe beide Lampen parallel an: jede Lampe direkt zwischen Plus- und Minusleitung.",
     lesson: "Parallele Verbraucher liegen an derselben Spannung und sind voneinander unabhängig.",
     cells: {
       "0,1": { type: "battery", orient: "v" },
@@ -86,7 +86,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     W: 7,
     H: 4,
     palette: BASE,
-    task: "Verdrahte beide Zweige. Die grüne Lampe soll leuchten, die rot gestrichelte muss AUS bleiben.",
+    task: "Verdrahte beide Zweige und schalte so, dass nur die grüne Lampe leuchtet.",
     lesson: "Strom fließt nur über geschlossene Stromwege – du entscheidest, welcher das ist.",
     cells: {
       "0,1": { type: "battery", orient: "v" },
@@ -97,6 +97,11 @@ export const grundlagenLevels: LegacyLevelDef[] = [
       "4,2": { type: "lamp", orient: "v", goal: "off" },
       ...wall("1,1 1,2 3,1 3,2 5,1 6,1 5,2 6,2"),
     },
-    goals: [{ k: "wired", ats: ["2,2", "4,2"] }],
+    /* Ohne eigene Texte hießen beide Ziele nur „Die Lampe …“ – welche, bliebe offen. */
+    goals: [
+      { k: "wired", ats: ["2,2", "4,2"], label: "Beide Lampen sind angeschlossen" },
+      { k: "on", at: "2,2", on: true, label: "Die grüne Lampe leuchtet" },
+      { k: "on", at: "4,2", on: false, label: "Die rot gestrichelte Lampe bleibt aus" },
+    ],
   },
 ];

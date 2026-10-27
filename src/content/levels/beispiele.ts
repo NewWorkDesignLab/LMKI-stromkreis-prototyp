@@ -41,7 +41,7 @@ export const beispielLevels: LevelDef[] = [
       {
         kind: "build",
         id: "bauen",
-        task: "Schalte beide Lampen in Reihe an die Quelle und miss mit dem Amperemeter den Strom. Lege die Leitungen selbst – jeder Weg ist erlaubt.",
+        task: "Schalte beide Lampen in Reihe an die Spannungsquelle. Wie groß ist die Stromstärke?",
         W: 7,
         H: 4,
         palette: BASE,
@@ -57,11 +57,12 @@ export const beispielLevels: LevelDef[] = [
         },
         goals: [
           {
-            k: "read",
-            at: "PA1",
-            min: 0.045,
-            max: 0.055,
-            label: "Das Amperemeter zeigt etwa 50 mA – halb so viel wie bei einer Lampe allein",
+            k: "measure",
+            id: "strom",
+            quantity: "current",
+            of: "E1",
+            unit: "mA",
+            label: "Miss die Stromstärke",
           },
         ],
         solution: {
@@ -79,7 +80,7 @@ export const beispielLevels: LevelDef[] = [
         id: "spannung",
         title: "Frage",
         concepts: ["spannungsteilung"],
-        question: "Welche Spannung liegt an einer der beiden Lampen?",
+        question: "Berechne die Spannung an einer der beiden Lampen.",
         blocks: [{ k: "p", text: "Die Quelle liefert 9 V, beide Lampen haben je 90 Ω." }],
         answer: { k: "number", value: 4.5, unit: "V", tolerance: 0.03 },
         explanation: [

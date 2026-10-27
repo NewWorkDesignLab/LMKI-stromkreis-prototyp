@@ -516,6 +516,10 @@ Kurzschluss und Überlastung lassen ein Level immer scheitern.
   Wechselschalter. Das ergibt etwa 10 × 6 Zellen. Seit dem Desktop-Layout (Oktober 2026)
   füllt das Brett die Mitte und lässt sich zoomen, der Platz ist also kein Hindernis
   mehr. Machbar, aber ein eigener Schritt, kein Beiwerk.
+- **Genau ablesen, nicht genau messen** (entschieden 2026-10-26). Die Anwendung übt das
+  exakte Ablesen und Umrechnen einer eindeutigen Anzeige. Messabweichung, Genauigkeitsklassen
+  und springende letzte Stellen echter Messgeräte gehören in die Praxis; ob es später Level
+  dazu gibt, ist mit den Ausbildern zu klären (siehe Offene Punkte).
 - **Messaufgaben erkennen das Messgerät am Wert.** Ein Amperemeter „misst“ `of`, wenn es
   denselben Strom führt, ein Voltmeter, wenn es an derselben Spannung liegt (`measuredValue`).
   Zeigt ein anderer Zweig zufällig denselben Wert (zwei gleiche Lampen parallel), gilt das
@@ -559,6 +563,16 @@ Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie
 - **Vor Tests und Screenshots fragen.** Steht so in seinen globalen Vorgaben.
 - **Konzeptnamen gehören in den Leveltitel**, nicht in den Merksatz — der Titel wird schon
   beim Bauen gelesen und lenkt das Erkennen. Merksätze bleiben ein bis zwei Sätze.
+- **Aufgabe und Ziele sprechen mit Operatoren** (entschieden 2026-10-26), wie in Ausbildung
+  und Prüfung: verdrahten, schalten, schließen an, messen, ablesen, prüfen, untersuchen,
+  einstellen, berechnen, Fehler finden und beheben. Die **Aufgabe** stellt die Frage oder
+  die Lage („Wie groß ist die Stromstärke durch die Lampe?“), das **Ziel** benennt die
+  Handlung („Miss die Stromstärke durch die Lampe“) oder einen prüfbaren Zustand („Die
+  Lampe leuchtet nur, wenn beide Schalter geschlossen sind“). Ziele als ganze Sätze mit
+  Artikel, ohne Großbuchstaben zur Betonung. Kein Sollwert, der das Ergebnis vorwegnimmt,
+  keine Lösung in der Aufgabe („lösche die Leitung bei …“), keine Bedienungsanleitung
+  („tippe an“, „trage ein“) – Bedienung erklärt sich am Brett. Fachbegriffe statt
+  Alltagswörtern: Spannungsquelle statt Batterie, betätigen statt drücken.
 - Repository: `https://github.com/NewWorkDesignLab/LMKI-stromkreis-prototyp`
 
 ## 12. Offene Punkte
@@ -573,6 +587,11 @@ Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie
   Spannungsteiler, Relais, Verbraucher mit unterschiedlichen Widerständen an einer Quelle.
 - Zweihandschaltung (zwei Taster gleichzeitig) — geht erst mit Touch, mit der Maus
   lässt sich nur ein Taster halten.
+- **Mit den Ausbildern klären (Messaufgaben):** Level zu Messabweichung und
+  Genauigkeitsklassen? Signifikante Stellen verlangen („9,00 V“ statt „9“)? Soll die
+  Einheit in schwierigeren Aufgaben selbst angegeben werden statt fest am Feld zu stehen?
+  Quizfragen nehmen Zahlen heute noch mit Vorsatz an („0,22 kΩ“) – angleichen an das
+  Messfeld (nur die Zahl in der vorgegebenen Einheit)?
 - Leistung (P = U · I) wird intern schon gerechnet: die Lampenhelligkeit ist
   `I²·R / (Un·In)`, also das Verhältnis zur Nennleistung. Angezeigt wird sie nirgends.
 

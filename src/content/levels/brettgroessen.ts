@@ -21,7 +21,7 @@ function demoLevel(id: string, name: string, W: number, H: number): LevelDef {
       {
         kind: "build",
         id: "bauen",
-        task: `Brett ${W} × ${H} Punkte: Verbinde Quelle und Lampe zu einem geschlossenen Stromkreis.`,
+        task: `Brett ${W} × ${H} Punkte: Verbinde Spannungsquelle und Lampe zu einem geschlossenen Stromkreis.`,
         W,
         H,
         palette: BASE,

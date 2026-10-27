@@ -11,7 +11,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Verdrahte den Stromkreis. Tippe dann den Widerstand an: Je größer er ist, desto weniger Strom fließt und desto dunkler wird die Lampe. Gesucht ist die dunkelste Stufe, bei der sie gerade noch leuchtet.",
+    task: "Verdrahte den Stromkreis und stelle am Widerstand die dunkelste Stufe ein, bei der die Lampe noch leuchtet.",
     lesson:
       "Ein Widerstand in Reihe dimmt die Lampe: mehr Widerstand, weniger Strom, weniger Licht. Wird er zu groß, reicht der Strom zum Leuchten nicht mehr aus.",
     cells: {
@@ -32,8 +32,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
         type: "ammeter",
         min: 0.025,
         max: 0.035,
-        label:
-          "Der Strom liegt bei etwa 30 mA – die dunkelste Stufe, bei der die Lampe noch leuchtet",
+        label: "Der Widerstand steht auf der dunkelsten Stufe, bei der die Lampe noch leuchtet",
       },
     ],
   },
@@ -48,7 +47,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     W: 7,
     H: 5,
     palette: BASE,
-    task: "Dieselbe Flurschaltung wie vorhin – nur lässt sich das Licht nicht mehr ausschalten, egal welchen Schalter du umlegst. Eine einzige Leitung verbindet die beiden korrespondierenden Leitungen miteinander. Finde und lösche sie.",
+    task: "Dieselbe Flurschaltung wie vorhin – nur lässt sich das Licht nicht mehr ausschalten. Eine Leitung ist zu viel: Finde den Fehler und behebe ihn.",
     lesson:
       "Die beiden korrespondierenden Leitungen müssen getrennt bleiben. Sind sie verbunden, findet der Strom in jeder Schalterstellung einen Weg – und beide Schalter sind wirkungslos.",
     cells: {
@@ -65,7 +64,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
         k: "toggle",
         at: "6,2",
         inputs: ["2,1", "4,1"],
-        label: "Jeder der beiden Schalter schaltet das Licht um",
+        label: "Jeder Schalter schaltet das Licht um",
       },
     ],
   },
@@ -103,7 +102,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
         ],
       },
     ],
-    task: "Die Glimmleuchte wird hier durch eine LED mit Vorwiderstand dargestellt. Verdrahte den Stromkreis so, dass die LED bei ausgeschalteter Lampe leuchtet und bei eingeschalteter Lampe erlischt.",
+    task: "Die LED mit Vorwiderstand steht für die Glimmleuchte. Verdrahte den Stromkreis so, dass die LED nur bei ausgeschalteter Lampe leuchtet.",
     lesson:
       "Die LED liegt parallel zum Schalter. Bei offenem Schalter fließt ein minimaler Strom durch LED und Lampe (hier 6,3 mA). Der LED (Glimmleuchte) reicht das zum Leuchten, der Lampe bei Weitem nicht. Geschlossen überbrückt der Schalter die LED, sie bekommt keine Spannung mehr und erlischt.",
     cells: {
@@ -128,7 +127,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
         at: "4,0",
         expr: "not",
         inputs: ["3,1"],
-        label: "Die LED leuchtet genau dann, wenn die Lampe aus ist",
+        label: "Die LED leuchtet nur, wenn die Lampe aus ist",
       },
     ],
   },
@@ -163,9 +162,9 @@ export const erweiterungLevels: LegacyLevelDef[] = [
         ],
       },
     ],
-    task: "Verbinde beide Lampenzweige mit der Quelle. Untersuche danach beide Taster: Was verbindet sich beim Drücken, was trennt sich? Die Funktionsansicht unter dem Schaltplan zeigt dir die Bewegung im Bauteil – probiere beide aus.",
+    task: "Schließe beide Lampenzweige an die Spannungsquelle an. Untersuche dann Schließer und Öffner: Was verbindet sich beim Betätigen, was trennt sich?",
     lesson:
-      "Der Name beschreibt, was passiert: Der Öffner öffnet den Stromkreis, wenn er betätigt wird. Während er im Ruhezustand Strom durchlässt. Der Schließer schließt den Stromkreis, wenn er betätigt wird. Während er im Ruhezustand keinen Strom durchlässt.",
+      "Der Name sagt, was beim Betätigen passiert: Der Öffner öffnet den Stromkreis, im Ruhezustand leitet er. Der Schließer schließt den Stromkreis, im Ruhezustand ist er offen.",
     cells: {
       "0,2": { type: "battery", orient: "v" },
       "2,1": {
@@ -203,7 +202,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     W: 7,
     H: 4,
     palette: BASE,
-    task: "Der rote Not-Aus ist ein Öffner wie der Taster von eben: Im Ruhezustand leitet er. Motor und Lampe bekommen je einen eigenen Schalter – verdrahte alles so, dass der Not-Aus beides auf einmal abschaltet.",
+    task: "Verdrahte Motor und Lampe mit je einem eigenen Schalter so, dass der Not-Aus beide gemeinsam abschaltet. Prüfe es: Nimm beide in Betrieb und betätige dann den Not-Aus.",
     lesson:
       "Der Not-Aus liegt in der Hauptleitung und ist ein Öffner: Betätigt trennt er den ganzen Stromkreis, ganz gleich welcher Zweigschalter eingeschaltet ist. Dass er im Ruhezustand leitet, ist Absicht – reißt die Leitung zu ihm ab, bleibt die Maschine stehen, statt weiterzulaufen.",
     cells: {
@@ -239,12 +238,12 @@ export const erweiterungLevels: LegacyLevelDef[] = [
       },
       {
         k: "seen",
-        label: "Motor und Lampe liefen gemeinsam",
+        label: "Motor und Lampe waren gleichzeitig in Betrieb",
       },
       {
         k: "state",
         pressed: { "1,0": true, "3,1": true, "5,1": true },
-        label: "Not-Aus gedrückt – beides steht still, obwohl beide Schalter auf EIN stehen",
+        label: "Bei betätigtem Not-Aus ist alles aus, obwohl beide Schalter eingeschaltet sind",
       },
     ],
     /* Ohne diesen Merker ließe sich das Level lösen, indem man erst den

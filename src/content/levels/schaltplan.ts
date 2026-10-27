@@ -16,7 +16,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     palette: ["cross", "wire", "erase"],
     stock: { cross: 4 },
     showValues: true,
-    task: "Zwei getrennte Stromkreise – trotzdem Kurzschluss. Die vier Knotenpunkte zeigen, wo die Leitungen elektrisch verbunden sind. Lösche sie und setze dort „Kreuzung“ ein.",
+    task: "Zwei getrennte Stromkreise – trotzdem ein Kurzschluss. Finde die Ursache und behebe sie mit Kreuzungen.",
     lesson:
       "Die eingesetzten Kreuzungen führen die waagerechte und die senkrechte Leitung elektrisch getrennt aneinander vorbei. So bleiben die beiden Stromkreise getrennt und die Kurzschlüsse sind behoben.",
     cells: {
@@ -42,7 +42,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     palette: ["wire", "ammeter", "erase"],
     stock: { ammeter: 1 },
     showValues: true,
-    task: "Die Knotenpunkte aus dem letzten Level – hier sind sie gewollt. Setze das Amperemeter so ein, dass es nur den Strom durch die Lampe misst.",
+    task: "Hier sind die Knotenpunkte gewollt. Wie groß ist die Stromstärke durch die Lampe?",
     lesson:
       "Knotenregel: Am Knotenpunkt fließt so viel heraus, wie hineinfließt. 99 mA + 148 mA = 247 mA.",
     cells: {
@@ -54,11 +54,12 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     },
     goals: [
       {
-        k: "read",
-        type: "ammeter",
-        min: 0.09,
-        max: 0.11,
-        label: "Das Amperemeter zeigt nur den Lampenstrom (99 mA)",
+        k: "measure",
+        id: "strom",
+        quantity: "current",
+        of: "0,1",
+        unit: "mA",
+        label: "Miss die Stromstärke durch die Lampe",
       },
     ],
   },
@@ -69,7 +70,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     W: 7,
     H: 5,
     palette: BASE,
-    task: "Zwei Schalter in Reihe – dieselbe UND-Schaltung wie in Level 3 „Reihenschaltung = UND“. Nur läuft der Stromkreis diesmal außen um das Feld herum statt auf einer Linie.",
+    task: "Baue die UND-Schaltung aus „Reihenschaltung = UND“ nach – diesmal läuft der Stromkreis außen um das Brett herum.",
     lesson:
       "Ein Schaltplan zeigt die elektrische Verschaltung, nicht die räumliche Anordnung der Bauteile. Dieselbe Schaltung kann daher auf unterschiedliche Weise gezeichnet werden, solange die elektrischen Verbindungen unverändert bleiben.",
     cells: {
@@ -98,7 +99,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Die Lampe braucht 18 V. Verdrahte beide Spannungsquellen in Reihe – tippe die zweite an, um ihre Polung zu drehen.",
+    task: "Die Lampe braucht 18 V. Schalte beide Spannungsquellen so in Reihe, dass sich ihre Spannungen addieren.",
     lesson:
       "In Reihe addieren sich die Spannungen – aber nur, wenn Plus an Minus liegt. Gegeneinander gepolt heben sie sich auf.",
     cells: {

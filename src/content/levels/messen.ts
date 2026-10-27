@@ -11,7 +11,7 @@ export const messenLevels: LegacyLevelDef[] = [
     H: 3,
     palette: BASE,
     showValues: true,
-    task: "Verdrahte den Stromkreis. Der Widerstand begrenzt den Strom – lies am Amperemeter ab, wie viel fließt, und achte auf die Helligkeit.",
+    task: "Verdrahte den Stromkreis. Wie groß ist die Stromstärke mit dem Widerstand?",
     lesson: "Ein Widerstand begrenzt den Strom. Mehr Widerstand im Stromkreis heißt weniger Strom.",
     explanation: [
       {
@@ -48,13 +48,13 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: ["wire", "ammeter", "erase"],
     stock: { ammeter: 1 },
     showValues: true,
-    task: "Wie viel Strom fließt durch die Lampe? Miss ihn, ohne dass die Lampe ausgeht, und trage den Wert ein.",
+    task: "Wie groß ist die Stromstärke durch die Lampe? Die Lampe soll dabei weiter leuchten.",
     lesson:
       "Ein Amperemeter wird IN REIHE eingebaut. Parallel geschaltet würde sein sehr kleiner Innenwiderstand den Verbraucher kurzschließen.",
     explanation: [
       {
         k: "p",
-        text: "Der Strom hat nur einen Weg: von der Batterie durch die Lampe und zurück. Das Amperemeter sitzt auf diesem Weg und wird vom selben Strom durchflossen – es zeigt deshalb genau den Lampenstrom.",
+        text: "Der Strom hat nur einen Weg: von der Spannungsquelle durch die Lampe und zurück. Das Amperemeter sitzt auf diesem Weg und wird vom selben Strom durchflossen – es zeigt deshalb genau den Lampenstrom.",
       },
       {
         k: "p",
@@ -85,7 +85,7 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: ["wire", "voltmeter", "erase"],
     stock: { voltmeter: 1 },
     showValues: true,
-    task: "Welche Spannung liegt an der Lampe? Miss sie und trage den Wert ein.",
+    task: "Welche Spannung liegt an der Lampe an?",
     lesson:
       "Ein Voltmeter wird PARALLEL zum Bauteil geschaltet. In Reihe sperrt sein hoher Innenwiderstand den Stromkreis nahezu.",
     explanation: [
@@ -122,7 +122,7 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: ["wire", "voltmeter", "erase"],
     stock: { voltmeter: 1 },
     showValues: true,
-    task: "Zwei gleiche Lampen liegen in Reihe. Welche Spannung liegt an der linken? Miss sie und trage den Wert ein.",
+    task: "Zwei gleiche Lampen liegen in Reihe. Welche Spannung liegt an der linken Lampe an?",
     lesson:
       "In der Reihenschaltung teilt sich die Spannung auf die Verbraucher auf – bei zwei gleichen Lampen je die Hälfte.",
     explanation: [
@@ -160,13 +160,13 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: ["wire", "ammeter", "erase"],
     stock: { ammeter: 1 },
     showValues: true,
-    task: "Der Stromkreis ist fertig verdrahtet. Wie viel Strom liefert die Batterie insgesamt? Miss ihn und trage den Wert ein.",
+    task: "Der Stromkreis ist fertig verdrahtet. Wie groß ist der Gesamtstrom, den die Spannungsquelle liefert?",
     lesson:
       "In der Parallelschaltung teilt sich der Strom auf die Zweige auf – der Gesamtstrom ist die Summe.",
     explanation: [
       {
         k: "p",
-        text: "Am Knotenpunkt teilt sich der Strom auf beide Lampen auf. In der Hauptleitung fließt der Strom aller Zweige zusammen – dort misst das Amperemeter den Gesamtstrom, den die Batterie liefert.",
+        text: "Am Knotenpunkt teilt sich der Strom auf beide Lampen auf. In der Hauptleitung fließt der Strom aller Zweige zusammen – dort misst das Amperemeter den Gesamtstrom, den die Spannungsquelle liefert.",
       },
       { k: "formula", text: "I_ges = I_1 + I_2 ≈ 100 mA + 100 mA = 200 mA" },
       {
@@ -188,7 +188,7 @@ export const messenLevels: LegacyLevelDef[] = [
         quantity: "current",
         of: "0,1",
         unit: "mA",
-        label: "Miss den Gesamtstrom, den die Batterie liefert",
+        label: "Miss den Gesamtstrom",
       },
     ],
   },
@@ -208,7 +208,7 @@ export const messenLevels: LegacyLevelDef[] = [
         id: "rechnen",
         title: "Rechnen",
         concepts: ["ohmsches-gesetz"],
-        question: "Welchen zusätzlichen Widerstand brauchst du, damit genau 29 mA fließen?",
+        question: "Berechne den Vorwiderstand, mit dem genau 29 mA fließen.",
         blocks: [
           {
             k: "p",
@@ -230,7 +230,7 @@ export const messenLevels: LegacyLevelDef[] = [
         ],
       },
     ],
-    task: "Stelle am Widerstand den Wert ein, den du berechnet hast, verdrahte den Stromkreis und überprüfe die Stromstärke mit dem Amperemeter.",
+    task: "Stelle den berechneten Widerstand ein, verdrahte den Stromkreis und überprüfe die Stromstärke am Amperemeter.",
     lesson:
       "R = U / I. Der Gesamtwiderstand einer Reihenschaltung ist die Summe aller Widerstände.",
     cells: {
@@ -251,7 +251,7 @@ export const messenLevels: LegacyLevelDef[] = [
         type: "ammeter",
         min: 0.0285,
         max: 0.029499999,
-        label: "Das Amperemeter zeigt 29 mA",
+        label: "Die Stromstärke beträgt 29 mA",
       },
     ],
   },
