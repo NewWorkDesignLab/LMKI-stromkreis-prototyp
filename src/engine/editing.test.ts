@@ -13,6 +13,7 @@ import {
   release,
   remaining,
   removePart,
+  setValue,
   snapToTerminals,
   type EditContext,
 } from "./editing";
@@ -149,6 +150,37 @@ describe("Antippen", () => {
       wires: wires(["0,1 1,1"], { lock: true }),
     };
     expect(activate(c, level, "E1").circuit).toBe(c);
+  });
+});
+
+describe("Freier Widerstandswert", () => {
+  const free = (): Circuit => ({
+    parts: {
+      R1: { type: "resistor", x: 1, y: 0, orient: "h", r: 100, range: { min: 1, max: 10000 } },
+    },
+    wires: {},
+  });
+
+  it("lässt beim Antippen den Wert abfragen, statt ihn weiterzuschalten", () => {
+    const c = free();
+    expect(activate(c, level, "R1")).toEqual({ circuit: c, kind: "value" });
+  });
+
+  it("übernimmt einen Wert innerhalb der Grenzen", () => {
+    expect(setValue(free(), "R1", 270).parts.R1.r).toBe(270);
+  });
+
+  it("lehnt Werte außerhalb der Grenzen, Nicht-Zahlen und den gleichen Wert ab", () => {
+    const c = free();
+    expect(setValue(c, "R1", 0.5)).toBe(c);
+    expect(setValue(c, "R1", 20000)).toBe(c);
+    expect(setValue(c, "R1", NaN)).toBe(c);
+    expect(setValue(c, "R1", 100)).toBe(c);
+  });
+
+  it("lässt Widerstände ohne Bereich nicht frei einstellen", () => {
+    const c: Circuit = { parts: { R1: { type: "resistor", x: 1, y: 0, orient: "h" } }, wires: {} };
+    expect(setValue(c, "R1", 270)).toBe(c);
   });
 });
 

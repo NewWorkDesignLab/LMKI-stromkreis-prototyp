@@ -24,10 +24,12 @@ import {
   release as releasePart,
   remaining,
   removePart,
+  setValue as setPartValue,
   snapToTerminals,
   type EditContext,
   type PlayMode,
 } from "../../engine/editing";
+import { P } from "../../engine/parts";
 import { boardPos, type Pos } from "../../render/geometry";
 import type { BoardHint, BoardPointerHandlers } from "../../render/Board";
 import { useUndoable } from "./useUndoable";
@@ -101,6 +103,8 @@ export function useBoardEditor(
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
   const pressed = useRef<PartId | null>(null);
+  /** Bauteil, dessen Wert gerade eingetragen wird */
+  const [valueOf, setValueOf] = useState<PartId | null>(null);
 
   const eventPos = (e: PointerEvent): Pos | null =>
     svgRef.current ? boardPos(svgRef.current, e, W, H) : null;
@@ -121,14 +125,27 @@ export function useBoardEditor(
 
   /* ---- Bedienung und Änderungen ---- */
   const interact = useCallback(
-    (id: PartId) =>
+    (id: PartId) => {
+      /* ein frei einstellbarer Wert wird erfragt; übernommen wird er mit setValue */
+      if (activate(circuit, ctx, id).kind === "value") return setValueOf(id);
       apply((c) => {
         const r = activate(c, ctx, id);
         if (r.pressed) pressed.current = r.pressed;
         return { value: r.circuit, record: r.kind === "edit" };
-      }),
-    [apply, ctx],
+      });
+    },
+    [apply, ctx, circuit],
   );
+  /* Ob der Wert passt, entscheidet der Befehl; abgelehnt heißt: das Feld bleibt offen. */
+  const setValue = (r: number): boolean => {
+    if (!valueOf) return false;
+    const id = valueOf;
+    const next = setPartValue(circuit, id, r);
+    if (next === circuit && r !== P(circuit.parts[id], "r")) return false;
+    commit((c) => setPartValue(c, id, r));
+    setValueOf(null);
+    return true;
+  };
   const release = useCallback(() => {
     const id = pressed.current;
     if (!id) return;
@@ -337,5 +354,10 @@ export function useBoardEditor(
     release,
     /** laufende Geste abbrechen */
     cancelGesture: () => stop(false),
+    /** Bauteil, dessen Wert gerade frei eingetragen wird (activate → "value") */
+    valueOf,
+    /** Wert übernehmen; false, wenn der Befehl ihn ablehnt */
+    setValue,
+    closeValue: () => setValueOf(null),
   };
 }

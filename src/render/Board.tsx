@@ -1,4 +1,10 @@
-import type { MouseEventHandler, PointerEventHandler, ReactNode, RefObject } from "react";
+import {
+  Fragment,
+  type MouseEventHandler,
+  type PointerEventHandler,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import type {
   Circuit,
   BuildStep,
@@ -12,8 +18,9 @@ import type {
 import { parsePoint, wireEnds } from "../engine/circuit";
 import { fmtA, fmtR, fmtV } from "../engine/format";
 import { CONSUMER, P } from "../engine/parts";
-import { BG, DOT, FLOW, FORBID, HINT, HOT, INK, LIVE, MUTE, WIRE } from "../theme/colors";
+import { BG, DOT, FLOW, FORBID, GHOST, HINT, HOT, INK, LIVE, MUTE, WIRE } from "../theme/colors";
 import { EMPTY_SIM } from "./emptySim";
+import { FORMELZEICHEN } from "./formelzeichen";
 import { CELL, PAD_X, boardExtent, center } from "./geometry";
 import { partGlyph } from "./symbols";
 import { wallEl } from "./symbols/wall";
@@ -58,9 +65,39 @@ interface Props {
   height: number;
   /** laufende Striche in stromführenden Leitungen (Einstellung) */
   flow: boolean;
+  /** Skizze statt Spielfeld: blass und grau-blau (Ghost-Schaltung) */
+  tone?: "ghost";
+  /** ersetzt die eingebaute Beschriftung; Bauteile ohne Eintrag bleiben unbeschriftet */
+  labels?: Record<PartId, string>;
+  /** hervorgehobene Bauteile; die übrigen treten zurück */
+  focus?: readonly PartId[];
 }
 
+/* Grau-blau statt der Bauteilfarben: die Skizze soll begleiten, nicht nach Spielfeld
+   aussehen. Ein Filter statt eigener Symbolfarben – die Symbole bleiben eine Wahrheit. */
+const GHOST_FILTER = "grayscale(1) sepia(0.4) hue-rotate(180deg)";
+
 const segEnds = (k: WireKey) => wireEnds(k).map(parsePoint);
+
+/* Beschriftung mit Formelzeichen („R_V = ?“): Zeichen kursiv, Index tiefgestellt. */
+const formel = (txt: string): ReactNode =>
+  txt.split(/(\s+)/).map((token, n) => {
+    const m = FORMELZEICHEN.exec(token);
+    if (!m) return token;
+    return (
+      <Fragment key={n}>
+        <tspan fontStyle="italic" fontFamily="serif">
+          {m[1]}
+        </tspan>
+        {m[2] && (
+          <tspan baselineShift="sub" fontSize="0.75em">
+            {m[2]}
+          </tspan>
+        )}
+        {m[3]}
+      </Fragment>
+    );
+  });
 
 /* Das Spielfeld als SVG. Zeichnet nur: Zustand und Eingaben kommen von außen. */
 export function Board({
@@ -76,7 +113,12 @@ export function Board({
   width,
   height,
   flow: animate,
+  tone,
+  labels,
+  focus,
 }: Props) {
+  const ghost = tone === "ghost";
+  const focused = new Set(focus ?? []);
   const { W, H } = cfg;
   const { w: vbW, h: vbH } = boardExtent(W, H);
 
@@ -85,6 +127,7 @@ export function Board({
     flowEls: ReactNode[] = [],
     nodeEls: ReactNode[] = [],
     compEls: ReactNode[] = [],
+    focusEls: ReactNode[] = [],
     labelEls: ReactNode[] = [];
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++)
@@ -181,22 +224,46 @@ export function Board({
         textAnchor="middle"
         fontSize={10.5}
         fontWeight="600"
-        fill={INK}
+        fill={ghost ? GHOST : INK}
         stroke={BG}
         strokeWidth={3}
         paintOrder="stroke"
       >
-        {txt}
+        {formel(txt)}
       </text>,
     );
 
   for (const [id, c] of Object.entries(circuit.parts)) {
-    compEls.push(partGlyph(id, c, sim));
-    /* Messwerte und Bauteilwerte */
+    if (focused.has(id)) {
+      /* flach statt rund: die Beschriftung 27 px unter der Mitte bleibt frei */
+      focusEls.push(
+        <rect
+          key={`fx${id}`}
+          x={center(c.x) - CELL * 0.4}
+          y={center(c.y) - CELL * 0.3}
+          width={CELL * 0.8}
+          height={CELL * 0.6}
+          rx={9}
+          fill={BG}
+          stroke={GHOST}
+          strokeWidth={3}
+        />,
+        partGlyph(id, c, sim),
+      );
+    } else compEls.push(partGlyph(id, c, sim));
+    if (labels) {
+      if (labels[id]) label(id, c, labels[id]);
+      continue;
+    }
+    /* Messwerte und Bauteilwerte; ✎ = Wert frei eintragbar, ⟳ = Wert weiterschalten */
     if (c.type === "ammeter") label(id, c, fmtA(sim.cur[id] || 0));
     else if (c.type === "voltmeter") label(id, c, fmtV(sim.volt[id] || 0));
     else if (c.type === "resistor")
-      label(id, c, fmtR(P(c, "r")) + ((P(c, "values") || []).length > 1 ? " ⟳" : ""));
+      label(
+        id,
+        c,
+        fmtR(P(c, "r")) + (c.range ? " ✎" : (P(c, "values") || []).length > 1 ? " ⟳" : ""),
+      );
     else if (c.type === "fuse")
       label(id, c, sim.tripped.has(id) ? "ausgelöst ⟳" : fmtA(P(c, "imax")));
     /* Ein Öffner ist am Symbol allein zu leicht zu übersehen – er sagt es dazu. */
@@ -223,13 +290,17 @@ export function Board({
       {...handlers}
     >
       <rect x={0} y={0} width={W * CELL} height={H * CELL} fill={BG} rx={10} />
-      {dotEls}
-      {frameEls}
-      {wallEls}
-      {lineEls}
-      {flowEls}
-      {nodeEls}
-      {compEls}
+      {/* Hervorgehobenes steht in der Skizze kräftig vor dem blassen Rest */}
+      <g style={ghost ? { filter: GHOST_FILTER, opacity: focused.size ? 0.35 : 0.6 } : undefined}>
+        {dotEls}
+        {frameEls}
+        {wallEls}
+        {lineEls}
+        {flowEls}
+        {nodeEls}
+        {compEls}
+      </g>
+      <g style={ghost ? { filter: GHOST_FILTER } : undefined}>{focusEls}</g>
       {labelEls}
       {hint && <HintLayer hint={hint} />}
       {overlay}

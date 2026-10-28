@@ -17,4 +17,5 @@ export const BG = tokenRef("bg"),
   MUTE = tokenRef("mute"),
   HOT = tokenRef("hot"),
   TUT = tokenRef("tutorial"),
-  HINT = tokenRef("hint");
+  HINT = tokenRef("hint"),
+  GHOST = tokenRef("ghost");

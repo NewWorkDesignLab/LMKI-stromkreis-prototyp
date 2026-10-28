@@ -26,9 +26,9 @@ export function StageLayout({ stage, children }: { stage: ReactNode; children: R
   );
 }
 
-const VISUAL = new Set<Block["k"]>(["widget", "image"]);
+const VISUAL = new Set<Block["k"]>(["ghost", "widget", "image"]);
 
-/** Trennt die erste Anschauung (Widget, Bild) für die Bühne vom übrigen Text. */
+/** Trennt die erste Anschauung (Ghost-Schaltung, Widget, Bild) für die Bühne vom übrigen Text. */
 export function splitVisual(blocks: Block[] = []): { visual: Block | null; rest: Block[] } {
   const i = blocks.findIndex((b) => VISUAL.has(b.k));
   return i < 0

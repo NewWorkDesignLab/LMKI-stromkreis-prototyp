@@ -318,6 +318,10 @@ Bauteileigenschaften:
 - `flip` — erlaubt dem Spieler, `rev` per Antippen zu ändern.
 - `values` — Werteliste; Antippen schaltet `r` durch die Liste. Eine Liste mit nur
   einem Wert friert das Bauteil ein (und blendet das ⟳ aus).
+- `range` — `{ min, max }` in Ω: der Widerstandswert wird frei eingetragen statt
+  weitergeschaltet (Beschriftung mit ✎). Antippen öffnet über dem Brett ein Feld
+  (`activate` → `"value"`), übernommen wird mit `setValue` – innerhalb der Grenzen, mit
+  Verlaufseintrag. Schließt `values` aus.
 - `nc` — macht aus einem `switch` oder `button` einen **Öffner**. Achtung: `closed` heißt auch dort
   „leitet“, nicht „betätigt“ — ein Öffner startet deshalb mit `closed: true`. Dadurch
   bleiben Löser, Zielprüfung und Schalterkombinationen unverändert; `nc` ändert nur
@@ -385,8 +389,17 @@ gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt si
 | `summary` | Rückblick: Aufgabe und erreichte Ziele (`reviewGoals`), Merksatz, `recall` löst eine Vorhersage auf, `blocks` erklären | „Weiter“ |
 
 - **Textbausteine statt HTML/Markdown** (`Block`: `p`, `list`, `formula`, `note`, `image`,
-  `video`, `widget`). Level können über die API von außen kommen; Bausteine lassen sich
+  `video`, `widget`, `ghost`). Level können über die API von außen kommen; Bausteine lassen sich
   prüfen, Bilder und Videos nur über http(s) oder relative Pfade.
+- **Ghost-Schaltung** (`{ k: "ghost", step, labels, wanted?, path? }`): zeichnet die
+  `solution` eines Bauschritts desselben Levels als blasse, grau-blaue Skizze, nicht
+  bedienbar und im Ruhebild (`idleSim`: ohne Quelle gerechnet, damit kein Messwert die
+  Lösung verrät). `labels` ersetzt die Beschriftung je Bauteil („R_V = ?“), `wanted` hebt
+  das Gesuchte hervor. `path` ist ein Rechenweg in Schritten (`focus`, `text`, `formulas`),
+  der beim Blättern die gemeinten Bauteile hervorhebt; er wird wie `quiz.explanation` erst
+  nach dem ersten Versuch frei und ersetzt sie dann. Der Ghost steht als Anschauung auf der
+  Bühne. Er zeigt, worauf sich eine Rechnung bezieht – bei „Ohmsches Gesetz“, dass nach dem
+  Vorwiderstand gefragt ist und nicht nach dem Gesamtwiderstand.
 - **Lösungsweg erst nach dem ersten Versuch** (`quiz.explanation`): wer ihn vorher liest,
   rechnet nicht mehr selbst. Ungültige Eingaben (keine Zahl, falsche Einheit) zählen nicht
   als Versuch.
@@ -398,9 +411,14 @@ gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt si
   ist_ aus `blocks`. Im Altformat steht diese Erklärung in `explanation`; bisher haben sie
   die Level in `levels/messen.ts`, die übrigen folgen.
 - Die Prototyp-Level werden zu „Bauen“ + „Merksatz“ übersetzt; `before` stellt Schritte im
-  heutigen Format davor. So heißt es bei „Ohmsches Gesetz“ jetzt „erst rechnen, dann
-  bauen“, und „Das Licht im Schalter“ und „Der Öffner“ zeigen ihren Alltagsbezug als
-  ersten Schritt statt hinter einem „?“.
+  heutigen Format davor. So zeigen „Das Licht im Schalter“ und „Der Öffner“ ihren
+  Alltagsbezug als ersten Schritt statt hinter einem „?“.
+- „Ohmsches Gesetz“ liegt im heutigen Format (`levels/rechnen.ts`): Rechnen ist die
+  Hauptleistung (Ghost-Schaltung, Feld mit `tolerance: 0`), Bauen die Probe mit frei
+  eingetragenem Vorwiderstand. Die Werte gehen glatt auf (9 V, 90 Ω, 25 mA → 270 Ω, ein
+  E12-Normwert), damit das Level das Ohmsche Gesetz lehrt und nicht das Runden.
+- Toleranz 0 heißt „genau dieser Wert“, gleich in welcher Schreibweise („270“, „0,27 kΩ“);
+  verglichen wird auf 12 Stellen (`exact`), wie beim Messwert.
 
 ### Bauschritt
 
@@ -528,6 +546,10 @@ Kurzschluss und Überlastung lassen ein Level immer scheitern.
   Zeigt ein anderer Zweig zufällig denselben Wert (zwei gleiche Lampen parallel), gilt das
   auch – physikalisch käme dasselbe heraus. Das Eintragen eines Messwerts wird noch nicht als
   `LearningEvent` gemeldet.
+- **Frei eingetragene Werte lassen sich ertasten.** Beim Vorwiderstand in „Ohmsches Gesetz“
+  kann man sich ohne Rechnen an den Wert herantasten. Der Bauschritt prüft auch nur die
+  Anzeige „25 mA“, die etwa 263–277 Ω ergeben; die Genauigkeit prüft der Rechenschritt.
+  Das Eintragen wird noch nicht als `LearningEvent` gemeldet.
 - **Kein gespeicherter Fortschritt.** Gespeichert werden bisher nur die Einstellungen. Der Zähler „x/24 gelöst" gilt nur für die laufende
   Sitzung und wird bei jedem Neuladen zurückgesetzt. Das bleibt erstmal so festgeschrieben.
 - **Wenige automatisierte Tests.** `npm test` (vitest) prüft Grundfälle der Simulation und
@@ -593,8 +615,10 @@ Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie
 - **Mit den Ausbildern klären (Messaufgaben):** Level zu Messabweichung und
   Genauigkeitsklassen? Signifikante Stellen verlangen („9,00 V“ statt „9“)? Soll die
   Einheit in schwierigeren Aufgaben selbst angegeben werden statt fest am Feld zu stehen?
-  Quizfragen nehmen Zahlen heute noch mit Vorsatz an („0,22 kΩ“) – angleichen an das
-  Messfeld (nur die Zahl in der vorgegebenen Einheit)?
+  Quizfragen nehmen Zahlen heute noch mit Vorsatz an („0,27 kΩ“) – angleichen an das
+  Messfeld (nur die Zahl in der vorgegebenen Einheit)? Vorerst bleibt es so (2026-10-28).
+- Runden auf Normwerte (E-Reihe) als eigener späterer Schritt: „Wähle den passenden
+  Widerstand aus der Normreihe“ – mit den Ausbildern klären.
 - Leistung (P = U · I) wird intern schon gerechnet: die Lampenhelligkeit ist
   `I²·R / (Un·In)`, also das Verhältnis zur Nennleistung. Angezeigt wird sie nirgends.
 
@@ -606,9 +630,10 @@ Testdurchlauf zusammen. Die Nummern unten sind die alten Katalognummern; im Code
 Dimmer (25) ersetzt Level 15. Die bisherigen Level 22–24 sind ausgeblendet.
 Die bisherigen Level 26–29 werden als 22–25 angehängt. Das Kühlschrankexperiment
 (30) war bereits vor dieser Umstellung nicht mehr im aktuellen Katalog enthalten.
-Level 20 bleibt „Ohmsches Gesetz“; seit dem Schrittformat wird zuerst gerechnet (Frage
-mit Zahleneingabe, URI-Dreieck als Hilfe, Rechenweg nach dem ersten Versuch), dann gebaut.
-Ziel sind 29 mA, auf ganze Milliampere gerundet.
+Level 20 bleibt „Ohmsches Gesetz“; es wird zuerst gerechnet (Ghost-Schaltung mit den
+gegebenen Größen, Zahleneingabe, URI-Dreieck, Rechenweg am Ghost nach dem ersten Versuch),
+dann gebaut: Den berechneten Vorwiderstand (270 Ω) trägt man selbst ein, das Amperemeter
+zeigt 25 mA.
 
 Seit Oktober 2026 hängt ein Kapitel „Neu: Level mit Schritten“ an (Level 26 „Die
 Lichterkette“) – die Vorlage für Level im neuen Format; sie nutzt jede Schrittart.

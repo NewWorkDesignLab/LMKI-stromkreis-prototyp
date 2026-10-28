@@ -22,6 +22,8 @@ export const TOKEN_DEFAULTS = {
   tutorial: "#06b6d4",
   /** Bearbeitungshinweis: Zielpunkt beim Verdrahten, Vorschau beim Setzen */
   hint: "#2f9e8f",
+  /** Ghost-Schaltung: Hervorhebung und Beschriftung der Skizze (grau-blau) */
+  ghost: "#4f6b8c",
 } as const;
 
 export type ThemeToken = keyof typeof TOKEN_DEFAULTS;

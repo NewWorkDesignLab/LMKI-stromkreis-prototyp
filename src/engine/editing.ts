@@ -225,8 +225,9 @@ export function erasePoint(c: Circuit, ctx: EditContext, p: PointKey): Circuit {
 export interface Activation {
   circuit: Circuit;
   /** "operate" = Bedienung (Schalter, Taster, Sicherung), "edit" = Änderung am Aufbau
-      (drehen, Wert, Polung). Nur Änderungen am Aufbau kommen in den Verlauf. */
-  kind: "operate" | "edit" | "none";
+      (drehen, Wert, Polung). Nur Änderungen am Aufbau kommen in den Verlauf. "value" = der
+      Wert wird frei eingetragen: die Oberfläche fragt ihn ab und ruft `setValue`. */
+  kind: "operate" | "edit" | "value" | "none";
   /** Gesetzt, wenn ein Taster gedrückt wurde und beim Loslassen zurückfedern muss. */
   pressed?: PartId;
 }
@@ -280,6 +281,7 @@ export function activate(c: Circuit, ctx: EditContext, id: PartId): Activation {
     const n = rotate(c, ctx, id);
     return { circuit: n, kind: n === c ? "none" : "edit" };
   }
+  if (part.range) return { circuit: c, kind: "value" };
   const vals = P(part, "values");
   if (vals) {
     /* liegt der aktuelle Wert nicht in der Reihe, weiter zum nächstgrößeren */
@@ -294,6 +296,15 @@ export function activate(c: Circuit, ctx: EditContext, id: PartId): Activation {
   if (part.type === "led" || part.flip)
     return { circuit: withPart(c, id, { rev: !part.rev }), kind: "edit" };
   return { circuit: c, kind: "none" };
+}
+
+/* Frei eingetragener Widerstandswert. Nur wo das Level es mit `range` vorsieht und nur
+   innerhalb der Grenzen; derselbe Wert ist keine Änderung (kein leerer Verlaufseintrag). */
+export function setValue(c: Circuit, id: PartId, r: number): Circuit {
+  const part = c.parts[id];
+  if (!part?.range || !Number.isFinite(r)) return c;
+  if (r < part.range.min || r > part.range.max || r === P(part, "r")) return c;
+  return withPart(c, id, { r });
 }
 
 /* Taster loslassen: federt in die Ruhelage zurück. */

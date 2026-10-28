@@ -114,6 +114,14 @@ function validateCircuit(
     if (p.type === "spdt" && !SIDE_SET.has(p.dir)) err(`Wechselschalter ${id} braucht dir`);
     if (p.orient !== undefined && p.orient !== "h" && p.orient !== "v")
       err(`Bauteil ${id}: orient muss "h" oder "v" sein`);
+    if (p.range !== undefined) {
+      const { min, max } = p.range ?? {};
+      if (p.type !== "resistor") err(`Bauteil ${id}: range gibt es nur beim Widerstand`);
+      if (!(min > 0 && max > min)) err(`Bauteil ${id}: range braucht 0 < min < max`);
+      else if (p.r !== undefined && (p.r < min || p.r > max))
+        err(`Bauteil ${id}: r liegt außerhalb von range`);
+      if (p.values !== undefined) err(`Bauteil ${id}: range und values schließen sich aus`);
+    }
   }
   for (const key of Object.keys(c.wires)) {
     if (!isWireKey(key)) {
@@ -175,6 +183,24 @@ function validateBlocks(blocks: unknown, where: string, err: (m: string) => void
         break;
       case "widget":
         if (!WIDGETS[b.widget]) err(`${at}: unbekannte Anschauung „${b.widget}“`);
+        break;
+      /* Verweise auf Schritt und Bauteile prüft validateGhosts, das alle Schritte kennt */
+      case "ghost":
+        if (!isText(b.step)) err(`${at}: Ghost braucht step`);
+        if (!b.labels || typeof b.labels !== "object" || !Object.values(b.labels).every(isText))
+          err(`${at}: labels muss je Bauteil einen Text haben`);
+        if (b.path !== undefined) {
+          if (!Array.isArray(b.path) || !b.path.length) err(`${at}: path ist leer`);
+          else
+            b.path.forEach((s, j) => {
+              if (!isTextList(s?.focus) || !s.focus.length)
+                err(`${at}, Rechenschritt ${j + 1}: focus braucht Bauteile`);
+              if (!isTextList(s?.formulas) || !s.formulas.length)
+                err(`${at}, Rechenschritt ${j + 1}: formulas fehlt`);
+              if (s?.text !== undefined && !isText(s.text))
+                err(`${at}, Rechenschritt ${j + 1}: text ist leer`);
+            });
+        }
         break;
       default:
         err(`${at}: unbekannte Art „${(b as { k?: string })?.k}“`);
@@ -333,6 +359,43 @@ function validateStep(st: Step, earlier: Step[], err: (m: string) => void) {
   }
 }
 
+/* Alle Bausteine eines Schritts, auch die des Lösungswegs. */
+function stepBlocks(st: Step): Block[] {
+  switch (st.kind) {
+    case "context":
+    case "predict":
+    case "summary":
+      return st.blocks ?? [];
+    case "quiz":
+      return [...(st.blocks ?? []), ...(st.explanation ?? [])];
+    default:
+      return [];
+  }
+}
+
+/* Eine Ghost-Schaltung zeichnet die Musterlösung eines Bauschritts desselben Levels – auch
+   eines späteren. Jede Beschriftung und Hervorhebung muss dort ein Bauteil treffen. */
+function validateGhosts(steps: Step[], err: (m: string) => void) {
+  for (const st of steps)
+    for (const b of stepBlocks(st)) {
+      if (b?.k !== "ghost") continue;
+      const where = `Schritt „${st.id}“, Ghost`;
+      const target = steps.find((s) => s.id === b.step);
+      if (target?.kind !== "build" || !target.solution) {
+        err(`${where}: „${b.step}“ ist kein Bauschritt mit solution`);
+        continue;
+      }
+      const parts = target.solution.parts;
+      const refs = [
+        ...Object.keys(b.labels ?? {}),
+        ...(b.wanted ? [b.wanted] : []),
+        ...(Array.isArray(b.path) ? b.path.flatMap((s) => s?.focus ?? []) : []),
+      ];
+      for (const id of refs)
+        if (!parts[id]) err(`${where}: Bauteil „${id}“ fehlt in der Lösung von „${b.step}“`);
+    }
+}
+
 export function validateLevel(level: unknown): ValidationResult {
   const errors: string[] = [];
   const err = (m: string) => errors.push(m);
@@ -358,6 +421,10 @@ export function validateLevel(level: unknown): ValidationResult {
     seen.add(st.id);
     validateStep(st, l.steps.slice(0, i), err);
   });
+  validateGhosts(
+    l.steps.filter((st) => st && typeof st === "object"),
+    err,
+  );
 
   return { ok: errors.length === 0, errors };
 }

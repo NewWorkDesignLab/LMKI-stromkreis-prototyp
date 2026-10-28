@@ -2,6 +2,7 @@ import { ExternalLink, Info } from "lucide-react";
 import type { ComponentType } from "react";
 import type { Block, WidgetId } from "../../domain/types";
 import { Formel } from "../widgets/Formel";
+import { GhostCircuit } from "../widgets/GhostCircuit";
 import { Kuehlschrank } from "../widgets/Kuehlschrank";
 import { Lichtschalter } from "../widgets/Lichtschalter";
 import { UriDreieck } from "../widgets/UriDreieck";
@@ -68,6 +69,8 @@ function BlockView({ b }: { b: Block }) {
         </figure>
       );
     }
+    case "ghost":
+      return <GhostCircuit block={b} />;
   }
 }
 

@@ -45,7 +45,13 @@ export function parsePlainNumber(text: string): number | null {
 /** Standardtoleranz: 2 % – genug für Rundung auf ganze Stellen, zu eng für Raten. */
 export const DEFAULT_TOLERANCE = 0.02;
 
+/** Rundet auf 12 signifikante Stellen. Das fängt nur die Gleitkomma-Ungenauigkeit von
+    Umrechnungen ab (0,27 · 1000 = 270,00000000000006), keine Rechen- oder Messabweichung. */
+export const exact = (n: number): number => Number(n.toPrecision(12));
+
+/** Toleranz 0 heißt: genau dieser Wert, gleich in welcher Schreibweise eingegeben. */
 export function withinTolerance(value: number, expected: number, tolerance = DEFAULT_TOLERANCE) {
+  if (tolerance === 0) return exact(value) === exact(expected);
   if (expected === 0) return Math.abs(value) <= tolerance;
   return Math.abs(value - expected) <= Math.abs(expected) * tolerance;
 }

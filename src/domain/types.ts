@@ -68,6 +68,8 @@ export interface PartProps {
   imax?: number;
   imin?: number;
   values?: number[];
+  /** Widerstand: Wert frei eintragbar (in Ω, Grenzen eingeschlossen) statt `values` weiterzuschalten */
+  range?: { min: number; max: number };
 }
 
 export interface Part extends PartProps {
@@ -242,7 +244,26 @@ export type Block =
   | { k: "image"; src: string; alt: string; caption?: string }
   /** Video als Verweis; ein eigener Player kommt später */
   | { k: "video"; src: string; title: string }
-  | { k: "widget"; widget: WidgetId; caption?: string };
+  | { k: "widget"; widget: WidgetId; caption?: string }
+  /** Die Musterlösung eines Bauschritts als blasse, nicht bedienbare Skizze: zeigt, worauf
+      sich eine Rechnung bezieht, ohne Messwerte zu verraten (Ruhebild). `labels` ersetzt die
+      Beschriftung je Bauteil, `wanted` hebt das Gesuchte hervor, `path` ist der Rechenweg,
+      der Schritt für Schritt Bauteile hervorhebt. */
+  | {
+      k: "ghost";
+      step: StepId;
+      labels: Record<PartId, string>;
+      wanted?: PartId;
+      path?: GhostStep[];
+    };
+
+/** Ein Schritt im Rechenweg an der Ghost-Schaltung. */
+export interface GhostStep {
+  /** hervorgehobene Bauteile; die übrigen bleiben blass */
+  focus: PartId[];
+  text?: string;
+  formulas: string[];
+}
 
 /* ---------- Schritte ---------- */
 

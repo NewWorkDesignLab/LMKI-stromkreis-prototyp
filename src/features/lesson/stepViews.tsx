@@ -1,5 +1,5 @@
 import { ArrowRight, CheckCircle2, Circle, CircleHelp, Lightbulb, XCircle } from "lucide-react";
-import { useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { useContext, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import type {
   AnswerValue,
   Block,
@@ -23,6 +23,7 @@ import { reviewGoals } from "../../engine/goals";
 import { unitAliases } from "../../engine/quantity";
 import { PANEL_HEADING } from "../../ui/heading";
 import { BuildStepView } from "./BuildStepView";
+import { BlockEnv } from "./blockEnv";
 import { Blocks } from "./Blocks";
 import { CircuitStage, StageLayout, VisualStage, splitVisual } from "./Stage";
 
@@ -245,87 +246,95 @@ function QuizView({
   };
   const solved = progress.done;
   const { el, rest } = pickStage(step.blocks, stage);
+  /* Der Rechenweg an einer Ghost-Schaltung folgt derselben Regel wie der Lösungsweg */
+  const env = useContext(BlockEnv);
+  const explained = useMemo(
+    () => ({ ...env, showPath: progress.attempts > 0 }),
+    [env, progress.attempts],
+  );
   return (
-    <StageLayout stage={el}>
-      <Card>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400">Frage</p>
-        <h2 className="mb-3 text-base font-semibold">{step.question}</h2>
-        <Blocks blocks={rest} />
-        <form
-          className="mt-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            check();
-          }}
-        >
-          {spec.k === "choice" ? (
-            <ChoiceList
-              name={step.id}
-              choices={spec.choices}
-              multiple={spec.correct.length > 1}
-              selected={sel}
-              onChange={setSel}
-              disabled={solved}
-            />
-          ) : (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                aria-label={`Antwort in ${unitAliases(spec.unit)[0]}`}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                inputMode="decimal"
+    <BlockEnv.Provider value={explained}>
+      <StageLayout stage={el}>
+        <Card>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400">Frage</p>
+          <h2 className="mb-3 text-base font-semibold">{step.question}</h2>
+          <Blocks blocks={rest} />
+          <form
+            className="mt-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              check();
+            }}
+          >
+            {spec.k === "choice" ? (
+              <ChoiceList
+                name={step.id}
+                choices={spec.choices}
+                multiple={spec.correct.length > 1}
+                selected={sel}
+                onChange={setSel}
                 disabled={solved}
-                placeholder="Zahl eingeben"
-                className="min-h-11 w-40 rounded-lg border border-stone-300 px-3 text-base"
               />
-              <span className="font-medium text-stone-600">{unitAliases(spec.unit)[0]}</span>
-            </label>
-          )}
-          {!solved && (
-            <button
-              type="submit"
-              className="mt-3 min-h-11 rounded-lg bg-stone-800 px-4 text-sm font-medium text-white"
+            ) : (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  aria-label={`Antwort in ${unitAliases(spec.unit)[0]}`}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  inputMode="decimal"
+                  disabled={solved}
+                  placeholder="Zahl eingeben"
+                  className="min-h-11 w-40 rounded-lg border border-stone-300 px-3 text-base"
+                />
+                <span className="font-medium text-stone-600">{unitAliases(spec.unit)[0]}</span>
+              </label>
+            )}
+            {!solved && (
+              <button
+                type="submit"
+                className="mt-3 min-h-11 rounded-lg bg-stone-800 px-4 text-sm font-medium text-white"
+              >
+                Prüfen
+              </button>
+            )}
+          </form>
+          <div aria-live="polite">
+            {result && "error" in result && (
+              <p className="mt-2 text-sm text-red-600">{result.error}</p>
+            )}
+            {result && "correct" in result && !result.correct && !solved && (
+              <p className="mt-2 flex items-center gap-1.5 text-sm text-amber-700">
+                <XCircle size={16} aria-hidden="true" /> Noch nicht richtig – prüfe deinen Weg und
+                versuche es noch einmal.
+              </p>
+            )}
+            {solved && (
+              <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+                <CheckCircle2 size={16} aria-hidden="true" /> Richtig!
+              </p>
+            )}
+          </div>
+          {/* Der Lösungsweg kommt erst nach dem ersten Versuch: wer ihn vorher liest,
+          rechnet nicht mehr selbst. */}
+          {step.explanation && progress.attempts > 0 && (
+            <details
+              className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3"
+              open={solved}
             >
-              Prüfen
-            </button>
-          )}
-        </form>
-        <div aria-live="polite">
-          {result && "error" in result && (
-            <p className="mt-2 text-sm text-red-600">{result.error}</p>
-          )}
-          {result && "correct" in result && !result.correct && !solved && (
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-amber-700">
-              <XCircle size={16} aria-hidden="true" /> Noch nicht richtig – prüfe deinen Weg und
-              versuche es noch einmal.
-            </p>
+              <summary className="cursor-pointer text-sm font-medium">Lösungsweg</summary>
+              <div className="mt-2">
+                <Blocks blocks={step.explanation} />
+              </div>
+            </details>
           )}
           {solved && (
-            <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-emerald-700">
-              <CheckCircle2 size={16} aria-hidden="true" /> Richtig!
-            </p>
-          )}
-        </div>
-        {/* Der Lösungsweg kommt erst nach dem ersten Versuch: wer ihn vorher liest,
-          rechnet nicht mehr selbst. */}
-        {step.explanation && progress.attempts > 0 && (
-          <details
-            className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3"
-            open={solved}
-          >
-            <summary className="cursor-pointer text-sm font-medium">Lösungsweg</summary>
-            <div className="mt-2">
-              <Blocks blocks={step.explanation} />
+            <div className="mt-4 flex">
+              <ProceedButton label={proceedLabel} onClick={proceed} />
             </div>
-          </details>
-        )}
-        {solved && (
-          <div className="mt-4 flex">
-            <ProceedButton label={proceedLabel} onClick={proceed} />
-          </div>
-        )}
-      </Card>
-    </StageLayout>
+          )}
+        </Card>
+      </StageLayout>
+    </BlockEnv.Provider>
   );
 }
 

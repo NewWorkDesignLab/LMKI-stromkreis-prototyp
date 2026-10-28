@@ -59,7 +59,7 @@ describe("Rückblick auf die Ziele", () => {
   it("hakt alle Ziele eines gelösten Aufbaus ab und nennt den gemessenen Wert", () => {
     const items = reviewGoals({ goals: [strom] }, withAmmeter());
     expect(items.every((i) => i.ok)).toBe(true);
-    expect(items.find((i) => i.measure)!.t).toMatch(/^Strom: d+ mA$/);
+    expect(items.find((i) => i.measure)!.t).toMatch(/^Strom: \d+ mA$/);
   });
 
   it("hakt auch ein Messziel in A ab", () => {

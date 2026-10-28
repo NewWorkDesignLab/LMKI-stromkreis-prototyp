@@ -14,6 +14,7 @@ import { hasParts } from "./PartPalette";
 import { GoalList, StatusBar, TaskBar, WinPanel } from "./BuildPanels";
 import { ToolBar } from "./ToolBar";
 import { usePlaySession } from "./usePlaySession";
+import { ValueInput } from "./ValueInput";
 import { useTaskIntro } from "./useTaskIntro";
 
 interface Props {
@@ -133,6 +134,15 @@ export function PlayArea({
                 setTool={s.setTool}
                 left={s.left}
                 orient={s.orient}
+              />
+            )}
+            {s.valueOf && s.circuit.parts[s.valueOf] && (
+              <ValueInput
+                key={s.valueOf}
+                id={s.valueOf}
+                part={s.circuit.parts[s.valueOf]}
+                onSubmit={s.setValue}
+                onClose={s.closeValue}
               />
             )}
             <BoardViewport

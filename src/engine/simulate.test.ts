@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Circuit } from "../domain/types";
 import { wires } from "../content/helpers";
 import { wireKey } from "./circuit";
-import { simulate } from "./simulate";
+import { idleSim, simulate } from "./simulate";
 
 /* Quelle links, Lampe rechts, Leitungen oben und unten – der Stromkreis aus Level 1. */
 const loop = (): Circuit => ({
@@ -85,5 +85,17 @@ describe("simulate", () => {
     const sim = simulate(loop());
     expect(sim.wires[wireKey("1,0", "2,0")].dir).toBe(1);
     expect(sim.wires[wireKey("1,2", "2,2")].dir).toBe(-1);
+  });
+});
+
+describe("Ruhebild", () => {
+  it("zeigt die Knotenpunkte, aber keinen Strom und kein Leuchten", () => {
+    const c = loop();
+    c.wires = { ...c.wires, ...wires(["2,0 2,1"]) };
+    const idle = idleSim(c);
+    expect(idle.closed).toBe(false);
+    expect(idle.lit.size).toBe(0);
+    expect(idle.cur.E1 ?? 0).toBe(0);
+    expect(idle.points["2,0"].deg).toBe(3);
   });
 });

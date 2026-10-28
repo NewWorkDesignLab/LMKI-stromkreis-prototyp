@@ -13,7 +13,7 @@ import type {
 import { cloneCircuit } from "./circuit";
 import { fmtA, fmtV, shownA, shownV } from "./format";
 import { CONSUMER } from "./parts";
-import { parsePlainNumber, withinTolerance } from "./quantity";
+import { exact, parsePlainNumber, withinTolerance } from "./quantity";
 import { simulate } from "./simulate";
 
 /* ================= Ziele ================= */
@@ -82,11 +82,10 @@ export function simulateAllClosed(circuit: Circuit): SimResult {
 const UNIT_FACTOR: Record<MeasureUnit, number> = { A: 1, mA: 1e-3, V: 1, mV: 1e-3 };
 
 /* Der Wert, den man vom Messgerät ablesen und in der Einheit der Aufgabe eintragen muss: die
-   Anzeige (gerundet wie am Gerät), umgerechnet in `unit`. 12 Stellen fangen nur die
-   Gleitkomma-Ungenauigkeit der Umrechnung ab (0,099 / 0,001), keine Messabweichung. */
+   Anzeige (gerundet wie am Gerät), umgerechnet in `unit` (0,099 / 0,001 ohne Gleitkommarest). */
 export function expectedReading(g: Extract<Goal, { k: "measure" }>, measured: number): number {
   const base = g.quantity === "current" ? shownA(measured) : shownV(measured);
-  return Number((base / UNIT_FACTOR[g.unit]).toPrecision(12));
+  return exact(base / UNIT_FACTOR[g.unit]);
 }
 
 /* Was zeigt ein Messgerät, das die Größe an `of` misst? null, wenn keines so sitzt. Erkannt

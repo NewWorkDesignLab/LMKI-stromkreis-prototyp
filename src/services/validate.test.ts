@@ -69,6 +69,43 @@ describe("Prüfung der Schritte", () => {
     expect(errorsOf([build({ lamp: 0 })])).toMatch(/ganze Zahl/);
   });
 
+  it("lässt eine Ghost-Schaltung nur auf Bauteile der Musterlösung verweisen", () => {
+    const lamp = { type: "lamp", x: 1, y: 1, orient: "h" };
+    const build = {
+      kind: "build",
+      id: "bauen",
+      W: 3,
+      H: 3,
+      palette: ["wire"],
+      task: "…",
+      circuit: { parts: { E1: lamp }, wires: {} },
+      solution: { parts: { E1: lamp }, wires: {} },
+    };
+    const ghost = (labels: Record<string, string>, step = "bauen") => ({
+      kind: "context",
+      id: "skizze",
+      blocks: [{ k: "ghost", step, labels, path: [{ focus: ["E1"], formulas: ["R = 90 Ω"] }] }],
+    });
+    expect(errorsOf([ghost({ E1: "90 Ω" }), build])).toBe("");
+    expect(errorsOf([ghost({ R1: "?" }), build])).toMatch(/R1/);
+    expect(errorsOf([ghost({ E1: "90 Ω" }, "gibtsnicht"), build])).toMatch(/solution/);
+  });
+
+  it("lässt einen frei einstellbaren Widerstand nur mit gültigem Bereich zu", () => {
+    const build = (range: unknown) => ({
+      kind: "build",
+      id: "bauen",
+      W: 3,
+      H: 3,
+      palette: ["wire"],
+      task: "…",
+      circuit: { parts: { R1: { type: "resistor", x: 1, y: 1, r: 100, range } }, wires: {} },
+    });
+    expect(errorsOf([build({ min: 1, max: 1000 })])).toBe("");
+    expect(errorsOf([build({ min: 200, max: 1000 })])).toMatch(/außerhalb/);
+    expect(errorsOf([build({ min: 0, max: 1000 })])).toMatch(/min < max/);
+  });
+
   it("kennt keine fremden Schrittarten", () => {
     expect(errorsOf([{ kind: "tanz", id: "x" }])).toMatch(/unbekannte Art/);
   });

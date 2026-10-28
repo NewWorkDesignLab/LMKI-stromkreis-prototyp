@@ -1,10 +1,9 @@
 import { Fragment } from "react";
+import { FORMELZEICHEN } from "../../render/formelzeichen";
 
 /* Formelsatz wie an der Tafel: Formelzeichen kursiv und mit tiefgestelltem
-   Index, Zahlen und Einheiten aufrecht. Geschrieben wird einfach "R_ges" –
-   erkannt wird ein einzelnes U, R oder I, wahlweise mit _Index und einem
-   Satzzeichen dahinter. Alles andere im Text bleibt, wie es ist. */
-const FORMELZEICHEN = /^([URI])(?:_([A-Za-zäöüÄÖÜß]+))?([,.;:]?)$/;
+   Index, Zahlen und Einheiten aufrecht. Geschrieben wird einfach "R_ges".
+   Alles andere im Text bleibt, wie es ist. */
 export function Formel({ children }: { children?: React.ReactNode }) {
   return (
     <>

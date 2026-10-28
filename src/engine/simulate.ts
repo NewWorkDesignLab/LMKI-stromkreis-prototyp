@@ -495,3 +495,13 @@ export function simulate(circuit: Circuit): SimResult {
       };
   return res;
 }
+
+/* Ruhebild: dieselbe Schaltung ohne Spannungsquelle gerechnet. Knotenpunkte und lose Enden
+   stehen da, aber nichts leuchtet und kein Messgerät zeigt etwas – für Skizzen, die keine
+   Werte der Musterlösung verraten sollen (Ghost-Schaltung). */
+export function idleSim(circuit: Circuit): SimResult {
+  const parts = Object.fromEntries(
+    Object.entries(circuit.parts).filter(([, p]) => p.type !== "battery"),
+  );
+  return simulate({ ...circuit, parts });
+}

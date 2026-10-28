@@ -189,4 +189,14 @@ describe("Zahleneingaben", () => {
     expect(evaluate(spec, { k: "number", text: "220,34" })).toEqual({ valid: true, correct: true });
     expect(evaluate(spec, { k: "number", text: "230" })).toEqual({ valid: true, correct: false });
   });
+
+  it("verlangt bei Toleranz 0 genau den Wert, gleich in welcher Schreibweise", () => {
+    const spec = { k: "number" as const, value: 270, unit: "Ω", tolerance: 0 };
+    expect(evaluate(spec, { k: "number", text: "270" })).toEqual({ valid: true, correct: true });
+    expect(evaluate(spec, { k: "number", text: "0,27 kΩ" })).toEqual({
+      valid: true,
+      correct: true,
+    });
+    expect(evaluate(spec, { k: "number", text: "270,3" })).toEqual({ valid: true, correct: false });
+  });
 });

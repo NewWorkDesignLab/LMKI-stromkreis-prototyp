@@ -109,8 +109,8 @@ describe("API", () => {
   it("wertet Antworten bei den Konzepten ihres Schritts aus", () => {
     const { rt, api } = setup();
     api.dispatch({ type: "go_to_level", levelId: "ohmsches-gesetz" });
-    rt.reportAnswer("ohmsches-gesetz", "rechnen", { k: "number", text: "300" }, false);
-    rt.reportAnswer("ohmsches-gesetz", "rechnen", { k: "number", text: "220" }, true);
+    rt.reportAnswer("ohmsches-gesetz", "rechnen", { k: "number", text: "360" }, false);
+    rt.reportAnswer("ohmsches-gesetz", "rechnen", { k: "number", text: "270" }, true);
     expect(api.getProfile().concepts["ohmsches-gesetz"]).toMatchObject({ answers: 2, wrong: 1 });
     /* „widerstand“ übt das Level, aber nicht diese Frage */
     expect(api.getProfile().concepts["widerstand"].answers).toBe(0);

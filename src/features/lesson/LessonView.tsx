@@ -1,6 +1,7 @@
-import { useState, type ComponentType } from "react";
+import { useMemo, useState, type ComponentType } from "react";
 import type { LevelDef, Step } from "../../domain/types";
 import { stageOf, stepProgress } from "../../engine/lesson";
+import { BlockEnv } from "./blockEnv";
 import { StepBar } from "./StepBar";
 import { STEP_VIEWS, type StepViewProps } from "./stepViews";
 import { useLesson } from "./useLesson";
@@ -21,6 +22,7 @@ export function LessonView({ level, overlayOpen, hasNextLevel, onNextLevel }: Pr
   const { state } = lesson;
   const [visited, setVisited] = useState(() => new Set([0]));
   if (!visited.has(state.index)) setVisited(new Set(visited).add(state.index));
+  const env = useMemo(() => ({ level, showPath: false }), [level]);
 
   /* Bauschritte füllen die Fläche; die übrigen ordnen sich selbst im Querformat an
      (StageLayout) und scrollen nur, wenn es gar nicht anders geht. */
@@ -43,26 +45,28 @@ export function LessonView({ level, overlayOpen, hasNextLevel, onNextLevel }: Pr
             }
           >
             <div className={step.kind === "build" ? "lg:h-full" : "py-2 lg:py-4"}>
-              <View
-                step={step}
-                level={level}
-                lesson={state}
-                progress={stepProgress(state, step.id)}
-                active={i === state.index}
-                overlayOpen={overlayOpen}
-                proceed={lesson.proceed}
-                stage={step.kind === "build" ? null : stageOf(level, state, i)}
-                proceedLabel={
-                  i < level.steps.length - 1
-                    ? "Weiter"
-                    : hasNextLevel
-                      ? "Nächstes Level"
-                      : "Abschließen"
-                }
-                complete={(circuit) => lesson.complete(step.id, circuit)}
-                submit={(v) => lesson.submit(step.id, v)}
-                onReset={lesson.reportReset}
-              />
+              <BlockEnv.Provider value={env}>
+                <View
+                  step={step}
+                  level={level}
+                  lesson={state}
+                  progress={stepProgress(state, step.id)}
+                  active={i === state.index}
+                  overlayOpen={overlayOpen}
+                  proceed={lesson.proceed}
+                  stage={step.kind === "build" ? null : stageOf(level, state, i)}
+                  proceedLabel={
+                    i < level.steps.length - 1
+                      ? "Weiter"
+                      : hasNextLevel
+                        ? "Nächstes Level"
+                        : "Abschließen"
+                  }
+                  complete={(circuit) => lesson.complete(step.id, circuit)}
+                  submit={(v) => lesson.submit(step.id, v)}
+                  onReset={lesson.reportReset}
+                />
+              </BlockEnv.Provider>
             </div>
           </div>
         );
