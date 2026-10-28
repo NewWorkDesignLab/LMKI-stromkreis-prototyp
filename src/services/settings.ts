@@ -12,6 +12,8 @@ export interface Settings {
   flowAnimation: boolean;
   /** Aufgabe beim Betreten eines Bauschritts kurz hervorheben */
   taskIntro: boolean;
+  /** Entwicklung: im Bauschritt sonst unsichtbare Hintergrunddaten anzeigen (DebugPanel) */
+  debug: boolean;
 }
 
 /* Die Ziehhilfe ist aus: dass nur verbunden ist, was man selbst verbindet, ist die
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volume: 0.6,
   flowAnimation: true,
   taskIntro: true,
+  debug: false,
 };
 
 /* Gespeicherte Einstellungen sind Fremddaten (alter Stand, von Hand geändert). Jedes Feld
@@ -32,7 +35,7 @@ export const DEFAULT_SETTINGS: Settings = {
 export function readSettings(raw: unknown): Settings {
   // Objekt ist geprüft; jedes Feld wird unten einzeln auf seinen Typ geprüft
   const o = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
-  const bool = (k: "snapWires" | "sound" | "flowAnimation" | "taskIntro") =>
+  const bool = (k: "snapWires" | "sound" | "flowAnimation" | "taskIntro" | "debug") =>
     typeof o[k] === "boolean" ? o[k] : DEFAULT_SETTINGS[k];
   const v = o.volume;
   return {
@@ -44,6 +47,7 @@ export function readSettings(raw: unknown): Settings {
         : DEFAULT_SETTINGS.volume,
     flowAnimation: bool("flowAnimation"),
     taskIntro: bool("taskIntro"),
+    debug: bool("debug"),
   };
 }
 

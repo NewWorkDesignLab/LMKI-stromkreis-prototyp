@@ -34,6 +34,15 @@ export function SettingsPanel() {
         />
       </section>
       <section>
+        <h3 className={PANEL_HEADING}>Entwicklung</h3>
+        <Toggle
+          label="Debug"
+          description="Zeigt im Bauschritt Hintergrunddaten, die Lernende sonst nicht sehen."
+          checked={settings.debug}
+          onChange={(debug) => rt.setSettings({ debug })}
+        />
+      </section>
+      <section>
         <h3 className={PANEL_HEADING}>Ton</h3>
         <Toggle
           label="Töne"

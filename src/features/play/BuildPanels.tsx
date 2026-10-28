@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Circle } from "lucide-react";
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import type { BuildStep, CheckResult, Readings, SimResult } from "../../domain/types";
 import type { PlayMode } from "../../engine/editing";
 import { fmtA } from "../../engine/format";
@@ -98,7 +98,8 @@ export function GoalList({
 }
 
 /* Hier trägt man den abgelesenen Wert ein, mit oder ohne Vorsatz („99 mA“, „0,099“). Ob er
-   stimmt, entscheidet checkLevel; das Feld zeigt nur das Ergebnis, sobald etwas drinsteht. */
+   stimmt, entscheidet checkLevel – aber erst mit „Eintragen“, nicht bei jedem Tastendruck,
+   sonst ließe sich der Wert durchprobieren. „Stimmt nicht“ gilt bis zur nächsten Änderung. */
 function ReadingField({
   measure,
   text,
@@ -106,27 +107,55 @@ function ReadingField({
   onChange,
 }: {
   measure: { id: string; unit: string };
+  /** eingetragener Wert */
   text: string;
   ok: boolean;
   onChange: (text: string) => void;
 }) {
+  const [draft, setDraft] = useState(text);
+  /* Wird der eingetragene Wert von außen geleert (Zurücksetzen), leert sich auch das Feld. */
+  const [synced, setSynced] = useState(text);
+  if (text !== synced) {
+    setSynced(text);
+    setDraft(text);
+  }
+  const current = draft === text;
+  const wrong = current && text !== "" && !ok;
   return (
-    <label className="mt-1 flex items-center gap-1.5">
-      <span className="sr-only">Abgelesener Wert in {measure.unit}</span>
-      <input
-        type="text"
-        inputMode="decimal"
-        autoComplete="off"
-        value={text}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Wert"
-        aria-invalid={text !== "" && !ok ? true : undefined}
-        className={`h-11 w-24 rounded-lg border bg-white px-2 text-sm tabular-nums text-stone-900 ${text !== "" && !ok ? "border-red-300" : "border-stone-300"}`}
-      />
-      <span className="text-stone-500" aria-hidden="true">
-        {measure.unit}
-      </span>
-    </label>
+    <form
+      className="mt-1 flex items-center gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onChange(draft);
+      }}
+    >
+      {/* min-w-0: in der schmalen Zielspalte schrumpft das Feld, nicht der Knopf über den Rand.
+          Einheit dicht am Feld, Knopf mit Abstand – sonst liest sich „V Eintragen“ zusammen. */}
+      <label className="flex min-w-0 items-center gap-1">
+        <span className="sr-only">Abgelesener Wert in {measure.unit}</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Wert"
+          aria-invalid={wrong || undefined}
+          className={`h-11 w-24 min-w-0 rounded-lg border px-2 text-sm tabular-nums text-stone-900 ${current && ok ? "border-emerald-300 bg-emerald-50" : wrong ? "border-red-400 bg-white" : "border-stone-300 bg-white"}`}
+        />
+        <span className="text-stone-500" aria-hidden="true">
+          {measure.unit}
+        </span>
+      </label>
+      {!(current && ok) && (
+        <button
+          type="submit"
+          className="ml-auto min-h-11 shrink-0 rounded-lg border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 hover:bg-stone-50"
+        >
+          Eintragen
+        </button>
+      )}
+    </form>
   );
 }
 

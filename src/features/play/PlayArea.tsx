@@ -8,6 +8,7 @@ import { FRAME_PAD, NATURAL_SCALE } from "../../render/viewport";
 import { ContactLab } from "../widgets/ContactLab";
 import { useTutorial } from "../tutorial/useTutorial";
 import { BoardViewport, TOOL_BUTTON } from "./BoardViewport";
+import { DebugPanel, type DebugRow } from "./DebugPanel";
 import { PartDrawer } from "./PartDrawer";
 import { hasParts } from "./PartPalette";
 import { GoalList, StatusBar, TaskBar, WinPanel } from "./BuildPanels";
@@ -26,6 +27,9 @@ interface Props {
   onReset?: () => void;
   /** Knopf nach dem Lösen */
   proceed?: { label: string; onClick: () => void };
+  /** Hintergrunddaten für die Debug-Anzeige (Einstellung „Debug“). Liefert bisher niemand –
+      die Anschlussstelle für künftige Auswertungen wie Versuche oder Tipps. */
+  debug?: DebugRow[];
 }
 
 /* Die Mittelspalte ist so breit wie das Brett, aber nie schmaler als eine gut lesbare
@@ -47,6 +51,7 @@ export function PlayArea({
   onSolved,
   onReset,
   proceed,
+  debug,
 }: Props) {
   const { settings } = useRuntimeState();
   const s = usePlaySession(step, mode, active, {
@@ -171,6 +176,7 @@ export function PlayArea({
               goalsEnter={intro.goalsEnter}
             />
             {mode === "level" && s.won && proceed && <WinPanel proceed={proceed} />}
+            {settings.debug && debug && <DebugPanel rows={debug} />}
           </div>
           {step.contactLab && (
             <ContactLab

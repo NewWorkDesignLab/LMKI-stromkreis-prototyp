@@ -60,7 +60,7 @@ src/
     assessment.ts       Bewertung: Ereignisse → Profil je Kompetenz
     sequencer.ts        welches Level als nächstes (Standard: linear)
     attempts.ts         Versuchs-Richtlinie (Platzhalter, noch ohne Wirkung)
-    settings.ts         Einstellungen (Ziehhilfe, Ton, Flussanimation) + SettingsStore
+    settings.ts         Einstellungen (Ziehhilfe, Ton, Flussanimation, Debug) + SettingsStore
     validate.ts         validateLevel – Prüfung für von außen kommende Level
     events.ts, store.ts
   app/
@@ -301,7 +301,10 @@ Unter `lg` steht alles vorläufig untereinander.
 
 **Einstellungen** (`services/settings.ts`): Ziehhilfe, Flussanimation, Aufgabe beim Start
 hervorheben, Ton und Lautstärke
-(die Töne selbst fehlen noch, Phase 6). Sie ändern nie, was als gelöst gilt. Die Runtime
+(die Töne selbst fehlen noch, Phase 6). Der Schalter „Debug“ zeigt im Bauschritt eine
+Debug-Anzeige (`DebugPanel`), sofern der Aufrufer von `PlayArea` Zeilen liefert – bisher
+tut das niemand, die Stelle ist für künftige Auswertungen vorgesehen. Einstellungen ändern
+nie, was als gelöst gilt. Die Runtime
 hält sie im Zustand (`settings`, `setSettings`), gespeichert über einen austauschbaren
 `SettingsStore` – im Browser `localStorage`. Gespeicherte Werte gelten als Fremddaten:
 jedes Feld wird geprüft, was nicht passt, bekommt seinen Standardwert.
