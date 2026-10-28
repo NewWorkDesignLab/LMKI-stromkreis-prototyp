@@ -86,7 +86,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     W: 7,
     H: 4,
     palette: BASE,
-    task: "Verdrahte beide Zweige und schalte so, dass nur die grüne Lampe leuchtet.",
+    task: "Verdrahte beide Zweige und schalte so, dass nur die linke Lampe leuchtet.",
     lesson: "Strom fließt nur über geschlossene Stromwege – du entscheidest, welcher das ist.",
     cells: {
       "0,1": { type: "battery", orient: "v" },
@@ -100,8 +100,8 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     /* Ohne eigene Texte hießen beide Ziele nur „Die Lampe …“ – welche, bliebe offen. */
     goals: [
       { k: "wired", ats: ["2,2", "4,2"], label: "Beide Lampen sind angeschlossen" },
-      { k: "on", at: "2,2", on: true, label: "Die grüne Lampe leuchtet" },
-      { k: "on", at: "4,2", on: false, label: "Die rot gestrichelte Lampe bleibt aus" },
+      { k: "on", at: "2,2", on: true, label: "Die linke Lampe leuchtet" },
+      { k: "on", at: "4,2", on: false, label: "Die rechte Lampe bleibt aus" },
     ],
   },
 ];

@@ -15,6 +15,7 @@ import { LessonView } from "../features/lesson/LessonView";
 import { PlayArea } from "../features/play/PlayArea";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
 import { applyTheme, DEFAULT_THEME } from "../theme/themes";
+import { FundingBar } from "../ui/FundingBar";
 import { LegendOverlay } from "../ui/LegendOverlay";
 import { LevelPicker } from "../ui/LevelPicker";
 import { Overlay } from "../ui/Overlay";
@@ -64,8 +65,9 @@ export default function App() {
   const modeTab = (active: boolean) =>
     `min-h-10 whitespace-nowrap rounded-lg px-4 text-sm font-medium transition ${active ? "bg-white shadow text-stone-900" : "text-stone-500 hover:text-stone-800"}`;
 
-  /* Ganze Fensterhöhe ab lg: Kopfleiste oben, darunter füllt der Schritt den Rest, und
-     nur die Seitenspalten scrollen. Darunter (schmale Fenster) fließt die Seite normal. */
+  /* Ganze Fensterhöhe ab lg: Kopfleiste oben, Förderlogos unten, dazwischen füllt der
+     Schritt den Rest, und nur die Seitenspalten scrollen. Darunter (schmale Fenster) fließt
+     die Seite normal. */
   return (
     <div
       ref={rootRef}
@@ -202,6 +204,8 @@ export default function App() {
           />
         )}
       </main>
+
+      <FundingBar />
 
       {overlay === "levels" && (
         <Overlay title="Kapitel & Level" onClose={() => setOverlay(null)}>
