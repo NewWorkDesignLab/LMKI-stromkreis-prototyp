@@ -108,25 +108,38 @@ export function measuredValue(
   return hit ? target : null;
 }
 
-/* Die Ziele eines gelösten Aufbaus im Rückblick (Merksatz-Schritt). Eigene Eingaben werden
-   nicht aufgehoben, deshalb liest die Rückschau Messwerte so ab, wie das Messgerät sie zeigt,
-   und nennt sie im Text. Ziele, die der Aufbau nicht (mehr) erfüllt, bleiben offen – etwa
-   wenn statt der eigenen Schaltung die Musterlösung gezeigt wird. `seen` gilt als erreicht:
-   wer den Schritt gelöst hat, hat die Reihenfolge eingehalten. */
-export function reviewGoals(level: Pick<BuildStep, "goals">, circuit: Circuit): CheckItem[] {
-  const sim = simulate(circuit);
-  const readings: Readings = {};
-  const shown: Record<string, string> = {};
+export interface MeasuredResult {
+  /** ID des Messziels */
+  id: string;
+  quantity: Extract<Goal, { k: "measure" }>["quantity"];
+  /** so, wie das Messgerät es anzeigt („47 mA“) */
+  shown: string;
+  /** der richtige Eintrag in der Einheit der Aufgabe („47“, „0,047“) */
+  reading: string;
+}
+
+/* Die Messungen eines Aufbaus im Rückblick (Merksatz-Schritt). Eigene Eingaben werden nicht
+   aufgehoben, deshalb liest die Rückschau ab, was das Messgerät zeigt. Messziele, für die
+   kein Messgerät richtig sitzt, fehlen – etwa wenn statt der eigenen Schaltung eine andere
+   gezeigt wird. */
+export function measuredResults(
+  level: Pick<BuildStep, "goals">,
+  circuit: Circuit,
+  sim: SimResult = simulate(circuit),
+): MeasuredResult[] {
+  const out: MeasuredResult[] = [];
   for (const g of level.goals ?? []) {
     if (g.k !== "measure") continue;
     const v = measuredValue(g, circuit, sim);
     if (v === null) continue;
-    shown[g.id] = g.quantity === "current" ? fmtA(v) : fmtV(v);
-    readings[g.id] = String(expectedReading(g, v));
+    out.push({
+      id: g.id,
+      quantity: g.quantity,
+      shown: g.quantity === "current" ? fmtA(v) : fmtV(v),
+      reading: String(expectedReading(g, v)),
+    });
   }
-  return checkLevel(level, circuit, sim, true, readings).items.map((it) =>
-    it.measure && shown[it.measure.id] ? { ...it, t: `${it.t}: ${shown[it.measure.id]}` } : it,
-  );
+  return out;
 }
 
 export function checkLevel(

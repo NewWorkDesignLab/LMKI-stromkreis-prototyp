@@ -30,7 +30,7 @@ export const SANDBOX: BuildStep = {
   /* Groß genug für mehrere Kreise nebeneinander; das Brett lässt sich zoomen. */
   W: 14,
   H: 9,
-  showValues: true,
+  ratings: "nominal",
   circuit: {
     parts: {
       G1: { type: "battery", x: 2, y: 4, orient: "v" },

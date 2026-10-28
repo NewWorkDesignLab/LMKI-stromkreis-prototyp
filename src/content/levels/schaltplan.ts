@@ -15,7 +15,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     H: 5,
     palette: ["cross", "wire", "erase"],
     stock: { cross: 4 },
-    showValues: true,
+    ratings: "nominal",
     task: "Zwei getrennte Stromkreise – trotzdem ein Kurzschluss. Finde die Ursache und behebe sie mit Kreuzungen.",
     lesson:
       "Die eingesetzten Kreuzungen führen die waagerechte und die senkrechte Leitung elektrisch getrennt aneinander vorbei. So bleiben die beiden Stromkreise getrennt und die Kurzschlüsse sind behoben.",
@@ -41,7 +41,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     H: 5,
     palette: ["wire", "ammeter", "erase"],
     stock: { ammeter: 1 },
-    showValues: true,
+    ratings: "nominal",
     task: "Hier sind die Knotenpunkte gewollt. Wie groß ist die Stromstärke durch die Lampe?",
     lesson:
       "Knotenregel: Am Knotenpunkt fließt so viel heraus, wie hineinfließt. 99 mA + 148 mA = 247 mA.",
@@ -98,7 +98,7 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     W: 7,
     H: 3,
     palette: BASE,
-    showValues: true,
+    ratings: "nominal",
     task: "Die Lampe braucht 18 V. Schalte beide Spannungsquellen so in Reihe, dass sich ihre Spannungen addieren.",
     lesson:
       "In Reihe addieren sich die Spannungen – aber nur, wenn Plus an Minus liegt. Gegeneinander gepolt heben sie sich auf.",

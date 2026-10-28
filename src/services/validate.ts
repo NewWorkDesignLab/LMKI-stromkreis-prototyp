@@ -235,6 +235,10 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
     H <= MAX_BOARD;
   if (!sizeOk) e(`W und H müssen ganze Zahlen zwischen 2 und ${MAX_BOARD} sein`);
 
+  if (l.ratings !== undefined && l.ratings !== "nominal" && l.ratings !== "resistance")
+    e(`ratings muss "nominal" oder "resistance" sein`);
+  /* früheres Feld: Fremddaten sollen nicht still ihre Beschriftung verlieren */
+  if ("showValues" in l) e("showValues gibt es nicht mehr – Kennwerte über ratings beschriften");
   if (!Array.isArray(l.palette)) e("palette fehlt");
   else for (const t of l.palette) if (!TOOLS.has(t)) e(`unbekanntes Werkzeug „${t}“`);
   if (l.stock !== undefined) {

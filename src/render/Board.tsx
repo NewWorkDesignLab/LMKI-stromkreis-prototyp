@@ -16,7 +16,7 @@ import type {
   WireKey,
 } from "../domain/types";
 import { parsePoint, wireEnds } from "../engine/circuit";
-import { fmtA, fmtR, fmtV } from "../engine/format";
+import { fmtA, fmtR, fmtV, ratingLines } from "../engine/format";
 import { CONSUMER, P } from "../engine/parts";
 import { BG, DOT, FLOW, FORBID, GHOST, HINT, HOT, INK, LIVE, MUTE, WIRE } from "../theme/colors";
 import { EMPTY_SIM } from "./emptySim";
@@ -46,7 +46,7 @@ export type BoardHint =
   | { kind: "eraseWire"; key: WireKey };
 
 interface Props {
-  level: Pick<BuildStep, "W" | "H" | "walls" | "frames" | "showValues" | "labelSwitches">;
+  level: Pick<BuildStep, "W" | "H" | "walls" | "frames" | "ratings" | "labelSwitches">;
   circuit: Circuit;
   sim: SimResult;
   /* Ohne Werkzeug und Zeigerereignisse ist das Brett nur zum Ansehen (Bühne neben
@@ -65,6 +65,9 @@ interface Props {
   height: number;
   /** laufende Striche in stromführenden Leitungen (Einstellung) */
   flow: boolean;
+  /** Betriebswerte (Ströme) an Quelle und Verbrauchern statt der Kennwerte: im Merksatz und
+      beim Frei bauen. Beim Bauen im Level zeigen sie nur die Messgeräte. */
+  live?: boolean;
   /** Skizze statt Spielfeld: blass und grau-blau (Ghost-Schaltung) */
   tone?: "ghost";
   /** ersetzt die eingebaute Beschriftung; Bauteile ohne Eintrag bleiben unbeschriftet */
@@ -113,6 +116,7 @@ export function Board({
   width,
   height,
   flow: animate,
+  live,
   tone,
   labels,
   focus,
@@ -215,7 +219,7 @@ export function Board({
 
   /* Beschriftungen stehen immer mittig unter ihrem Bauteil – auch am Brettrand,
      denn die viewBox reicht dort um PAD_X über das Spielfeld hinaus. */
-  const label = (id: PartId, c: Part, txt: string) =>
+  const label = (id: PartId, c: Part, txt: string | string[]) =>
     labelEls.push(
       <text
         key={`t${id}`}
@@ -229,7 +233,13 @@ export function Board({
         strokeWidth={3}
         paintOrder="stroke"
       >
-        {formel(txt)}
+        {typeof txt === "string"
+          ? formel(txt)
+          : txt.map((line, n) => (
+              <tspan key={n} x={center(c.x)} dy={n ? 12 : 0}>
+                {formel(line)}
+              </tspan>
+            ))}
       </text>,
     );
 
@@ -269,10 +279,15 @@ export function Board({
     /* Ein Öffner ist am Symbol allein zu leicht zu übersehen – er sagt es dazu. */
     else if ((c.type === "switch" || c.type === "button") && (c.name || c.nc || cfg.labelSwitches))
       label(id, c, c.name || (c.nc ? "Öffner" : "Schließer"));
-    else if (cfg.showValues) {
+    /* Betriebswerte nur, wo es ausdrücklich gewollt ist (Merksatz, Frei bauen) – beim Bauen
+       zeigen sie die Messgeräte, die Bauteile tragen nur ihre Kennwerte. */
+    else if (live) {
       if (c.type === "battery") label(id, c, `${fmtV(P(c, "u"))} · ${fmtA(sim.cur[id] || 0)}`);
       else if (CONSUMER.has(c.type))
         label(id, c, sim.blocked.has(id) ? "sperrt" : fmtA(sim.cur[id] || 0));
+    } else if (cfg.ratings) {
+      const lines = ratingLines(c, cfg.ratings === "resistance");
+      if (lines.length) label(id, c, lines);
     }
   }
 

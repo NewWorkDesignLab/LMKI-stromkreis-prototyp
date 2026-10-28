@@ -1,3 +1,6 @@
+import type { Part } from "../domain/types";
+import { P } from "./parts";
+
 /* Zahlen im deutschen Format: Komma als Dezimaltrenner, passende Einheit. */
 export const de = (s) => String(s).replace(".", ",");
 /* Nachkommastellen der Anzeige in mA: ab 10 mA ganze, darunter eine Stelle */
@@ -20,3 +23,28 @@ export const shownA = (i) => {
 export const shownV = (v) => Number(Math.abs(v).toFixed(2));
 export const fmtR = (r) =>
   r >= 1000 ? `${de((r / 1000).toFixed(r % 1000 ? 1 : 0))} kΩ` : `${r} Ω`;
+
+/* Nennwert wie auf dem Typenschild: ohne Nachkommastellen, die nichts aussagen („9 V“). */
+const nominalV = (v: number) => `${de(v)} V`;
+
+/** Kennwerte eines Bauteils als Beschriftungszeilen: was auf Sockel oder Typenschild steht,
+    gilt unabhängig von der Schaltung. `withResistance` ergänzt in Rechenleveln den
+    Bauteilwiderstand – eine Aufgabenkonvention, kein Aufdruck (siehe PROJEKT.md, Grenzen).
+    Widerstand und Sicherung beschriftet das Brett selbst; Motor und Summer haben im Modell
+    keine Nennwerte. */
+export function ratingLines(part: Part, withResistance: boolean): string[] {
+  const ohm = withResistance ? [fmtR(P(part, "r"))] : [];
+  switch (part.type) {
+    case "battery":
+      return [nominalV(P(part, "u"))];
+    case "lamp":
+      return [`${nominalV(P(part, "un"))} / ${fmtA(P(part, "in"))}`, ...ohm];
+    case "led":
+      return [`${nominalV(P(part, "vf"))} / ${fmtA(P(part, "in"))}`];
+    case "motor":
+    case "buzzer":
+      return ohm;
+    default:
+      return [];
+  }
+}

@@ -10,7 +10,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     W: 7,
     H: 3,
     palette: BASE,
-    showValues: true,
+    ratings: "nominal",
     task: "Verdrahte den Stromkreis und stelle am Widerstand die dunkelste Stufe ein, bei der die Lampe noch leuchtet.",
     lesson:
       "Ein Widerstand in Reihe dimmt die Lampe: mehr Widerstand, weniger Strom, weniger Licht. Wird er zu groß, reicht der Strom zum Leuchten nicht mehr aus.",
@@ -81,7 +81,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     W: 7,
     H: 4,
     palette: BASE,
-    showValues: true,
+    ratings: "nominal",
     before: [
       {
         kind: "context",

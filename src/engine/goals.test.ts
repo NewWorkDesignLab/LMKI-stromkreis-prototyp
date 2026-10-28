@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Circuit, Goal } from "../domain/types";
 import { wires } from "../content/helpers";
 import { shownA, shownV } from "./format";
-import { checkLevel, reviewGoals } from "./goals";
+import { checkLevel, measuredResults } from "./goals";
 import { simulate } from "./simulate";
 
 /* Quelle links, Lampe rechts – wie in simulate.test.ts. */
@@ -55,20 +55,20 @@ const ok = (goal: Goal, c: Circuit, id: string, text: string) =>
 /* der Strom der Lampe, wie das Amperemeter ihn in mA anzeigt */
 const anzeigeMA = (c: Circuit) => Math.round(Math.abs(simulate(c).cur.A1) * 1000);
 
-describe("Rückblick auf die Ziele", () => {
-  it("hakt alle Ziele eines gelösten Aufbaus ab und nennt den gemessenen Wert", () => {
-    const items = reviewGoals({ goals: [strom] }, withAmmeter());
-    expect(items.every((i) => i.ok)).toBe(true);
-    expect(items.find((i) => i.measure)!.t).toMatch(/^Strom: \d+ mA$/);
+describe("Rückblick auf die Messungen", () => {
+  it("liest den Wert so ab, wie das Messgerät ihn zeigt", () => {
+    const [r] = measuredResults({ goals: [strom] }, withAmmeter());
+    expect(r.shown).toMatch(/^\d+ mA$/);
+    expect(r.reading).toBe(String(anzeigeMA(withAmmeter())));
   });
 
-  it("hakt auch ein Messziel in A ab", () => {
-    expect(reviewGoals({ goals: [stromInA] }, withAmmeter()).every((i) => i.ok)).toBe(true);
+  it("gibt den richtigen Eintrag in der Einheit der Aufgabe an", () => {
+    const [r] = measuredResults({ goals: [stromInA] }, withAmmeter());
+    expect(ok(stromInA, withAmmeter(), "strom", r.reading)).toBe(true);
   });
 
-  it("lässt ein Messziel offen, solange kein Messgerät so sitzt", () => {
-    const items = reviewGoals({ goals: [strom] }, loop());
-    expect(items.find((i) => i.measure)!.ok).toBe(false);
+  it("lässt eine Messung weg, solange kein Messgerät so sitzt", () => {
+    expect(measuredResults({ goals: [strom] }, loop())).toEqual([]);
   });
 });
 

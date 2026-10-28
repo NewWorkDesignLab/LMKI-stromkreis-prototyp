@@ -10,7 +10,7 @@ export const messenLevels: LegacyLevelDef[] = [
     W: 7,
     H: 3,
     palette: BASE,
-    showValues: true,
+    ratings: "resistance",
     task: "Verdrahte den Stromkreis. Wie groß ist die Stromstärke mit dem Widerstand?",
     lesson: "Ein Widerstand begrenzt den Strom. Mehr Widerstand im Stromkreis heißt weniger Strom.",
     explanation: [
@@ -47,7 +47,7 @@ export const messenLevels: LegacyLevelDef[] = [
     H: 3,
     palette: ["wire", "ammeter", "erase"],
     stock: { ammeter: 1 },
-    showValues: true,
+    ratings: "nominal",
     task: "Wie groß ist die Stromstärke durch die Lampe? Die Lampe soll dabei weiter leuchten.",
     lesson:
       "Ein Amperemeter wird IN REIHE eingebaut. Parallel geschaltet würde sein sehr kleiner Innenwiderstand den Verbraucher kurzschließen.",
@@ -84,7 +84,7 @@ export const messenLevels: LegacyLevelDef[] = [
     H: 4,
     palette: ["wire", "voltmeter", "erase"],
     stock: { voltmeter: 1 },
-    showValues: true,
+    ratings: "nominal",
     task: "Welche Spannung liegt an der Lampe an?",
     lesson:
       "Ein Voltmeter wird PARALLEL zum Bauteil geschaltet. In Reihe sperrt sein hoher Innenwiderstand den Stromkreis nahezu.",
@@ -121,7 +121,7 @@ export const messenLevels: LegacyLevelDef[] = [
     H: 4,
     palette: ["wire", "voltmeter", "erase"],
     stock: { voltmeter: 1 },
-    showValues: true,
+    ratings: "nominal",
     task: "Zwei gleiche Lampen liegen in Reihe. Welche Spannung liegt an der linken Lampe an?",
     lesson:
       "In der Reihenschaltung teilt sich die Spannung auf die Verbraucher auf – bei zwei gleichen Lampen je die Hälfte.",
@@ -159,7 +159,7 @@ export const messenLevels: LegacyLevelDef[] = [
     H: 3,
     palette: ["wire", "ammeter", "erase"],
     stock: { ammeter: 1 },
-    showValues: true,
+    ratings: "nominal",
     task: "Der Stromkreis ist fertig verdrahtet. Wie groß ist der Gesamtstrom, den die Spannungsquelle liefert?",
     lesson:
       "In der Parallelschaltung teilt sich der Strom auf die Zweige auf – der Gesamtstrom ist die Summe.",

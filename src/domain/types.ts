@@ -323,8 +323,10 @@ export interface BuildStep extends StepBase {
   tips?: string[];
   /** Musterlösung. Noch nicht in der Oberfläche. */
   solution?: Circuit;
-  /** Messwerte und Werte an den Bauteilen beschriften */
-  showValues?: boolean;
+  /** Kennwerte an den Bauteilen beschriften (Nennwerte wie auf dem Sockel); "resistance"
+      schreibt in Rechenleveln den Bauteilwiderstand dazu. Betriebswerte (Ströme, anliegende
+      Spannungen) zeigen beim Bauen nur Messgeräte. */
+  ratings?: "nominal" | "resistance";
   /** Schalter immer mit „Schließer“/„Öffner“ beschriften */
   labelSwitches?: boolean;
   /** Gestrichelte Geräterahmen (reine Anzeige) */

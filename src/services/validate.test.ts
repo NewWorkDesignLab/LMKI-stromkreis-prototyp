@@ -106,6 +106,22 @@ describe("Prüfung der Schritte", () => {
     expect(errorsOf([build({ min: 0, max: 1000 })])).toMatch(/min < max/);
   });
 
+  it("kennt für Kennwerte nur ratings und meldet das frühere showValues", () => {
+    const build = (extra: Record<string, unknown>) => ({
+      kind: "build",
+      id: "bauen",
+      W: 3,
+      H: 3,
+      palette: ["wire"],
+      task: "…",
+      circuit: { parts: {}, wires: {} },
+      ...extra,
+    });
+    expect(errorsOf([build({ ratings: "resistance" })])).toBe("");
+    expect(errorsOf([build({ ratings: "alles" })])).toMatch(/ratings/);
+    expect(errorsOf([build({ showValues: true })])).toMatch(/showValues/);
+  });
+
   it("kennt keine fremden Schrittarten", () => {
     expect(errorsOf([{ kind: "tanz", id: "x" }])).toMatch(/unbekannte Art/);
   });

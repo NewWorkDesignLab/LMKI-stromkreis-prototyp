@@ -159,7 +159,9 @@ function ReadingField({
   );
 }
 
-function statusText(sim: SimResult) {
+/* Im Level nur der Zustand: der Gesamtstrom der Quelle ist kein Messwert eines Messgeräts und
+   nähme Messaufgaben vorweg. Beim Frei bauen steht er dabei, wie die Werte am Brett. */
+function statusText(sim: SimResult, mode: PlayMode) {
   return !sim.hasBattery
     ? "Keine Spannungsquelle vorhanden"
     : sim.short
@@ -167,7 +169,9 @@ function statusText(sim: SimResult) {
       : sim.tripped.size
         ? "Sicherung ausgelöst"
         : sim.closed
-          ? `Strom fließt · ${fmtA(sim.ibatt)}`
+          ? mode === "sandbox"
+            ? `Strom fließt · ${fmtA(sim.ibatt)}`
+            : "Strom fließt"
           : "Kein geschlossener Stromkreis";
 }
 
@@ -189,7 +193,7 @@ export function StatusBar({
           className={`flex items-center gap-1.5 text-sm font-medium ${sim.short ? "text-red-600" : sim.closed ? "text-amber-700" : "text-stone-500"}`}
         >
           {sim.short && <AlertTriangle size={16} aria-hidden="true" />}
-          {statusText(sim)}
+          {statusText(sim, mode)}
           {mode === "sandbox" && sim.lit.size > 0 && (
             <span className="font-normal text-stone-500">· {sim.lit.size} Verbraucher aktiv</span>
           )}

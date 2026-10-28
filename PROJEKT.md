@@ -423,7 +423,21 @@ gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt si
 ### Bauschritt
 
 Ein Bauschritt hat Feldgröße, Startschaltung, Werkzeugpalette, Aufgabe (`task`) und optionale
-Ziele. `showValues: true` blendet Spannungen und Ströme ein. `labelSwitches: true` schreibt
+Ziele.
+
+**Kennwerte am Bauteil, Betriebswerte nur am Messgerät** (entschieden 2026-10-28):
+- **Beschriftung beim Bauen:** `ratings: "nominal"` schreibt Kennwerte an die Bauteile,
+  wie auf Sockel oder Typenschild (`ratingLines` in `engine/format.ts`): Spannungsquelle „9 V“,
+  Lampe „9 V / 100 mA“, LED „2 V / 15 mA“.
+- **Rechenlevel:** `"resistance"` ergänzt dort den Bauteilwiderstand („90 Ω“), also in
+  „Der Widerstand“, „Ohmsches Gesetz“ und „Die Lichterkette“.
+- **Betriebswerte:** Ströme und anliegende Spannungen zeigen beim Bauen nur Amperemeter und
+  Voltmeter. Die Statusleiste meldet nur den Zustand („Strom fließt“), weil der Gesamtstrom
+  der Quelle sonst jede Messaufgabe vorwegnähme.
+- **Merksatz und Frei bauen:** Erst der Merksatz zeigt alle Betriebswerte (Board `live`),
+  und nur in Leveln mit `ratings`: dort ist die Schaltung Auswertung. Frei bauen zeigt sie immer.
+
+`showValues` gibt es nicht mehr; die Prüfung meldet es. `labelSwitches: true` schreibt
 unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, weil dort der
 Öffner in der Palette liegt). `latch` siehe Zielsystem.
 
@@ -525,7 +539,10 @@ Kurzschluss und Überlastung lassen ein Level immer scheitern.
 
 ## 9. Bewusste Grenzen
 
-- **Lampenwiderstand ist konstant.** Real steigt er mit der Temperatur.
+- **Lampenwiderstand ist konstant.** Real steigt er mit der Temperatur. Auf einer echten
+  Lampe steht deshalb auch kein Widerstandswert, nur Nennspannung und Nennstrom bzw.
+  -leistung; „90 Ω“ (`ratings: "resistance"`) ist eine Aufgabenkonvention für Rechenlevel.
+  Motor und Summer haben im Modell keine Nennwerte und tragen nur dort ihren Widerstand.
 - **Kurzschluss ist eine Stromschwelle je Quelle.** Im freien Baumodus können sehr viele
   parallele Lampen fälschlich als Kurzschluss gelten.
 - **Keine Kreuzschaltung.** Ein Kreuzschalter braucht vier Anschlüsse mit zwei

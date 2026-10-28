@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, Circle, CircleHelp, Lightbulb, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleHelp, Lightbulb, XCircle } from "lucide-react";
 import { useContext, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import type {
   AnswerValue,
@@ -19,7 +19,7 @@ import {
   type Stage,
   type StepProgress,
 } from "../../engine/lesson";
-import { reviewGoals } from "../../engine/goals";
+import { measuredResults, type MeasuredResult } from "../../engine/goals";
 import { unitAliases } from "../../engine/quantity";
 import { PANEL_HEADING } from "../../ui/heading";
 import { BuildStepView } from "./BuildStepView";
@@ -101,7 +101,10 @@ function pickStage(
   circuitFirst = false,
 ): { el: ReactNode; rest: Block[] } {
   const { visual, rest } = splitVisual(blocks);
-  const circuit = stage && <CircuitStage stage={stage} />;
+  /* Betriebswerte erst im Merksatz, und nur in Leveln, die überhaupt Werte beschriften */
+  const circuit = stage && (
+    <CircuitStage stage={stage} live={circuitFirst && !!stage.build.ratings} />
+  );
   if (circuitFirst && circuit) return { el: circuit, rest: blocks ?? [] };
   return visual
     ? { el: <VisualStage block={visual} />, rest }
@@ -338,6 +341,12 @@ function QuizView({
   );
 }
 
+/* Gemessenes als Ergebnis benannt, nicht im Wortlaut des Ziels („Miss …“) */
+const QUANTITY_NAME: Record<MeasuredResult["quantity"], string> = {
+  current: "Stromstärke",
+  voltage: "Spannung",
+};
+
 function SummaryView({
   step,
   level,
@@ -353,45 +362,42 @@ function SummaryView({
   const text = (id: string) => predict?.choices.find((c) => c.id === id)?.text;
   const saidId = said?.k === "choice" ? said.ids[0] : undefined;
   const { el, rest } = pickStage(step.blocks, stage, true);
-  /* Rückblick: die Aufgabe und was davon erreicht ist, dann der Merksatz, dann die
-     Erklärung. So entsteht der Zusammenhang Aufgabe → Tun → Erkenntnis auf einer Seite. */
-  const items = useMemo(() => (stage ? reviewGoals(stage.build, stage.circuit) : []), [stage]);
+  /* Rückblick: links im Blick die eigene Schaltung, darunter was man richtig gemessen hat;
+     rechts in einem Panel die Aufgabe, der Merksatz und die Erklärung. Eine Zielliste braucht
+     es nicht – was erreicht ist, zeigt die Schaltung, und ihre Schalter lassen sich bedienen.
+     Lange Erklärungen verlängern nur die rechte Spalte, die Schaltung bleibt oben. */
+  const measured = useMemo(
+    () => (stage ? measuredResults(stage.build, stage.circuit) : []),
+    [stage],
+  );
   return (
-    <StageLayout stage={el}>
-      <Card>
-        {stage && (
-          <section aria-label="Rückblick">
-            <h2 className={`${PANEL_HEADING} flex items-center gap-1.5`}>
-              <CheckCircle2 size={15} className="text-emerald-600" aria-hidden="true" /> Das war die
-              Aufgabe
-            </h2>
-            <p className="text-sm leading-relaxed text-stone-700">{stage.build.task}</p>
-            {items.length > 0 && (
-              <ul aria-label="Ziele" className="mt-2 flex flex-col gap-1">
-                {items.map((it, i) => (
-                  <li
-                    key={i}
-                    className={`flex items-start gap-1.5 text-sm ${it.ok ? "text-emerald-700" : "text-stone-600"}`}
-                  >
-                    {it.ok ? (
-                      <CheckCircle2 size={17} className="mt-px shrink-0" aria-label="erreicht" />
-                    ) : (
-                      <Circle
-                        size={17}
-                        className="mt-px shrink-0 text-stone-300"
-                        aria-label="offen"
-                      />
-                    )}
-                    <span>{it.t}</span>
+    <StageLayout
+      stage={
+        el && (
+          <div className="flex flex-col gap-3">
+            {el}
+            {measured.length > 0 && (
+              <ul aria-label="Gemessen" className="flex flex-col gap-1 px-1">
+                {measured.map((m) => (
+                  <li key={m.id} className="flex items-center gap-1.5 text-sm text-emerald-700">
+                    <CheckCircle2 size={17} className="shrink-0" aria-hidden="true" />
+                    <span>
+                      {QUANTITY_NAME[m.quantity]}:{" "}
+                      <strong className="tabular-nums">{m.shown}</strong>
+                    </span>
                   </li>
                 ))}
               </ul>
             )}
-          </section>
-        )}
+          </div>
+        )
+      }
+    >
+      <Card>
+        {stage && <p className="mb-4 text-sm leading-relaxed text-stone-600">{stage.build.task}</p>}
         <section
           aria-label="Merksatz"
-          className={`rounded-xl border border-amber-200 bg-amber-50 p-3 ${stage ? "mt-4" : ""}`}
+          className="rounded-xl border border-amber-200 bg-amber-50 p-3"
         >
           <h2 className={`${PANEL_HEADING} flex items-center gap-1.5 text-amber-800`}>
             <Lightbulb size={15} className="text-amber-500" aria-hidden="true" /> Merke

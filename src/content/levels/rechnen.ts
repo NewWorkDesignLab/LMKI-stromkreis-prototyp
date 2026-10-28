@@ -74,7 +74,7 @@ export const rechnenLevels: LevelDef[] = [
         W: 7,
         H: 3,
         palette: BASE,
-        showValues: true,
+        ratings: "resistance",
         walls: points("1,1 2,1 3,1 4,1 5,1"),
         circuit: { parts: ohmParts(100), wires: {} },
         goals: [

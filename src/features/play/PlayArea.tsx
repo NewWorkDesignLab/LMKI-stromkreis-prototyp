@@ -169,6 +169,7 @@ export function PlayArea({
                   handlers={s.handlers}
                   hint={s.hint}
                   overlay={tutorial}
+                  live={mode === "sandbox"}
                   width={width}
                   height={height}
                   flow={settings.flowAnimation}

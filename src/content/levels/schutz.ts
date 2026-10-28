@@ -10,7 +10,7 @@ export const schutzLevels: LegacyLevelDef[] = [
     W: 6,
     H: 3,
     palette: BASE,
-    showValues: true,
+    ratings: "nominal",
     task: "Die Lampe bleibt dunkel, obwohl der Stromkreis geschlossen ist. Finde den Kurzschluss und beseitige ihn.",
     lesson:
       "Ein Kurzschluss verbindet + und − ohne Verbraucher. Die Brücke hat keinen Widerstand: an der Lampe liegt keine Spannung mehr, also fließt durch sie kein Strom.",
@@ -28,7 +28,7 @@ export const schutzLevels: LegacyLevelDef[] = [
     W: 7,
     H: 3,
     palette: BASE,
-    showValues: true,
+    ratings: "nominal",
     task: "Die Sicherung hat ausgelöst. Beseitige die Ursache und schalte die Sicherung wieder ein.",
     lesson:
       "Eine Sicherung trennt den Stromkreis bei Überstrom – sie schützt Leitung und Spannungsquelle. Einschalten hilft erst, wenn die Ursache weg ist.",
@@ -48,7 +48,7 @@ export const schutzLevels: LegacyLevelDef[] = [
     W: 6,
     H: 3,
     palette: BASE,
-    showValues: true,
+    ratings: "nominal",
     task: "Verdrahte den Stromkreis und baue die LED in Durchlassrichtung ein.",
     lesson:
       "Die LED leitet nur von Anode zur Kathode (Balken). Falsch gepolt sperrt sie vollständig.",
@@ -66,7 +66,7 @@ export const schutzLevels: LegacyLevelDef[] = [
     W: 7,
     H: 3,
     palette: BASE,
-    showValues: true,
+    ratings: "nominal",
     task: "Verdrahte den Stromkreis und wähle den Vorwiderstand so, dass ein LED-Strom zwischen 12 mA und 18 mA fließt. Mehr als 30 mA verträgt die LED nicht.",
     lesson: "Eine LED braucht immer einen Vorwiderstand: R = (Uq − UF) / I.",
     cells: {

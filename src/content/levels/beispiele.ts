@@ -45,7 +45,7 @@ export const beispielLevels: LevelDef[] = [
         W: 7,
         H: 4,
         palette: BASE,
-        showValues: true,
+        ratings: "resistance",
         circuit: {
           parts: {
             G1: { type: "battery", x: 0, y: 1, orient: "v" },

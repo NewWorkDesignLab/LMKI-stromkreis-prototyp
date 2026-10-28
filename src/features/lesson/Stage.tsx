@@ -56,8 +56,9 @@ const OPERABLE = new Set(["switch", "button", "spdt"]);
 /* Die Schaltung eines Bauschritts zum Ansehen: mit Simulation (Lampen leuchten, Messwerte
    stehen da), ohne Werkzeuge. Schalter und Taster lassen sich bedienen, damit man die eigene
    Schaltung ausprobieren kann (useOperableBoard). Originalgröße wie beim Bauen; ist die
-   Spalte schmaler, schrumpft sie mit. */
-export function CircuitStage({ stage }: { stage: Stage }) {
+   Spalte schmaler, schrumpft sie mit. `live` zeigt nach dem Lösen alle Betriebswerte – vorher
+   (Vermutung, Frage) verrieten sie bei vorverdrahteten Leveln die Antwort. */
+export function CircuitStage({ stage, live = false }: { stage: Stage; live?: boolean }) {
   const { settings } = useRuntimeState();
   const board = useOperableBoard(stage.circuit, stage.build);
   const sim = useMemo(() => simulate(board.circuit), [board.circuit]);
@@ -72,6 +73,7 @@ export function CircuitStage({ stage }: { stage: Stage }) {
           sim={sim}
           svgRef={board.svgRef}
           handlers={operable ? board.handlers : undefined}
+          live={live}
           fit
           width={w}
           height={h}

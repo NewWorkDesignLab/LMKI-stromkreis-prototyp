@@ -5,7 +5,7 @@ import { LEVEL_CATALOG } from "./catalog";
 import { DEFAULT_CURRICULUM } from "./curriculum";
 import { TUTORIALS } from "./tutorials";
 import { validateLevel } from "../services/validate";
-import { checkLevel, reviewGoals } from "../engine/goals";
+import { checkLevel, measuredResults } from "../engine/goals";
 import { simulate } from "../engine/simulate";
 import { circuitFromCells, fromLegacyLevel } from "./legacy";
 import { lockw, wire } from "./helpers";
@@ -74,7 +74,11 @@ describe("Inhalte", () => {
       for (const b of builds(l))
         /* Messaufgaben brauchen den abgelesenen Wert; die Rückschau liest ihn von der Anzeige ab */
         if (b.solution) {
-          const items = reviewGoals(b, b.solution);
+          const sim = simulate(b.solution);
+          const readings = Object.fromEntries(
+            measuredResults(b, b.solution, sim).map((r) => [r.id, r.reading]),
+          );
+          const { items } = checkLevel(b, b.solution, sim, true, readings);
           expect(items.length > 0 && items.every((i) => i.ok), `${l.id}/${b.id}`).toBe(true);
         }
   });
