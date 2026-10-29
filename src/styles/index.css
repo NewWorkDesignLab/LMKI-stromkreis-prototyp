@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Flussanimation der Leitungen und Glühen der Lampen */
+.flow {
+  stroke-dasharray: 7 17;
+  animation: flowmove 0.7s linear infinite;
+}
+.flow.fast {
+  animation-duration: 0.22s;
+}
+@keyframes flowmove {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.lamp-on-glow {
+  opacity: 0.28;
+  animation: lampp 1.5s ease-in-out infinite;
+}
+@keyframes lampp {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
+/* Einführungsanimationen (features/tutorial) */
+.tutorial-demo {
+  animation: tutorial-fade 4.8s linear infinite;
+}
+.tutorial-trace {
+  stroke-dasharray: 1;
+  animation: tutorial-draw 4.8s linear infinite;
+}
+.tutorial-cursor {
+  animation: tutorial-drag 4.8s linear infinite;
+}
+.tutorial-click-cursor {
+  animation: tutorial-click 4.8s ease-in-out infinite;
+}
+.tutorial-click-ring {
+  animation: tutorial-click-ring 4.8s ease-out infinite;
+}
+@keyframes tutorial-click {
+  0%,
+  25%,
+  55%,
+  100% {
+    transform: scale(1);
+  }
+  35%,
+  45% {
+    transform: scale(0.8);
+  }
+}
+@keyframes tutorial-click-ring {
+  0%,
+  35% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.8;
+  }
+  65%,
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+@keyframes tutorial-draw {
+  0%,
+  15% {
+    stroke-dashoffset: 1;
+  }
+  75%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes tutorial-drag {
+  0%,
+  15% {
+    offset-distance: 0%;
+  }
+  75%,
+  100% {
+    offset-distance: 100%;
+  }
+}
+@keyframes tutorial-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  8%,
+  85% {
+    opacity: 1;
+  }
+}
+
+/* Moment des Lösens: der Brettrahmen leuchtet einmal grün auf, erreichte Ziele haken sich
+   mit einem kurzen Ploppen ab, „Geschafft“ gleitet unter dem Brett herein. Bewusst einmalig
+   und leise – Bestätigung, kein Feuerwerk. */
+.board-solved::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 3px #34d399,
+    inset 0 0 48px rgba(52, 211, 153, 0.35);
+  opacity: 0;
+  animation: solved-glow 1.4s ease-out;
+}
+@keyframes solved-glow {
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.goal-pop {
+  animation: goal-pop 0.35s ease-out;
+}
+@keyframes goal-pop {
+  0% {
+    transform: scale(0.5);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.goal-in {
+  animation: goal-in 0.35s ease-out both;
+}
+@keyframes goal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+.win-in {
+  animation: win-in 0.3s ease-out;
+}
+@keyframes win-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-demo {
+    display: none;
+  }
+  .flow,
+  .lamp-on-glow,
+  .board-solved::after,
+  .goal-pop,
+  .goal-in,
+  .win-in {
+    animation: none;
+  }
+}
+
+button:focus-visible {
+  outline: 3px solid #0891b2;
+  outline-offset: 3px;
+}
+
+dialog::backdrop {
+  background: rgba(28, 25, 23, 0.55);
+}
