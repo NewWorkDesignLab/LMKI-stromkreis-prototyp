@@ -208,15 +208,15 @@ export function PlayArea({
             {!step.contactLab && win}
             {settings.debug && debug && <DebugPanel rows={debug} />}
           </div>
-          {step.contactLab && (
-            /* „Geschafft“ steht neben der Funktionsansicht: dort probiert man zuletzt aus, oben
-               bei den Zielen läge es dann außer Sicht. Schmaler darunter. */
-            <div ref={labRef} className="relative mt-4 flex scroll-mt-1 flex-col gap-3">
+          {step.contactLab && othersMet(s.check) && (
+            /* Die Funktionsansicht kommt erst nach dem Verdrahten dazu – vorher lenkte sie vom
+               Bauen ab. „Geschafft“ steht neben ihr: dort probiert man zuletzt aus, oben bei
+               den Zielen läge es dann außer Sicht. Schmaler darunter. */
+            <div ref={labRef} className="goal-in relative mt-4 flex scroll-mt-1 flex-col gap-3">
               <ContactLab
                 config={step.contactLab}
                 circuit={s.circuit}
                 sim={s.sim}
-                wired={othersMet(s.check)}
                 tried={s.tried}
                 press={s.press}
                 release={s.release}

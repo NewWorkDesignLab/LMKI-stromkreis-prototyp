@@ -467,10 +467,11 @@ oder später ein Relais.
 
 Was dort zu tun ist, ist ein gewöhnliches Ziel `tried` (siehe Zielsystem); die Ansicht liest
 nur dessen Fortschritt und schreibt am Ende knapp „Beide Taster ausprobiert.“ – der Merksatz
-folgt im nächsten Schritt. In der Zielliste erscheint das Ziel erst, wenn die Schaltung
-gebaut ist (alle übrigen Ziele erreicht), damit es den Blick nach unten führt; offen steht es
-orange mit Pfeil nach unten als Verweis, Antippen springt zur Funktionsansicht. Ein Level mit `contactLab` muss ein
-`tried`-Ziel mit beiden Tastern haben, sonst meldet die Prüfung einen Fehler.
+folgt im nächsten Schritt. Ziel und Funktionsansicht erscheinen erst, wenn die Schaltung
+gebaut ist (alle übrigen Ziele erreicht): vorher lenkten sie vom Bauen ab, danach führen sie
+den Blick nach unten. Offen steht das Ziel orange mit Pfeil nach unten als Verweis, Antippen
+springt zur Funktionsansicht. Ein Level mit `contactLab` muss ein `tried`-Ziel mit beiden
+Tastern haben, sonst meldet die Prüfung einen Fehler.
 
 Welche Taster und Lampen gemeint sind, steht im Bauschritt, nicht im Bauteil-Code.
 `frames` zeichnet gestrichelte

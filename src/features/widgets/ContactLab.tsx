@@ -3,8 +3,8 @@ import { actuated } from "../../engine/parts";
 
 /* Funktionsansicht zu „Der Öffner“: zeigt den Kontakt im Taster. Ob beide Taster einmal
    gedrückt UND wieder losgelassen wurden, prüft das Ziel „tried“ (engine/goals.ts); die
-   Ansicht liest nur dessen Fortschritt. Welche Taster und Lampen gemeint sind, steht im
-   Level (`contactLab`). */
+   Ansicht liest nur dessen Fortschritt. Sie erscheint erst nach dem Verdrahten (PlayArea).
+   Welche Taster und Lampen gemeint sind, steht im Level (`contactLab`). */
 
 type Config = NonNullable<BuildStep["contactLab"]>;
 
@@ -12,14 +12,12 @@ interface Props {
   config: Config;
   circuit: Circuit;
   sim: SimResult;
-  /** übrige Ziele erreicht – erst dann zählt das Ausprobieren */
-  wired: boolean;
   tried: Tried;
   press: (id: PartId) => void;
   release: () => void;
 }
 
-export function ContactLab({ config, circuit, sim, wired, tried, press, release }: Props) {
+export function ContactLab({ config, circuit, sim, tried, press, release }: Props) {
   const closer = tried[config.closer.contact] ?? 0;
   const opener = tried[config.opener.contact] ?? 0;
   const contacts = [
@@ -36,19 +34,17 @@ export function ContactLab({ config, circuit, sim, wired, tried, press, release 
         Beide Taster kehren beim Loslassen zurück. Betätige sie hier oder im Schaltplan.
       </p>
       <p className="my-3 rounded-lg bg-white p-2 text-sm font-medium" aria-live="polite">
-        {!wired
-          ? "Verdrahte zuerst beide Lampenzweige."
-          : closer === 2 && opener === 2
-            ? "Beide Taster ausprobiert."
-            : closer === 1
-              ? "Lass den Schließer wieder los. Beobachte, wie der Kontakt zurückkehrt."
-              : opener === 1
-                ? "Lass den Öffner wieder los. Beobachte, wie der Kontakt zurückkehrt."
-                : closer === 2
-                  ? "Halte jetzt den Öffner gedrückt. Beobachte die Unterbrechung."
-                  : opener === 2
-                    ? "Halte jetzt den Schließer gedrückt. Beobachte die Kontaktbrücke."
-                    : "Halte einen der beiden Taster gedrückt und beobachte die Kontaktbrücke."}
+        {closer === 2 && opener === 2
+          ? "Beide Taster ausprobiert."
+          : closer === 1
+            ? "Lass den Schließer wieder los. Beobachte, wie der Kontakt zurückkehrt."
+            : opener === 1
+              ? "Lass den Öffner wieder los. Beobachte, wie der Kontakt zurückkehrt."
+              : closer === 2
+                ? "Halte jetzt den Öffner gedrückt. Beobachte die Unterbrechung."
+                : opener === 2
+                  ? "Halte jetzt den Schließer gedrückt. Beobachte die Kontaktbrücke."
+                  : "Halte einen der beiden Taster gedrückt und beobachte die Kontaktbrücke."}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {contacts.map(({ contact: at, lamp, name }) => {
