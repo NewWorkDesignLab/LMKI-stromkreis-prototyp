@@ -205,13 +205,14 @@ export function PlayArea({
               goalsEnter={intro.goalsEnter}
               onTried={step.contactLab ? showLab : undefined}
             />
-            {!step.contactLab && win}
+            {win}
             {settings.debug && debug && <DebugPanel rows={debug} />}
           </div>
           {step.contactLab && othersMet(s.check) && (
             /* Die Funktionsansicht kommt erst nach dem Verdrahten dazu – vorher lenkte sie vom
-               Bauen ab. „Geschafft“ steht neben ihr: dort probiert man zuletzt aus, oben bei
-               den Zielen läge es dann außer Sicht. Schmaler darunter. */
+               Bauen ab. „Geschafft“ steht zweimal: unter den Zielen, weil man auch am Brett
+               ausprobieren kann, und neben der Unterkante der Ansicht bei ihren Tastern, wo es
+               sonst außer Sicht läge. Schmaler darunter. */
             <div ref={labRef} className="goal-in relative mt-4 flex scroll-mt-1 flex-col gap-3">
               <ContactLab
                 config={step.contactLab}
@@ -222,7 +223,7 @@ export function PlayArea({
                 release={s.release}
               />
               {win && (
-                <div className="xl:absolute xl:left-full xl:top-0 xl:ml-2 xl:w-64">{win}</div>
+                <div className="xl:absolute xl:bottom-0 xl:left-full xl:ml-2 xl:w-64">{win}</div>
               )}
             </div>
           )}

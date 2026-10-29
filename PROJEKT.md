@@ -274,8 +274,9 @@ Ergänzt 2026-10-26: Bauteilfach und Ziele stehen ab `xl` unmittelbar neben der 
   - `WinPanel` nach dem Lösen, unter den Zielen in der rechten Spalte: „Geschafft“ und
     „Weiter“. Der Merksatz steht bewusst nicht hier, sondern im nächsten Schritt.
   - Zusatzbausteine wie die Funktionsansicht stehen darunter; dann scrollt die Spalte. Mit
-    Funktionsansicht steht das `WinPanel` neben ihr statt unter den Zielen: dort probiert
-    man zuletzt aus, oben läge „Weiter“ außer Sicht.
+    Funktionsansicht steht das `WinPanel` zweimal: unter den Zielen, weil man auch am Brett
+    ausprobieren kann, und neben der Unterkante der Ansicht bei ihren Tastern (schmaler
+    darunter), wo „Weiter“ sonst außer Sicht läge.
 
 **Übrige Schritte im Querformat** (`features/lesson/Stage.tsx`): links eine Bühne, rechts der
 Text. Auf der Bühne steht die erste Anschauung (Widget, Bild) aus den Bausteinen des
