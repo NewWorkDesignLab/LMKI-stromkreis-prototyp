@@ -38,6 +38,11 @@ export const TWO = new Set<PartType>([
   "button",
 ]);
 export const CONSUMER = new Set<PartType>(["lamp", "led", "motor", "buzzer"]);
+
+/** Betätigt, nicht leitend: beim Öffner heißt betätigt offen. */
+export const actuated = (c: Pick<Part, "nc" | "closed">): boolean =>
+  c.nc ? !c.closed : !!c.closed;
+
 export const IDEAL = new Set<PartType>(["switch", "button", "spdt"]); // widerstandslos, per Union verschmolzen
 /* Bauteile ohne eigene Tippfunktion – dort dreht ein Tippen die Lage */
 export const ROTATABLE = new Set<PartType>(["lamp", "motor", "buzzer", "ammeter", "voltmeter"]);

@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { BuildStep, CheckResult, Circuit, Readings } from "../../domain/types";
+import type { BuildStep, CheckResult, Circuit, Readings, Tried } from "../../domain/types";
 import { cloneCircuit, emptyCircuit } from "../../engine/circuit";
-import { checkLevel } from "../../engine/goals";
+import { advanceTried, checkLevel } from "../../engine/goals";
 import { latchTripped, type PlayMode } from "../../engine/editing";
 import { simulate } from "../../engine/simulate";
-import { useContactLab } from "../widgets/ContactLab";
 import { useBoardEditor } from "./useBoardEditor";
 
 const NOT_PLAYING: CheckResult = { items: [], won: false };
@@ -44,13 +43,18 @@ export function usePlaySession(
   const [readings, setReadings] = useState<Readings>({});
   const setReading = (id: string, text: string) => setReadings((r) => ({ ...r, [id]: text }));
 
-  const check = useMemo(
-    () => (mode === "level" ? checkLevel(level, circuit, sim, seen, readings) : NOT_PLAYING),
-    [mode, level, circuit, sim, seen, readings],
-  );
+  /* Ausprobieren zählt Betätigungen über die Zeit – wie `seen` ein Zustand des Versuchs */
+  const [tried, setTried] = useState<Tried>({});
 
-  const contactLab = useContactLab(level.contactLab, circuit, check.won);
-  const won = check.won && (!level.contactLab || contactLab.done);
+  const check = useMemo(
+    () => (mode === "level" ? checkLevel(level, circuit, sim, seen, readings, tried) : NOT_PLAYING),
+    [mode, level, circuit, sim, seen, readings, tried],
+  );
+  const won = check.won;
+
+  useEffect(() => {
+    setTried((t) => advanceTried(t, level, circuit, check));
+  }, [level, circuit, check]);
 
   useEffect(() => {
     if (won && mode === "level") onSolved?.(circuit);
@@ -67,7 +71,7 @@ export function usePlaySession(
   /* Zurücksetzen und Leeren sind Änderungen am Aufbau – sie lassen sich rückgängig machen. */
   const reset = () => {
     editor.cancelGesture();
-    contactLab.reset();
+    setTried({});
     setSeen(false); // sonst bliebe „lief schon mal“ über das Zurücksetzen hinweg stehen
     setReadings({});
     commit(() => cloneCircuit(level.circuit));
@@ -75,5 +79,5 @@ export function usePlaySession(
   };
   const clear = () => commit(() => emptyCircuit());
 
-  return { ...editor, sim, check, won, readings, setReading, contactLab, reset, clear };
+  return { ...editor, sim, check, won, readings, setReading, tried, reset, clear };
 }

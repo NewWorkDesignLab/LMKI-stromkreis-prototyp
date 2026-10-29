@@ -18,6 +18,7 @@ import {
   sideTowards,
   wireEnds,
 } from "../engine/circuit";
+import { triedParts } from "../engine/goals";
 import { hasPort } from "../engine/parts";
 
 /* Prüft Leveldaten, bevor sie ins Spiel dürfen. Gedacht für alles, was nicht von
@@ -55,6 +56,7 @@ const GOAL_KINDS = new Set([
   "state",
   "seen",
   "fuse",
+  "tried",
 ]);
 const SIDE_SET = new Set(["N", "E", "S", "W"]);
 /** Größtes Brett je Richtung; größere Felder sind im Rework vorgesehen, aber nicht grenzenlos. */
@@ -81,6 +83,8 @@ function goalRefs(g: Goal): string[] {
       return [g.at, ...g.inputs];
     case "state":
       return Object.keys(g.pressed);
+    case "tried":
+      return g.ats;
     default:
       return [];
   }
@@ -300,12 +304,27 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
         );
     }
   }
+  for (const g of l.goals ?? [])
+    if (g?.k === "tried") {
+      if (!isText(g.label)) e("Ziel „tried“: label fehlt");
+      if (!Array.isArray(g.ats) || !g.ats.length) e("Ziel „tried“: ats fehlt");
+      else
+        for (const id of g.ats)
+          if (parts[id] && parts[id].type !== "button")
+            e(`Ziel „tried“: „${id}“ ist kein Taster – nur Taster kehren von selbst zurück`);
+    }
   for (const id of l.latch?.lit ?? []) ref(id, "latch");
-  if (l.contactLab)
+  if (l.contactLab) {
+    /* Die Funktionsansicht ist der Ort, an dem man ausprobiert – ohne Ziel dazu wäre sie
+       folgenlos, und das Level gälte schon nach dem Verdrahten als gelöst. */
+    const tried = new Set(triedParts(l));
     for (const c of [l.contactLab.closer, l.contactLab.opener]) {
       ref(c?.contact, "contactLab");
       ref(c?.lamp, "contactLab");
+      if (c?.contact && !tried.has(c.contact))
+        e(`contactLab: Taster „${c.contact}“ fehlt in einem Ziel „tried“`);
     }
+  }
   if (l.tips !== undefined && !isTextList(l.tips)) e("tips muss eine Liste von Texten sein");
 }
 

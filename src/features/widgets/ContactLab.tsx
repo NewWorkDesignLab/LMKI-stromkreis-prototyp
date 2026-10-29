@@ -1,65 +1,33 @@
-import { useEffect, useState } from "react";
-import type { BuildStep, Circuit, PartId, SimResult } from "../../domain/types";
+import type { BuildStep, Circuit, PartId, SimResult, Tried } from "../../domain/types";
+import { actuated } from "../../engine/parts";
 
-/* Funktionsansicht zu „Der Öffner“: zeigt den Kontakt im Taster und verlangt, dass
-   beide Taster einmal gedrückt UND wieder losgelassen wurden. Welche Taster und Lampen
-   gemeint sind, steht im Level (`contactLab`). */
+/* Funktionsansicht zu „Der Öffner“: zeigt den Kontakt im Taster. Ob beide Taster einmal
+   gedrückt UND wieder losgelassen wurden, prüft das Ziel „tried“ (engine/goals.ts); die
+   Ansicht liest nur dessen Fortschritt. Welche Taster und Lampen gemeint sind, steht im
+   Level (`contactLab`). */
 
-interface Lab {
-  closer: 0 | 1 | 2;
-  opener: 0 | 1 | 2;
-}
-const FRESH: Lab = { closer: 0, opener: 0 };
-
-type Config = BuildStep["contactLab"];
-
-/** Je Taster 0 = noch nicht angefasst, 1 = gerade gedrückt, 2 = gedrückt UND wieder losgelassen.
-    Zwei getrennte Zähler, damit die Reihenfolge egal ist – wer mit dem Öffner anfängt,
-    soll nicht ins Leere laufen. Nur bei richtiger Verdrahtung zählen die Betätigungen. */
-export function useContactLab(config: Config | undefined, circuit: Circuit, wired: boolean) {
-  const [lab, setLab] = useState<Lab>(FRESH);
-
-  useEffect(() => {
-    if (!config) return;
-    if (!wired) {
-      if (lab.closer || lab.opener) setLab(FRESH);
-      return;
-    }
-    /* „betätigt“ statt „leitet“ – beim Öffner ist das gegenläufig. */
-    const held = (id: PartId) => {
-      const c = circuit.parts[id];
-      return c ? (c.nc ? !c.closed : !!c.closed) : false;
-    };
-    const next = (cur: 0 | 1 | 2, down: boolean): 0 | 1 | 2 =>
-      cur === 2 ? 2 : down ? 1 : cur === 1 ? 2 : 0;
-    const n: Lab = {
-      closer: next(lab.closer, held(config.closer.contact)),
-      opener: next(lab.opener, held(config.opener.contact)),
-    };
-    if (n.closer !== lab.closer || n.opener !== lab.opener) setLab(n);
-  }, [config, wired, circuit, lab]);
-
-  return { lab, done: lab.closer === 2 && lab.opener === 2, reset: () => setLab(FRESH) };
-}
+type Config = NonNullable<BuildStep["contactLab"]>;
 
 interface Props {
   config: Config;
   circuit: Circuit;
   sim: SimResult;
+  /** übrige Ziele erreicht – erst dann zählt das Ausprobieren */
   wired: boolean;
-  lab: Lab;
-  done: boolean;
+  tried: Tried;
   press: (id: PartId) => void;
   release: () => void;
 }
 
-export function ContactLab({ config, circuit, sim, wired, lab, done, press, release }: Props) {
+export function ContactLab({ config, circuit, sim, wired, tried, press, release }: Props) {
+  const closer = tried[config.closer.contact] ?? 0;
+  const opener = tried[config.opener.contact] ?? 0;
   const contacts = [
     { ...config.closer, name: "Schließerkontakt" },
     { ...config.opener, name: "Öffnerkontakt" },
   ];
   return (
-    <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3">
+    <section className="rounded-xl border border-stone-200 bg-stone-50 p-3">
       <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">
         Funktionsansicht
       </p>
@@ -70,15 +38,15 @@ export function ContactLab({ config, circuit, sim, wired, lab, done, press, rele
       <p className="my-3 rounded-lg bg-white p-2 text-sm font-medium" aria-live="polite">
         {!wired
           ? "Verdrahte zuerst beide Lampenzweige."
-          : done
-            ? "Der Schließer schließt beim Betätigen. Der Öffner öffnet beim Betätigen."
-            : lab.closer === 1
+          : closer === 2 && opener === 2
+            ? "Beide Taster ausprobiert."
+            : closer === 1
               ? "Lass den Schließer wieder los. Beobachte, wie der Kontakt zurückkehrt."
-              : lab.opener === 1
+              : opener === 1
                 ? "Lass den Öffner wieder los. Beobachte, wie der Kontakt zurückkehrt."
-                : lab.closer === 2
+                : closer === 2
                   ? "Halte jetzt den Öffner gedrückt. Beobachte die Unterbrechung."
-                  : lab.opener === 2
+                  : opener === 2
                     ? "Halte jetzt den Schließer gedrückt. Beobachte die Kontaktbrücke."
                     : "Halte einen der beiden Taster gedrückt und beobachte die Kontaktbrücke."}
       </p>
@@ -88,7 +56,7 @@ export function ContactLab({ config, circuit, sim, wired, lab, done, press, rele
           /* Beim Levelwechsel rendert die Kachel kurz gegen das alte Feld –
              ohne diese Zeile reißt sie die ganze App mit. */
           if (!c) return null;
-          const down = c.nc ? !c.closed : c.closed;
+          const down = actuated(c);
           const bridgeY = c.closed ? 105 : c.nc ? 132 : 78;
           return (
             <div key={at} className="rounded-lg border border-stone-200 bg-white p-3">

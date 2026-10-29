@@ -140,6 +140,8 @@ export function fromLegacyLevel(l: LegacyLevelDef): LevelDef {
         return { ...g, at: id(g.at), inputs: g.inputs.map(input) };
       case "toggle":
         return { ...g, at: id(g.at), inputs: g.inputs.map(id) };
+      case "tried":
+        return { ...g, ats: g.ats.map(id) };
       case "state":
         return {
           ...g,

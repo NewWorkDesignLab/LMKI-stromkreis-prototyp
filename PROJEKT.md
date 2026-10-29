@@ -273,7 +273,9 @@ Ergänzt 2026-10-26: Bauteilfach und Ziele stehen ab `xl` unmittelbar neben der 
     (Frei bauen: Leeren).
   - `WinPanel` nach dem Lösen, unter den Zielen in der rechten Spalte: „Geschafft“ und
     „Weiter“. Der Merksatz steht bewusst nicht hier, sondern im nächsten Schritt.
-  - Zusatzbausteine wie die Funktionsansicht stehen darunter; dann scrollt die Spalte.
+  - Zusatzbausteine wie die Funktionsansicht stehen darunter; dann scrollt die Spalte. Mit
+    Funktionsansicht steht das `WinPanel` neben ihr statt unter den Zielen: dort probiert
+    man zuletzt aus, oben läge „Weiter“ außer Sicht.
 
 **Übrige Schritte im Querformat** (`features/lesson/Stage.tsx`): links eine Bühne, rechts der
 Text. Auf der Bühne steht die erste Anschauung (Widget, Bild) aus den Bausteinen des
@@ -463,10 +465,12 @@ dem Brett und als „vereinfachte Funktionsansicht“ beschriftet, damit die Sch
 Sprache auf dem Brett unberührt bleibt. Das Muster taugt auch für den Wechselschalter
 oder später ein Relais.
 
-Die Schrittfolge ist **reihenfolgefrei**: je Taster merkt sich `lab` 0 (unberührt),
-1 (gedrückt) und 2 (gedrückt und wieder losgelassen); gelöst ist das Level, wenn beide
-auf 2 stehen. Dass es diese Zusatzbedingung gibt, steht im Aufgabentext, nicht in der
-Zielliste — die Ziele bleiben die Verdrahtung.
+Was dort zu tun ist, ist ein gewöhnliches Ziel `tried` (siehe Zielsystem); die Ansicht liest
+nur dessen Fortschritt und schreibt am Ende knapp „Beide Taster ausprobiert.“ – der Merksatz
+folgt im nächsten Schritt. In der Zielliste erscheint das Ziel erst, wenn die Schaltung
+gebaut ist (alle übrigen Ziele erreicht), damit es den Blick nach unten führt; offen steht es
+orange mit Pfeil nach unten als Verweis, Antippen springt zur Funktionsansicht. Ein Level mit `contactLab` muss ein
+`tried`-Ziel mit beiden Tastern haben, sonst meldet die Prüfung einen Fehler.
 
 Welche Taster und Lampen gemeint sind, steht im Bauschritt, nicht im Bauteil-Code.
 `frames` zeichnet gestrichelte
@@ -504,6 +508,7 @@ Ziele stehen pro Level in `goals`; für Verbraucher ohne eigenes Ziel wird autom
 | `state`  | die genannten Kontakte sind **jetzt** betätigt bzw. nicht betätigt            |
 | `seen`   | die in `latch` genannten Verbraucher liefen im Verlauf schon einmal gemeinsam |
 | `fuse`   | die Sicherung hält                                                            |
+| `tried`  | jeder Taster in `ats` wurde einmal betätigt und wieder losgelassen            |
 
 `logic` und `toggle` **simulieren alle Schalterkombinationen durch**, nicht nur den aktuellen
 Zustand. Dadurch wird wirklich die Verdrahtung geprüft.
@@ -520,6 +525,11 @@ genannten Verbraucher einmal gemeinsam liefen; der Merker wird beim Levelwechsel
 beim Zurücksetzen gelöscht. `toggle` gibt es, weil eine
 Wechselschaltung je nach Verdrahtung XOR _oder_ XNOR ergibt — beides ist richtig, das
 gemeinsame Merkmal ist das Umschalten.
+
+`tried` zählt **reihenfolgefrei** je Taster 1 (gedrückt) und 2 (gedrückt und wieder
+losgelassen), `advanceTried` in `engine/goals.ts`. Gezählt wird erst, wenn alle übrigen Ziele
+erreicht sind – bis dahin beginnt der Fortschritt von vorn, ein Drücken an der halb
+verdrahteten Schaltung gilt nicht. Zurücksetzen löscht ihn wie den `latch`-Merker.
 
 Messgeräte-Level brauchen keine Sonderregel: wer ein Amperemeter parallel schaltet, macht
 den Verbraucher dunkel; wer ein Voltmeter in Reihe schaltet, sperrt den Stromkreis. Die Physik

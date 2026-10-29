@@ -193,6 +193,11 @@ export const erweiterungLevels: LegacyLevelDef[] = [
         inputs: ["4,1"],
         label: "Die rechte Lampe erlischt, solange der Öffner betätigt ist",
       },
+      {
+        k: "tried",
+        ats: ["2,1", "4,1"],
+        label: "Betätige unten beide Taster und lass sie wieder los",
+      },
     ],
   },
   {

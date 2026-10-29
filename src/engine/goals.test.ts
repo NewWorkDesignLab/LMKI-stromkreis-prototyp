@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Circuit, Goal } from "../domain/types";
+import type { CheckResult, Circuit, Goal, Tried } from "../domain/types";
 import { wires } from "../content/helpers";
 import { shownA, shownV } from "./format";
-import { checkLevel, measuredResults } from "./goals";
+import { advanceTried, checkLevel, measuredResults } from "./goals";
 import { simulate } from "./simulate";
 
 /* Quelle links, Lampe rechts – wie in simulate.test.ts. */
@@ -138,5 +138,54 @@ describe("Messaufgabe", () => {
   it("gibt dem Listeneintrag die Einheit für das Eingabefeld mit", () => {
     expect(measureItem(run(strom, loop())).measure).toEqual({ id: "strom", unit: "mA" });
     expect(measureItem(run(spannung, loop())).measure).toEqual({ id: "spannung", unit: "V" });
+  });
+});
+
+describe("Ausprobieren", () => {
+  const ziel: Goal = { k: "tried", ats: ["S1", "S2"], label: "Probiere beide Taster aus" };
+  const level = { goals: [ziel] };
+  /* Schließer S1 und Öffner S2 in Ruhe; verdrahtet muss für die Regel nichts sein */
+  const taster = (s1Gedrueckt: boolean, s2Gedrueckt: boolean): Circuit => ({
+    parts: {
+      S1: { type: "button", x: 0, y: 0, orient: "v", closed: s1Gedrueckt },
+      S2: { type: "button", x: 2, y: 0, orient: "v", nc: true, closed: !s2Gedrueckt },
+    },
+    wires: {},
+  });
+  const erreicht: CheckResult = { items: [{ t: "gebaut", ok: true }], won: true };
+  const offen: CheckResult = { items: [{ t: "gebaut", ok: false }], won: false };
+  const schritte = (...stellungen: [boolean, boolean][]) =>
+    stellungen.reduce<Tried>((t, [a, b]) => advanceTried(t, level, taster(a, b), erreicht), {});
+
+  it("zählt einen Taster erst, wenn er betätigt und wieder losgelassen wurde", () => {
+    expect(schritte([true, false])).toEqual({ S1: 1 });
+    expect(schritte([true, false], [false, false])).toEqual({ S1: 2 });
+  });
+
+  it("rechnet den Öffner als betätigt, wenn er offen ist", () => {
+    expect(schritte([false, true], [false, false])).toEqual({ S2: 2 });
+  });
+
+  it("ist erfüllt, wenn beide Taster ausprobiert sind – in beliebiger Reihenfolge", () => {
+    const t = schritte([false, true], [false, false], [true, false], [false, false]);
+    const c = taster(false, false);
+    const item = checkLevel(level, c, simulate(c), false, {}, t).items[0];
+    expect(item).toMatchObject({ ok: true, tried: true });
+  });
+
+  it("bleibt offen, solange ein Taster nur gedrückt, aber nicht losgelassen ist", () => {
+    const t = schritte([true, false], [false, false], [false, true]);
+    const c = taster(false, true);
+    expect(checkLevel(level, c, simulate(c), false, {}, t).items[0].ok).toBe(false);
+  });
+
+  it("zählt nichts und beginnt von vorn, solange die übrigen Ziele offen sind", () => {
+    const t = schritte([true, false], [false, false]);
+    expect(advanceTried(t, level, taster(true, false), offen)).toEqual({});
+  });
+
+  it("gibt ohne Änderung dasselbe Objekt zurück", () => {
+    const t = schritte([true, false], [false, false]);
+    expect(advanceTried(t, level, taster(false, false), erreicht)).toBe(t);
   });
 });

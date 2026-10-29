@@ -6,13 +6,15 @@ import type {
   BuildStep,
   LogicExpr,
   MeasureUnit,
+  PartId,
   PartType,
   Readings,
   SimResult,
+  Tried,
 } from "../domain/types";
 import { cloneCircuit } from "./circuit";
 import { fmtA, fmtV, shownA, shownV } from "./format";
-import { CONSUMER } from "./parts";
+import { CONSUMER, actuated } from "./parts";
 import { exact, parsePlainNumber, withinTolerance } from "./quantity";
 import { simulate } from "./simulate";
 
@@ -148,6 +150,7 @@ export function checkLevel(
   sim: SimResult,
   seen = false,
   readings: Readings = {},
+  tried: Tried = {},
 ): CheckResult {
   const parts = circuit.parts;
   const goals = deriveGoals(level, circuit);
@@ -246,7 +249,7 @@ export function checkLevel(
       /* Stellungen im Jetzt, wieder als „betätigt“ – beim Öffner also closed === false. */
       const ok = Object.entries(g.pressed).every(([k, want]) => {
         const c = parts[k];
-        return c ? (c.nc ? !c.closed : !!c.closed) === want : false;
+        return c ? actuated(c) === want : false;
       });
       items.push({ t: g.label, ok });
     } else if (g.k === "seen") {
@@ -258,9 +261,40 @@ export function checkLevel(
         t: g.label || "Die Sicherung hält",
         ok: sim.tripped.size === 0,
       });
+    } else if (g.k === "tried") {
+      items.push({ t: g.label, ok: g.ats.every((id) => tried[id] === 2), tried: true });
     }
   }
   if (sim.short) items.push({ t: "Kein Kurzschluss", ok: false });
   if (sim.overload.size) items.push({ t: "Kein Bauteil überlastet", ok: false });
   return { items, won: items.length > 0 && items.every((i) => i.ok) };
+}
+
+/** Die Taster, die die Ausprobieren-Ziele eines Levels verlangen. */
+export const triedParts = (level: Pick<BuildStep, "goals">): PartId[] => [
+  ...new Set((level.goals ?? []).flatMap((g) => (g.k === "tried" ? g.ats : []))),
+];
+
+/** Alle Ziele außer dem Ausprobieren erreicht: erst dann zählen Betätigungen. */
+export const othersMet = (check: CheckResult): boolean => check.items.every((i) => i.ok || i.tried);
+
+/** Fortschritt der Ausprobieren-Ziele nach einer Änderung der Schaltung. Gezählt wird erst,
+    wenn die übrigen Ziele erreicht sind; bis dahin beginnt er von vorn – sonst zählte ein
+    Drücken an der halb verdrahteten Schaltung. Ohne Änderung kommt dasselbe Objekt zurück. */
+export function advanceTried(
+  tried: Tried,
+  level: Pick<BuildStep, "goals">,
+  circuit: Circuit,
+  check: CheckResult,
+): Tried {
+  if (!othersMet(check)) return Object.keys(tried).length ? {} : tried;
+  let next = tried;
+  for (const id of triedParts(level)) {
+    const c = circuit.parts[id];
+    const cur = tried[id];
+    /* einmal losgelassen bleibt losgelassen; die Reihenfolge der Taster ist egal */
+    const v = cur === 2 ? 2 : c && actuated(c) ? 1 : cur === 1 ? 2 : undefined;
+    if (v && v !== cur) next = { ...next, [id]: v };
+  }
+  return next;
 }

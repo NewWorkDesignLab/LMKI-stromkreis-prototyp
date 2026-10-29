@@ -1,6 +1,8 @@
 import { Redo2, RotateCcw, Trash2, Undo2 } from "lucide-react";
+import { useRef } from "react";
 import type { BuildStep, Circuit } from "../../domain/types";
 import type { PlayMode } from "../../engine/editing";
+import { othersMet } from "../../engine/goals";
 import { useRuntimeState } from "../../app/RuntimeContext";
 import { Board } from "../../render/Board";
 import { boardExtent } from "../../render/geometry";
@@ -108,6 +110,15 @@ export function PlayArea({
     </>
   );
 
+  /* Das Ausprobieren-Ziel verweist auf die Funktionsansicht unter dem Brett */
+  const labRef = useRef<HTMLDivElement>(null);
+  const showLab = () =>
+    labRef.current?.scrollIntoView({
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
+  const win = mode === "level" && s.won && proceed && <WinPanel proceed={proceed} />;
+
   const fill = mode === "sandbox";
   const extent = boardExtent(step.W, step.H);
   const columnWidth = Math.max(MIN_COLUMN_PX, extent.w * NATURAL_SCALE + 2 * FRAME_PAD);
@@ -192,21 +203,28 @@ export function PlayArea({
               onReading={s.setReading}
               intro={intro.intro}
               goalsEnter={intro.goalsEnter}
+              onTried={step.contactLab ? showLab : undefined}
             />
-            {mode === "level" && s.won && proceed && <WinPanel proceed={proceed} />}
+            {!step.contactLab && win}
             {settings.debug && debug && <DebugPanel rows={debug} />}
           </div>
           {step.contactLab && (
-            <ContactLab
-              config={step.contactLab}
-              circuit={s.circuit}
-              sim={s.sim}
-              wired={s.check.won}
-              lab={s.contactLab.lab}
-              done={s.contactLab.done}
-              press={s.press}
-              release={s.release}
-            />
+            /* „Geschafft“ steht neben der Funktionsansicht: dort probiert man zuletzt aus, oben
+               bei den Zielen läge es dann außer Sicht. Schmaler darunter. */
+            <div ref={labRef} className="relative mt-4 flex scroll-mt-1 flex-col gap-3">
+              <ContactLab
+                config={step.contactLab}
+                circuit={s.circuit}
+                sim={s.sim}
+                wired={othersMet(s.check)}
+                tried={s.tried}
+                press={s.press}
+                release={s.release}
+              />
+              {win && (
+                <div className="xl:absolute xl:left-full xl:top-0 xl:ml-2 xl:w-64">{win}</div>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -1,8 +1,9 @@
-import { AlertTriangle, CheckCircle2, Circle } from "lucide-react";
+import { AlertTriangle, ArrowDown, CheckCircle2, Circle } from "lucide-react";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import type { BuildStep, CheckResult, Readings, SimResult } from "../../domain/types";
 import type { PlayMode } from "../../engine/editing";
 import { fmtA } from "../../engine/format";
+import { othersMet } from "../../engine/goals";
 import { PANEL_HEADING } from "../../ui/heading";
 import { ProceedButton } from "../lesson/stepViews";
 
@@ -42,13 +43,17 @@ export function TaskBar({
 }
 
 /** Die Ziele als Checkliste, untereinander: rechts neben dem Brett, auf schmalen Fenstern
-    darunter. Messaufgaben haben ein Feld für den abgelesenen Wert. */
+    darunter. Messaufgaben haben ein Feld für den abgelesenen Wert. Ein offenes
+    Ausprobieren-Ziel ist ein Verweis (orange, Pfeil nach unten): man erfüllt es in der
+    Anschauung unter dem Brett, und Antippen springt dorthin. Es erscheint erst, wenn die
+    übrigen Ziele erreicht sind – erst bauen, dann ausprobieren, und der Blick wandert mit. */
 export function GoalList({
   check,
   readings,
   onReading,
   intro = false,
   goalsEnter = false,
+  onTried,
 }: {
   check: CheckResult;
   readings: Readings;
@@ -58,8 +63,11 @@ export function GoalList({
   intro?: boolean;
   /** Ziele nach der Einblendung nacheinander erscheinen lassen */
   goalsEnter?: boolean;
+  /** springt zur Anschauung, in der man die Ausprobieren-Ziele erfüllt */
+  onTried?: () => void;
 }) {
   if (check.items.length === 0) return null;
+  const items = othersMet(check) ? check.items : check.items.filter((it) => !it.tried);
   return (
     <section
       aria-label="Ziele"
@@ -68,30 +76,46 @@ export function GoalList({
     >
       <h2 className={PANEL_HEADING}>Ziele</h2>
       <ul className="flex flex-col gap-2">
-        {check.items.map((it, i) => (
-          <li
-            key={i}
-            style={goalsEnter ? { animationDelay: `${i * GOAL_STAGGER_MS}ms` } : undefined}
-            className={`flex items-start gap-1.5 text-sm ${it.ok ? "text-emerald-700" : "text-stone-700"} ${goalsEnter && !intro ? "goal-in" : ""}`}
-          >
-            {it.ok ? (
-              <CheckCircle2 size={17} className="goal-pop mt-px shrink-0" aria-label="erreicht" />
-            ) : (
-              <Circle size={17} className="mt-px shrink-0 text-stone-300" aria-label="offen" />
-            )}
-            <div className="min-w-0 flex-1">
-              <span>{it.t}</span>
-              {it.measure && (
-                <ReadingField
-                  measure={it.measure}
-                  text={readings[it.measure.id] ?? ""}
-                  ok={it.ok}
-                  onChange={(t) => onReading(it.measure.id, t)}
-                />
+        {items.map((it, i) => {
+          const pointer = it.tried && !it.ok && onTried;
+          return (
+            <li
+              key={i}
+              style={goalsEnter ? { animationDelay: `${i * GOAL_STAGGER_MS}ms` } : undefined}
+              className={`flex items-start gap-1.5 text-sm ${it.ok ? "text-emerald-700" : pointer ? "text-amber-700" : "text-stone-700"} ${(goalsEnter && !intro) || it.tried ? "goal-in" : ""}`}
+            >
+              {it.ok ? (
+                <CheckCircle2 size={17} className="goal-pop mt-px shrink-0" aria-label="erreicht" />
+              ) : pointer ? (
+                <ArrowDown size={17} className="mt-px shrink-0" aria-label="offen" />
+              ) : (
+                <Circle size={17} className="mt-px shrink-0 text-stone-300" aria-label="offen" />
               )}
-            </div>
-          </li>
-        ))}
+              <div className="min-w-0 flex-1">
+                {pointer ? (
+                  /* -my-3 py-3: Tastfläche 44 px, ohne die Zeile höher zu machen */
+                  <button
+                    type="button"
+                    onClick={onTried}
+                    className="-my-3 py-3 text-left underline decoration-dotted underline-offset-2 hover:text-amber-800"
+                  >
+                    {it.t}
+                  </button>
+                ) : (
+                  <span>{it.t}</span>
+                )}
+                {it.measure && (
+                  <ReadingField
+                    measure={it.measure}
+                    text={readings[it.measure.id] ?? ""}
+                    ok={it.ok}
+                    onChange={(t) => onReading(it.measure.id, t)}
+                  />
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

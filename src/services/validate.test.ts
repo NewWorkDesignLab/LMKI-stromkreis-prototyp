@@ -122,6 +122,30 @@ describe("Prüfung der Schritte", () => {
     expect(errorsOf([build({ showValues: true })])).toMatch(/showValues/);
   });
 
+  it("verlangt zur Funktionsansicht ein Ausprobieren-Ziel mit genau ihren Tastern", () => {
+    const taster = (x: number, nc = false) => ({ type: "button", x, y: 0, orient: "v", nc });
+    const lampe = (x: number) => ({ type: "lamp", x, y: 2, orient: "v" });
+    const build = (goals: unknown[]) => ({
+      kind: "build",
+      id: "bauen",
+      W: 4,
+      H: 3,
+      palette: ["wire"],
+      task: "…",
+      circuit: {
+        parts: { S1: taster(0), S2: taster(2, true), E1: lampe(0), E2: lampe(2) },
+        wires: {},
+      },
+      contactLab: { closer: { contact: "S1", lamp: "E1" }, opener: { contact: "S2", lamp: "E2" } },
+      goals,
+    });
+    const ziel = (ats: string[]) => ({ k: "tried", ats, label: "Probiere beide Taster aus" });
+    expect(errorsOf([build([ziel(["S1", "S2"])])])).toBe("");
+    expect(errorsOf([build([])])).toMatch(/S1.*tried/);
+    expect(errorsOf([build([ziel(["S1"])])])).toMatch(/S2/);
+    expect(errorsOf([build([ziel(["S1", "E1"])])])).toMatch(/kein Taster/);
+  });
+
   it("kennt keine fremden Schrittarten", () => {
     expect(errorsOf([{ kind: "tanz", id: "x" }])).toMatch(/unbekannte Art/);
   });

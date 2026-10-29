@@ -178,7 +178,10 @@ export type Goal =
   | { k: "toggle"; at: PartId; inputs: PartId[]; label: string }
   | { k: "state"; pressed: Record<PartId, boolean>; label: string }
   | { k: "seen"; label: string }
-  | { k: "fuse"; label?: string };
+  | { k: "fuse"; label?: string }
+  /** Ausprobieren: jeder Taster in `ats` wurde einmal betätigt und wieder losgelassen.
+      Zählt erst, wenn alle übrigen Ziele erreicht sind – erst bauen, dann ausprobieren. */
+  | { k: "tried"; ats: PartId[]; label: string };
 
 /** Messgröße einer Messaufgabe: Strom durch ein Bauteil (Amperemeter) oder Spannung an ihm (Voltmeter). */
 export type Quantity = "current" | "voltage";
@@ -188,12 +191,18 @@ export type MeasureUnit = "A" | "mA" | "V" | "mV";
 /** Eingetragene Messwerte je Messaufgabe (`measure.id`), als getippter Text. */
 export type Readings = Record<string, string>;
 
+/** Fortschritt der Ausprobieren-Ziele je Taster: 1 = gerade betätigt, 2 = betätigt und
+    wieder losgelassen. Fehlt ein Taster, ist er noch nicht angefasst. */
+export type Tried = Readonly<Record<PartId, 1 | 2>>;
+
 export interface CheckItem {
   /** Text der Checkliste */
   t: string;
   ok: boolean;
   /** Messaufgabe: hier trägt man den abgelesenen Wert ein */
   measure?: { id: string; unit: MeasureUnit };
+  /** Ausprobieren-Ziel: zählt erst nach den übrigen und verweist auf die Anschauung */
+  tried?: true;
 }
 
 export interface CheckResult {
