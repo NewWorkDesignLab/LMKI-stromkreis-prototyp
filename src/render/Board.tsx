@@ -283,12 +283,12 @@ export function Board({
     /* Messwerte und Bauteilwerte; ✎ = Wert frei eintragbar, ⟳ = Wert weiterschalten */
     if (c.type === "ammeter") label(id, c, fmtA(sim.cur[id] || 0));
     else if (c.type === "voltmeter") label(id, c, fmtV(sim.volt[id] || 0));
+    /* Der Widerstandswert steht kräftig, obwohl er ein Kennwert ist: man stellt ihn ein. */
     else if (c.type === "resistor")
       label(
         id,
         c,
         fmtR(P(c, "r")) + (c.range ? " ✎" : (P(c, "values") || []).length > 1 ? " ⟳" : ""),
-        true,
       );
     else if (c.type === "fuse")
       label(id, c, sim.tripped.has(id) ? "ausgelöst ⟳" : fmtA(P(c, "imax")), !sim.tripped.has(id));

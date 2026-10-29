@@ -440,8 +440,8 @@ Ziele.
 - **Merksatz und Frei bauen:** Erst der Merksatz zeigt alle Betriebswerte (Board `live`),
   und nur in Leveln mit `ratings`: dort ist die Schaltung Auswertung. Frei bauen zeigt sie immer.
 - **Kennwert und Messwert:** Kennwerte stehen grau und klein wie ein Aufdruck unter dem
-  Bauteil, Mess- und Betriebswerte kräftig in Tinte. Im Merksatz ersetzt der Betriebswert das
-  Typenschild.
+  Bauteil, Mess- und Betriebswerte kräftig in Tinte. Der Widerstandswert steht immer kräftig,
+  weil man ihn einstellt. Im Merksatz ersetzt der Betriebswert das Typenschild.
 
 `showValues` gibt es nicht mehr; die Prüfung meldet es. `labelSwitches: true` schreibt
 unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, weil dort der
