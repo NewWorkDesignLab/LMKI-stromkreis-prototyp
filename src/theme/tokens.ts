@@ -24,6 +24,8 @@ export const TOKEN_DEFAULTS = {
   hint: "#2f9e8f",
   /** Ghost-Schaltung: Hervorhebung und Beschriftung der Skizze (grau-blau) */
   ghost: "#4f6b8c",
+  /** Kennwert am Bauteil, wie aufgedruckt */
+  rating: "#7d7768",
 } as const;
 
 export type ThemeToken = keyof typeof TOKEN_DEFAULTS;

@@ -18,4 +18,5 @@ export const BG = tokenRef("bg"),
   HOT = tokenRef("hot"),
   TUT = tokenRef("tutorial"),
   HINT = tokenRef("hint"),
-  GHOST = tokenRef("ghost");
+  GHOST = tokenRef("ghost"),
+  RATING = tokenRef("rating");

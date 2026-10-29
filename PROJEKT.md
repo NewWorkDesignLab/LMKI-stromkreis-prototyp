@@ -386,7 +386,7 @@ gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt si
 | `predict` | Vorhersage mit Auswahl; festgehalten, nicht bewertet, danach unveränderlich       | eine Antwort festgehalten |
 | `build`   | das Brett (alles, was früher ein ganzes Level war)                                | die Ziele erreicht sind   |
 | `quiz`    | Auswahl (auch mehrere richtige) oder Zahl mit Einheit und Toleranz (Standard 2 %) | richtig beantwortet       |
-| `summary` | Rückblick: Aufgabe und erreichte Ziele (`reviewGoals`), Merksatz, `recall` löst eine Vorhersage auf, `blocks` erklären | „Weiter“ |
+| `summary` | Rückblick: eigene Schaltung mit richtigen Messungen (`measuredResults`), Aufgabe, Merksatz, `recall` löst eine Vorhersage auf, `blocks` erklären | „Weiter“ |
 
 - **Textbausteine statt HTML/Markdown** (`Block`: `p`, `list`, `formula`, `note`, `image`,
   `video`, `widget`, `ghost`). Level können über die API von außen kommen; Bausteine lassen sich
@@ -406,9 +406,12 @@ gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt si
 - Zahleneingaben verstehen Komma und Vorsätze: „29 mA“, „0,22 kΩ“, „220 Ohm“, „0,22k“.
 - Verborgene Schritte bleiben eingehängt: ein halb verdrahtetes Brett übersteht das
   Zurückblättern. Tastenkürzel (Strg+Z) wirken nur auf das sichtbare Brett.
-- Der Merksatz-Schritt ordnet sich so: _Das war die Aufgabe_ mit den abgehakten Zielen
-  (Messwerte so, wie das Messgerät sie zeigt), _Merke_, die Vermutung, dann _Warum das so
-  ist_ aus `blocks`. Im Altformat steht diese Erklärung in `explanation`; bisher haben sie
+- Der Merksatz-Schritt hat zwei Spalten. Links steht die Aufgabe als dünne Zeile ohne
+  Überschrift, darunter die eigene Schaltung (bedienbar) und was man richtig gemessen hat
+  („Stromstärke: 47 mA“, so wie das Messgerät es zeigt). Rechts steht ein Panel: _Merke_, die
+  Vermutung, dann _Warum das so ist_ aus `blocks`. Eine Zielliste gibt es dort bewusst nicht –
+  was erreicht ist, zeigt die Schaltung, und lange Erklärungen verlängern nur die rechte
+  Spalte. Im Altformat steht diese Erklärung in `explanation`; bisher haben sie
   die Level in `levels/messen.ts`, die übrigen folgen.
 - Die Prototyp-Level werden zu „Bauen“ + „Merksatz“ übersetzt; `before` stellt Schritte im
   heutigen Format davor. So zeigen „Das Licht im Schalter“ und „Der Öffner“ ihren
@@ -436,6 +439,9 @@ Ziele.
   der Quelle sonst jede Messaufgabe vorwegnähme.
 - **Merksatz und Frei bauen:** Erst der Merksatz zeigt alle Betriebswerte (Board `live`),
   und nur in Leveln mit `ratings`: dort ist die Schaltung Auswertung. Frei bauen zeigt sie immer.
+- **Kennwert und Messwert:** Kennwerte stehen grau und klein wie ein Aufdruck unter dem
+  Bauteil, Mess- und Betriebswerte kräftig in Tinte. Im Merksatz ersetzt der Betriebswert das
+  Typenschild.
 
 `showValues` gibt es nicht mehr; die Prüfung meldet es. `labelSwitches: true` schreibt
 unter jeden Kontakt „Schließer“ bzw. „Öffner“ (im freien Baumodus an, weil dort der

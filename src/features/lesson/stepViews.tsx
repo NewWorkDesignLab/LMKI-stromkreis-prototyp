@@ -362,8 +362,8 @@ function SummaryView({
   const text = (id: string) => predict?.choices.find((c) => c.id === id)?.text;
   const saidId = said?.k === "choice" ? said.ids[0] : undefined;
   const { el, rest } = pickStage(step.blocks, stage, true);
-  /* Rückblick: links im Blick die eigene Schaltung, darunter was man richtig gemessen hat;
-     rechts in einem Panel die Aufgabe, der Merksatz und die Erklärung. Eine Zielliste braucht
+  /* Rückblick: links die Aufgabe über der eigenen Schaltung, darunter was man richtig gemessen
+     hat; rechts in einem Panel der Merksatz und die Erklärung. Eine Zielliste braucht
      es nicht – was erreicht ist, zeigt die Schaltung, und ihre Schalter lassen sich bedienen.
      Lange Erklärungen verlängern nur die rechte Spalte, die Schaltung bleibt oben. */
   const measured = useMemo(
@@ -375,6 +375,9 @@ function SummaryView({
       stage={
         el && (
           <div className="flex flex-col gap-3">
+            {stage && (
+              <p className="px-1 text-sm leading-relaxed text-stone-600">{stage.build.task}</p>
+            )}
             {el}
             {measured.length > 0 && (
               <ul aria-label="Gemessen" className="flex flex-col gap-1 px-1">
@@ -394,7 +397,6 @@ function SummaryView({
       }
     >
       <Card>
-        {stage && <p className="mb-4 text-sm leading-relaxed text-stone-600">{stage.build.task}</p>}
         <section
           aria-label="Merksatz"
           className="rounded-xl border border-amber-200 bg-amber-50 p-3"

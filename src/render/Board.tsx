@@ -18,7 +18,20 @@ import type {
 import { parsePoint, wireEnds } from "../engine/circuit";
 import { fmtA, fmtR, fmtV, ratingLines } from "../engine/format";
 import { CONSUMER, P } from "../engine/parts";
-import { BG, DOT, FLOW, FORBID, GHOST, HINT, HOT, INK, LIVE, MUTE, WIRE } from "../theme/colors";
+import {
+  BG,
+  DOT,
+  FLOW,
+  FORBID,
+  GHOST,
+  HINT,
+  HOT,
+  INK,
+  LIVE,
+  MUTE,
+  RATING,
+  WIRE,
+} from "../theme/colors";
 import { EMPTY_SIM } from "./emptySim";
 import { FORMELZEICHEN } from "./formelzeichen";
 import { CELL, PAD_X, boardExtent, center } from "./geometry";
@@ -219,16 +232,18 @@ export function Board({
 
   /* Beschriftungen stehen immer mittig unter ihrem Bauteil – auch am Brettrand,
      denn die viewBox reicht dort um PAD_X über das Spielfeld hinaus. */
-  const label = (id: PartId, c: Part, txt: string | string[]) =>
+  /* Kennwerte stehen wie ein Aufdruck am Bauteil (printed: klein, grau), Mess- und
+     Betriebswerte kräftig in Tinte. So sieht man ohne Erklärung, was gemessen ist. */
+  const label = (id: PartId, c: Part, txt: string | string[], printed = false) =>
     labelEls.push(
       <text
         key={`t${id}`}
         x={center(c.x)}
         y={center(c.y) + 27}
         textAnchor="middle"
-        fontSize={10.5}
-        fontWeight="600"
-        fill={ghost ? GHOST : INK}
+        fontSize={printed ? 9.5 : 10.5}
+        fontWeight={printed ? "500" : "600"}
+        fill={ghost ? GHOST : printed ? RATING : INK}
         stroke={BG}
         strokeWidth={3}
         paintOrder="stroke"
@@ -273,9 +288,10 @@ export function Board({
         id,
         c,
         fmtR(P(c, "r")) + (c.range ? " ✎" : (P(c, "values") || []).length > 1 ? " ⟳" : ""),
+        true,
       );
     else if (c.type === "fuse")
-      label(id, c, sim.tripped.has(id) ? "ausgelöst ⟳" : fmtA(P(c, "imax")));
+      label(id, c, sim.tripped.has(id) ? "ausgelöst ⟳" : fmtA(P(c, "imax")), !sim.tripped.has(id));
     /* Ein Öffner ist am Symbol allein zu leicht zu übersehen – er sagt es dazu. */
     else if ((c.type === "switch" || c.type === "button") && (c.name || c.nc || cfg.labelSwitches))
       label(id, c, c.name || (c.nc ? "Öffner" : "Schließer"));
@@ -287,7 +303,7 @@ export function Board({
         label(id, c, sim.blocked.has(id) ? "sperrt" : fmtA(sim.cur[id] || 0));
     } else if (cfg.ratings) {
       const lines = ratingLines(c, cfg.ratings === "resistance");
-      if (lines.length) label(id, c, lines);
+      if (lines.length) label(id, c, lines, true);
     }
   }
 
