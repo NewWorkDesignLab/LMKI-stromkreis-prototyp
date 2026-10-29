@@ -45,6 +45,9 @@ const BUTTON_ZOOM = 1.25;
    damit die Leiste nie einen Rasterpunkt verdeckt – auch nicht beim Verschieben. */
 const TOOLBAR_BAND = 58;
 
+/** Mindesthöhe des Rahmens im Level: bis hierhin schrumpft er, danach scrollt die Spalte. */
+export const FRAME_MIN_H = "min-h-[16rem]";
+
 export const TOOL_BUTTON =
   "flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 disabled:pointer-events-none disabled:opacity-35";
 
@@ -141,7 +144,7 @@ export function BoardViewport({ content, fill = false, solved = false, toolbar, 
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-2xl border transition-colors ${solved ? "board-solved border-emerald-300" : "border-stone-200"} ${fill ? "min-h-[24rem] flex-1" : "min-h-[16rem] shrink"}`}
+      className={`relative w-full overflow-hidden rounded-2xl border transition-colors ${solved ? "board-solved border-emerald-300" : "border-stone-200"} ${fill ? "min-h-[24rem] flex-1" : `${FRAME_MIN_H} shrink`}`}
       style={{
         background: BG,
         /* Originalgröße samt Rand und Band; reicht der Platz nicht, schrumpft der Rahmen,

@@ -7,7 +7,7 @@ import { boardExtent } from "../../render/geometry";
 import { FRAME_PAD, NATURAL_SCALE } from "../../render/viewport";
 import { ContactLab } from "../widgets/ContactLab";
 import { useTutorial } from "../tutorial/useTutorial";
-import { BoardViewport, TOOL_BUTTON } from "./BoardViewport";
+import { BoardViewport, FRAME_MIN_H, TOOL_BUTTON } from "./BoardViewport";
 import { DebugPanel, type DebugRow } from "./DebugPanel";
 import { PartDrawer } from "./PartDrawer";
 import { hasParts } from "./PartPalette";
@@ -115,8 +115,10 @@ export function PlayArea({
   return (
     <div className="flex min-h-0 flex-col lg:h-full">
       {/* Reicht die Höhe nicht, schrumpft zuerst der Brettrahmen (bis zu seiner
-          Mindesthöhe); steht ein Zusatzbaustein darunter, scrollt die Spalte. Der seitliche
-          Rand ab xl hält Platz für Bauteilfach links und Ziele rechts, die neben der
+          Mindesthöhe), danach scrollt die Spalte. Steht ein Zusatzbaustein darunter, behält
+          das Brett seine Originalgröße und die Spalte scrollt gleich: man liest dort ohnehin
+          weiter, und ein verkleinertes Brett mit Zoomleiste wäre nur Bedienaufwand. Der
+          seitliche Rand ab xl hält Platz für Bauteilfach links und Ziele rechts, die neben der
           Brettspalte stehen. */}
       <div className="flex min-h-0 flex-1 flex-col lg:overflow-y-auto xl:px-[18.5rem]">
         <div
@@ -126,7 +128,12 @@ export function PlayArea({
           style={fill ? undefined : { maxWidth: columnWidth }}
         >
           <TaskBar step={step} mode={mode} style={intro.taskStyle} intro={intro.intro} />
-          <div className={`relative flex min-h-0 flex-col gap-3 ${fill ? "flex-1" : ""}`}>
+          <div
+            /* Im Level hält der Brettbereich die Mindesthöhe des Rahmens, mit Zusatzbaustein
+               seine volle Höhe. Mit min-h-0 schrumpfte er auf null, und der Rahmen läge über
+               Zustand und Zusatzbaustein. */
+            className={`relative flex flex-col gap-3 ${fill ? "min-h-0 flex-1" : step.contactLab ? "shrink-0" : FRAME_MIN_H}`}
+          >
             {hasParts(step.palette) && (
               <PartDrawer
                 palette={step.palette}

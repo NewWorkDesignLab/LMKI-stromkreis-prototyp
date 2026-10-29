@@ -263,7 +263,8 @@ Ergänzt 2026-10-26: Bauteilfach und Ziele stehen ab `xl` unmittelbar neben der 
     (100 % = 60 px je Punkt, wie im Prototyp) plus Rand – ein kleines Level bleibt klein und
     mittig. Zoom und Verschieben erscheinen nur, wenn das Brett nicht hineinpasst (dann bis
     70 % verkleinert, `MIN_START_SCALE`, der Rest wird verschoben) und im freien Bauen, wo
-    der Rahmen die Fläche füllt. Mausrad zoomt um den Zeiger, Leertaste oder mittlere
+    der Rahmen die Fläche füllt. Steht ein Zusatzbaustein (`contactLab`) unter dem Brett,
+    schrumpft es nie: es bleibt in Originalgröße, und die Spalte scrollt. Mausrad zoomt um den Zeiger, Leertaste oder mittlere
     Maustaste verschiebt. Oben links schwebt die `ToolBar` mit Verdrahten (W), Löschen (E)
     und Drehen (R), die Kürzel sichtbar im Knopf (entschieden 2026-10-23: vorher stand das
     links in der Palette, bei normal breiten Brettern weit weg vom Brett). Sie hat ein
