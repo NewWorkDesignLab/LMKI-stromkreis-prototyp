@@ -35,6 +35,9 @@ export const steuernLevels: LegacyLevelDef[] = [
         at: "5,1",
         expr: "id",
         inputs: ["2,0"],
+        /* Ohne das Betätigen wäre das Level schon mit dem Verdrahten geschafft – das Ziel
+           spricht aber vom Betätigen, und darum geht es im Level. */
+        operated: true,
         label: "Die Lampe leuchtet nur, solange der Taster betätigt ist",
       },
     ],

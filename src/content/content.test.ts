@@ -5,10 +5,10 @@ import { LEVEL_CATALOG } from "./catalog";
 import { DEFAULT_CURRICULUM } from "./curriculum";
 import { TUTORIALS } from "./tutorials";
 import { validateLevel } from "../services/validate";
-import { checkLevel, measuredResults } from "../engine/goals";
+import { advanceOperated, checkLevel, measuredResults, startOperated } from "../engine/goals";
 import { simulate } from "../engine/simulate";
 import { circuitFromCells, fromLegacyLevel } from "./legacy";
-import { lockw, wire } from "./helpers";
+import { lockw, wire, wires } from "./helpers";
 
 const builds = (l: LevelDef) => l.steps.filter((s): s is BuildStep => s.kind === "build");
 const level = (id: string) => LEVEL_CATALOG.find((l) => l.id === id);
@@ -81,6 +81,32 @@ describe("Inhalte", () => {
           const { items } = checkLevel(b, b.solution, sim, { seen: true, readings });
           expect(items.length > 0 && items.every((i) => i.ok), `${l.id}/${b.id}`).toBe(true);
         }
+  });
+});
+
+describe("Der Taster", () => {
+  /* Fehler aus dem Testdurchlauf: „Geschafft“ erschien, bevor der Taster je betätigt wurde */
+  const b = build("der-taster");
+  const verdrahtet = {
+    ...b.circuit,
+    wires: wires(["0,1 0,0 2,0", "2,0 5,0 5,1", "5,1 5,2 0,2 0,1"]),
+  };
+  const betaetigt = {
+    ...verdrahtet,
+    parts: { ...verdrahtet.parts, S1: { ...verdrahtet.parts.S1, closed: true } },
+  };
+  const geschafft = (folge: (typeof verdrahtet)[]) => {
+    const o = folge.reduce((acc, c) => advanceOperated(acc, b, c), startOperated(b.circuit));
+    const c = folge[folge.length - 1];
+    return checkLevel(b, c, simulate(c), { operated: o.ids }).won;
+  };
+
+  it("ist nach dem Verdrahten allein noch nicht geschafft", () => {
+    expect(geschafft([verdrahtet])).toBe(false);
+  });
+
+  it("ist geschafft, sobald der Taster am verdrahteten Stromkreis betätigt wurde", () => {
+    expect(geschafft([verdrahtet, betaetigt, verdrahtet])).toBe(true);
   });
 });
 
