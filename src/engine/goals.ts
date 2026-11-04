@@ -11,6 +11,7 @@ import type {
   PartType,
   SimResult,
   Tried,
+  TryCue,
 } from "../domain/types";
 import { cloneCircuit } from "./circuit";
 import { fmtA, fmtV, shownA, shownV } from "./format";
@@ -302,6 +303,14 @@ export const tryPress = (tried: Tried, id: PartId): Tried =>
 /** Taster in der Funktionsansicht losgelassen */
 export const tryRelease = (tried: Tried, id: PartId): Tried =>
   tried[id] === 1 ? { ...tried, [id]: 2 } : tried;
+
+/** Was der Taster `id` als Nächstes verlangt. Solange ein anderer gedrückt ist, wartet er –
+    so ist immer nur der Taster dran, an dem gerade etwas zu tun ist. */
+export const tryCue = (tried: Tried, id: PartId): TryCue => {
+  if (tried[id] === 2) return "done";
+  if (tried[id] === 1) return "release";
+  return Object.values(tried).includes(1) ? "wait" : "press";
+};
 
 /** Solange die übrigen Ziele offen sind, beginnt das Ausprobieren von vorn – ein Drücken an
     der halb verdrahteten Schaltung gälte sonst. */

@@ -104,10 +104,10 @@
   }
 }
 
-/* Moment des Lösens: der Brettrahmen leuchtet einmal grün auf, erreichte Ziele haken sich
-   mit einem kurzen Ploppen ab, „Geschafft“ gleitet unter dem Brett herein. Bewusst einmalig
-   und leise – Bestätigung, kein Feuerwerk. */
-.board-solved::after {
+/* Moment des Lösens: der Brettrahmen (und die Funktionsansicht) leuchtet einmal grün auf,
+   erreichte Ziele haken sich mit einem kurzen Ploppen ab, „Geschafft“ gleitet unter dem Brett
+   herein. Bewusst einmalig und leise – Bestätigung, kein Feuerwerk. */
+.solved-glow::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -176,6 +176,15 @@
     transform: translateY(8px);
   }
 }
+/* Funktionsansicht: die Lampe geht an – die Zustandszeile hebt sich kurz hervor. */
+.state-flash {
+  animation: state-flash 0.7s ease-out;
+}
+@keyframes state-flash {
+  from {
+    background-color: #fde68a;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .tutorial-demo {
@@ -183,11 +192,12 @@
   }
   .flow,
   .lamp-on-glow,
-  .board-solved::after,
+  .solved-glow::after,
   .goal-pop,
   .goal-in,
   .goal-grow,
-  .win-in {
+  .win-in,
+  .state-flash {
     animation: none;
   }
 }

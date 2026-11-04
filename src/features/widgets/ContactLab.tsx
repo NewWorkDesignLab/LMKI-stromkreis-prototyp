@@ -1,62 +1,108 @@
-import type { BuildStep, Circuit, PartId, SimResult, Tried } from "../../domain/types";
+import { CheckCircle2 } from "lucide-react";
+import { useState, type PointerEvent } from "react";
+import type { BuildStep, Circuit, PartId, SimResult, Tried, TryCue } from "../../domain/types";
+import { tryCue } from "../../engine/goals";
 import { actuated } from "../../engine/parts";
+import { SWITCH_OFF, SWITCH_ON } from "../../theme/colors";
 
 /* Funktionsansicht zu „Der Öffner“: zeigt den Kontakt im Taster. Ob beide Taster einmal
    gedrückt UND wieder losgelassen wurden, prüft das Ziel „tried“ (engine/goals.ts); gezählt
    werden nur Betätigungen hier, nicht am Brett. Sie erscheint erst nach dem Verdrahten (PlayArea).
-   Welche Taster und Lampen gemeint sind, steht im Level (`contactLab`). */
+   Welche Taster und Lampen gemeint sind, steht im Level (`contactLab`).
+   Was zu tun ist, zeigt die Kachel selbst statt eines Hinweistexts darüber: orange = hier ist
+   etwas zu tun (wie das offene Ziel in der Zielliste), grün mit Häkchen = ausprobiert, grüner
+   Rahmen um alles = Ziel erreicht. Die Kontaktbrücke trägt die Farben des Schalters auf dem
+   Brett; Grün bleibt so allein dem Erreichten vorbehalten. */
 
 type Config = NonNullable<BuildStep["contactLab"]>;
+
+/* Zustand eines Kontakts in einer Zeile. Sie blitzt kurz auf, wenn die Lampe angeht – das
+   ist die Wirkung, auf die man achten soll; beim Ausgehen und beim Erscheinen der Ansicht
+   bleibt sie ruhig. Der neue key beim Umspringen startet die Animation neu. */
+function StateLine({ closed, lit }: { closed: boolean; lit: boolean }) {
+  const [litAtStart] = useState(lit);
+  const [switched, setSwitched] = useState(false);
+  if (!switched && lit !== litAtStart) setSwitched(true);
+  return (
+    <p aria-live="polite" className="text-sm font-medium">
+      <span
+        key={String(lit)}
+        className={`-mx-1 rounded px-1 ${lit && switched ? "state-flash" : ""}`}
+      >
+        Kontakt {closed ? "geschlossen" : "offen"} · Lampe {lit ? "an" : "aus"}
+      </span>
+    </p>
+  );
+}
 
 interface Props {
   config: Config;
   circuit: Circuit;
   sim: SimResult;
   tried: Tried;
+  /** das Ausprobieren-Ziel ist erreicht */
+  solved: boolean;
   press: (id: PartId) => void;
   release: (id: PartId) => void;
 }
 
-export function ContactLab({ config, circuit, sim, tried, press, release }: Props) {
-  const closer = tried[config.closer.contact] ?? 0;
-  const opener = tried[config.opener.contact] ?? 0;
+const TILE_BORDER: Record<TryCue, string> = {
+  press: "border-amber-400",
+  release: "border-amber-400",
+  wait: "border-stone-200",
+  done: "border-emerald-400",
+};
+
+export function ContactLab({ config, circuit, sim, tried, solved, press, release }: Props) {
   const contacts = [
-    { ...config.closer, name: "Schließerkontakt" },
-    { ...config.opener, name: "Öffnerkontakt" },
+    { ...config.closer, name: "Schließer" },
+    { ...config.opener, name: "Öffner" },
   ];
   return (
-    <section className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+    <section
+      className={`relative rounded-xl border p-3 transition-colors ${solved ? "solved-glow border-emerald-400" : "border-stone-200"} bg-stone-50`}
+    >
       <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">
         Funktionsansicht
       </p>
-      <h3 className="font-semibold text-stone-800">Was bewegt sich im Taster?</h3>
-      <p className="mt-1 text-xs text-stone-600">
-        Beide Taster kehren beim Loslassen zurück. Betätige sie hier oder im Schaltplan.
-      </p>
-      <p className="my-3 rounded-lg bg-white p-2 text-sm font-medium" aria-live="polite">
-        {closer === 2 && opener === 2
-          ? "Beide Taster ausprobiert."
-          : closer === 1
-            ? "Lass den Schließer wieder los. Beobachte, wie der Kontakt zurückkehrt."
-            : opener === 1
-              ? "Lass den Öffner wieder los. Beobachte, wie der Kontakt zurückkehrt."
-              : closer === 2
-                ? "Halte jetzt den Öffner gedrückt. Beobachte die Unterbrechung."
-                : opener === 2
-                  ? "Halte jetzt den Schließer gedrückt. Beobachte die Kontaktbrücke."
-                  : "Halte einen der beiden Taster gedrückt und beobachte die Kontaktbrücke."}
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <h3 className="mb-3 font-semibold text-stone-800">Was bewegt sich im Taster?</h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {contacts.map(({ contact: at, lamp, name }) => {
           const c = circuit.parts[at];
           /* Beim Levelwechsel rendert die Kachel kurz gegen das alte Feld –
              ohne diese Zeile reißt sie die ganze App mit. */
           if (!c) return null;
           const down = actuated(c);
+          const cue = tryCue(tried, at);
           const bridgeY = c.closed ? 105 : c.nc ? 132 : 78;
+          /* Gedrückt halten am Knopf wie am Tasterkopf in der Zeichnung: die Zeiger-Erfassung
+             hält den Taster, auch wenn der Finger dabei vom Ziel abrutscht. */
+          const hold = {
+            onPointerDown: (e: PointerEvent<Element>) => {
+              if (e.button !== 0 || !e.isPrimary) return;
+              e.preventDefault();
+              e.currentTarget.setPointerCapture(e.pointerId);
+              press(at);
+            },
+            onPointerUp: () => release(at),
+            onPointerCancel: () => release(at),
+            onLostPointerCapture: () => release(at),
+          };
           return (
-            <div key={at} className="rounded-lg border border-stone-200 bg-white p-3">
-              <h4 className="text-sm font-semibold">Taster mit {name}</h4>
+            <div
+              key={at}
+              className={`rounded-lg border-2 bg-white p-3 transition-colors ${TILE_BORDER[cue]}`}
+            >
+              <h4 className="flex items-center justify-between text-sm font-semibold">
+                {name}
+                {cue === "done" && (
+                  <CheckCircle2
+                    size={20}
+                    className="goal-pop text-emerald-600"
+                    aria-label="ausprobiert"
+                  />
+                )}
+              </h4>
               <svg
                 viewBox="0 0 240 160"
                 className="w-full"
@@ -73,11 +119,16 @@ export function ContactLab({ config, circuit, sim, tried, press, release }: Prop
                 <circle cx="80" cy="105" r="5" fill="#44403c" />
                 <circle cx="160" cy="105" r="5" fill="#44403c" />
                 <g
+                  {...hold}
+                  className="cursor-pointer"
                   style={{
+                    touchAction: "none",
                     transform: `translateY(${down ? 27 : 0}px)`,
                     transition: "transform 120ms",
                   }}
                 >
+                  {/* Tastfläche um den Tasterkopf, größer als der gezeichnete Kopf */}
+                  <rect x="80" y="0" width="80" height="44" fill="transparent" />
                   <rect x="96" y="15" width="48" height="13" rx="4" fill="#44403c" />
                   <path
                     d={`M120 28 V${bridgeY - (down ? 27 : 0)}`}
@@ -87,35 +138,19 @@ export function ContactLab({ config, circuit, sim, tried, press, release }: Prop
                 </g>
                 <path
                   d={`M75 ${bridgeY} H165`}
-                  stroke={c.closed ? "#047857" : "#b45309"}
+                  stroke={c.closed ? SWITCH_ON : SWITCH_OFF}
                   strokeWidth="7"
                   strokeLinecap="round"
                 />
-                <text x="175" y="46" fontSize="11" fill="#57534e">
-                  {down ? "↓ betätigt" : "losgelassen"}
-                </text>
               </svg>
-              <p className="text-sm font-medium">
-                Kontakt {c.closed ? "geschlossen · verbunden" : "offen · getrennt"}
-              </p>
-              <p className="mt-1 text-xs text-stone-600">
-                Lampe {sim.lit.has(lamp) ? "an" : "aus"}
-              </p>
+              <StateLine closed={c.closed} lit={sim.lit.has(lamp)} />
               <button
                 type="button"
                 className="mt-3 w-full rounded-lg bg-stone-800 px-3 py-2 text-sm font-medium text-white select-none"
                 style={{ touchAction: "none" }}
                 aria-label={`${name} gedrückt halten`}
                 aria-pressed={down}
-                onPointerDown={(e) => {
-                  if (e.button !== 0 || !e.isPrimary) return;
-                  e.preventDefault();
-                  e.currentTarget.setPointerCapture(e.pointerId);
-                  press(at);
-                }}
-                onPointerUp={() => release(at)}
-                onPointerCancel={() => release(at)}
-                onLostPointerCapture={() => release(at)}
+                {...hold}
                 onKeyDown={(e) => {
                   if ((e.key === " " || e.key === "Enter") && !e.repeat) {
                     e.preventDefault();
@@ -130,7 +165,7 @@ export function ContactLab({ config, circuit, sim, tried, press, release }: Prop
                 }}
                 onBlur={() => release(at)}
               >
-                {down ? "Loslassen zum Zurückkehren" : "Gedrückt halten"}
+                {down ? "Jetzt loslassen" : "Gedrückt halten"}
               </button>
             </div>
           );

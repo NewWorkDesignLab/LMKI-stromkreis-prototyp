@@ -216,21 +216,18 @@ export function PlayArea({
           </div>
           {step.contactLab && labShown && (
             /* Die Funktionsansicht kommt erst nach dem Verdrahten dazu – vorher lenkte sie vom
-               Bauen ab. „Geschafft“ steht zweimal: unter den Zielen, weil man auch am Brett
-               ausprobieren kann, und neben der Unterkante der Ansicht bei ihren Tastern, wo es
-               sonst außer Sicht läge. Schmaler darunter. */
-            <div ref={labRef} className="goal-in relative mt-4 flex scroll-mt-1 flex-col gap-3">
+               Bauen ab. Ein eigenes „Geschafft“ braucht sie nicht: das Erreichen zeigt ihr
+               grüner Rahmen, „Weiter“ steht unter den Zielen. */
+            <div ref={labRef} className="goal-in mt-4 scroll-mt-1">
               <ContactLab
                 config={step.contactLab}
                 circuit={s.circuit}
                 sim={s.sim}
                 tried={s.tried}
+                solved={s.check.items.some((it) => it.tried && it.ok)}
                 press={s.labPress}
                 release={s.labRelease}
               />
-              {win && (
-                <div className="xl:absolute xl:bottom-0 xl:left-full xl:ml-2 xl:w-64">{win}</div>
-              )}
             </div>
           )}
         </div>

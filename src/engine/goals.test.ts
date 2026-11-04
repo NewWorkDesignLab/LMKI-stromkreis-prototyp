@@ -8,6 +8,7 @@ import {
   keepTried,
   measuredResults,
   startOperated,
+  tryCue,
   tryPress,
   tryRelease,
 } from "./goals";
@@ -179,6 +180,23 @@ describe("Ausprobieren in der Funktionsansicht", () => {
     const erreicht: CheckResult = { items: [{ t: "gebaut", ok: true }], won: true };
     expect(keepTried(t, offen)).toEqual({});
     expect(keepTried(t, erreicht)).toBe(t);
+  });
+
+  it("verlangt zu Beginn bei jedem Taster das Drücken", () => {
+    expect(tryCue({}, "S1")).toBe("press");
+    expect(tryCue({}, "S2")).toBe("press");
+  });
+
+  it("lässt den gedrückten Taster loslassen und den anderen so lange warten", () => {
+    const t = tasten(["S1", "drück"]);
+    expect(tryCue(t, "S1")).toBe("release");
+    expect(tryCue(t, "S2")).toBe("wait");
+  });
+
+  it("ist nach dem Loslassen erledigt und gibt den anderen Taster frei", () => {
+    const t = tasten(["S1", "drück"], ["S1", "los"]);
+    expect(tryCue(t, "S1")).toBe("done");
+    expect(tryCue(t, "S2")).toBe("press");
   });
 });
 

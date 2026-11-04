@@ -273,10 +273,8 @@ Ergänzt 2026-10-26: Bauteilfach und Ziele stehen ab `xl` unmittelbar neben der 
     (Frei bauen: Leeren).
   - `WinPanel` nach dem Lösen, unter den Zielen in der rechten Spalte: „Geschafft“ und
     „Weiter“. Der Merksatz steht bewusst nicht hier, sondern im nächsten Schritt.
-  - Zusatzbausteine wie die Funktionsansicht stehen darunter; dann scrollt die Spalte. Mit
-    Funktionsansicht steht das `WinPanel` zweimal: unter den Zielen, weil man auch am Brett
-    ausprobieren kann, und neben der Unterkante der Ansicht bei ihren Tastern (schmaler
-    darunter), wo „Weiter“ sonst außer Sicht läge.
+  - Zusatzbausteine wie die Funktionsansicht stehen darunter; dann scrollt die Spalte. Die
+    Funktionsansicht hat kein eigenes `WinPanel`: das Erreichen zeigt ihr grüner Rahmen.
 
 **Übrige Schritte im Querformat** (`features/lesson/Stage.tsx`): links eine Bühne, rechts der
 Text. Auf der Bühne steht die erste Anschauung (Widget, Bild) aus den Bausteinen des
@@ -459,16 +457,23 @@ und „Knotenpunkt oder Kreuzung?“ (vier Kreuzungen); für schwerere Level ist
 die Lösung über das Material einzugrenzen. Im freien Bauen gibt es keinen Vorrat.
 
 `contactLab: { closer: {contact, lamp}, opener: {contact, lamp} }` blendet unter dem Brett die **Funktionsansicht** ein: zwei
-aufgeschnittene Taster, in denen Stößel und Kontaktbrücke sich mitbewegen, dazu eine
-Schrittfolge, die zum Ausprobieren beider Kontakte auffordert. Sie zeigt den
+aufgeschnittene Taster, in denen Stößel und Kontaktbrücke sich mitbewegen. Sie zeigt den
 _Mechanismus_, den der Schaltplan grundsätzlich nicht zeigen kann — bewusst **neben**
 dem Brett und als „vereinfachte Funktionsansicht“ beschriftet, damit die Schaltplan-
 Sprache auf dem Brett unberührt bleibt. Das Muster taugt auch für den Wechselschalter
 oder später ein Relais.
 
 Was dort zu tun ist, ist ein gewöhnliches Ziel `tried` (siehe Zielsystem); es zählt nur
-Betätigungen in der Ansicht, nicht am Brett. Die Ansicht meldet sie und schreibt am Ende knapp „Beide Taster ausprobiert.“ – der Merksatz
-folgt im nächsten Schritt. Ziel und Funktionsansicht erscheinen erst, wenn die Schaltung
+Betätigungen in der Ansicht, nicht am Brett. Gedrückt wird am Knopf oder am Tasterkopf in
+der Zeichnung. Was zu tun ist, zeigt jede Kachel selbst statt eines Hinweistexts
+(`tryCue` in `engine/goals.ts`): orange umrandet = hier drücken bzw. loslassen (wie das
+offene Ziel in der Zielliste), neutral = warten, solange der andere gedrückt ist, grün mit
+Häkchen = ausprobiert. Ist das Ziel erreicht, leuchtet der Rahmen der Ansicht grün auf wie
+der Brettrahmen. Die Kontaktbrücke trägt die Schalterfarben des Bretts (`switchOn`,
+`switchOff`), damit Grün allein „erreicht“ bedeutet; die Zustandszeile („Kontakt
+geschlossen · Lampe an“) blitzt kurz auf, wenn die Lampe angeht – nicht beim Ausgehen
+und nicht beim Erscheinen der Ansicht. Der Merksatz folgt im nächsten
+Schritt. Ziel und Funktionsansicht erscheinen erst, wenn die Schaltung
 gebaut ist (alle übrigen Ziele erreicht – in Level 24 heißt das auch: beide Taster am Brett
 einmal betätigt, `operated`), mit 2,5 s Abstand (`LAB_DELAY_MS`), damit man erst die
 Lampen-Ziele grün werden sieht: vorher lenkten sie vom Bauen ab, danach führen sie den Blick

@@ -27,7 +27,7 @@ interface Props {
   content: Size;
   /** füllt den verfügbaren Platz (freies Bauen); sonst so groß wie das Brett */
   fill?: boolean;
-  /** Ziele erreicht: der Rahmen leuchtet einmal auf (Klasse board-solved) */
+  /** Ziele erreicht: der Rahmen leuchtet einmal auf (Klasse solved-glow) */
   solved?: boolean;
   /** schwebende Leiste oben links (ToolBar); bekommt ein eigenes Band über dem Brett */
   toolbar?: ReactNode;
@@ -144,7 +144,7 @@ export function BoardViewport({ content, fill = false, solved = false, toolbar, 
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-2xl border transition-colors ${solved ? "board-solved border-emerald-300" : "border-stone-200"} ${fill ? "min-h-[24rem] flex-1" : `${FRAME_MIN_H} shrink`}`}
+      className={`relative w-full overflow-hidden rounded-2xl border transition-colors ${solved ? "solved-glow border-emerald-300" : "border-stone-200"} ${fill ? "min-h-[24rem] flex-1" : `${FRAME_MIN_H} shrink`}`}
       style={{
         background: BG,
         /* Originalgröße samt Rand und Band; reicht der Platz nicht, schrumpft der Rahmen,

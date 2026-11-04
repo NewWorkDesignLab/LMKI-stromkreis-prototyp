@@ -199,6 +199,10 @@ export type Readings = Record<string, string>;
     wieder losgelassen. Fehlt ein Taster, ist er noch nicht angefasst. */
 export type Tried = Readonly<Record<PartId, 1 | 2>>;
 
+/** Was ein Taster der Funktionsansicht gerade verlangt: drücken, wieder loslassen, warten (ein
+    anderer ist gerade gedrückt) oder nichts mehr (ausprobiert). */
+export type TryCue = "press" | "release" | "wait" | "done";
+
 /** Was ein Versuch über die Zeit sammelt – für Ziele, die nicht nur den Jetztzustand prüfen. */
 export interface Attempt {
   /** `latch`: die genannten Verbraucher liefen schon einmal gemeinsam (Ziel „seen“) */
