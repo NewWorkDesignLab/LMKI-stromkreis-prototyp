@@ -4,25 +4,34 @@ import { box } from "./primitives";
 import { ports } from "./primitives";
 
 /* Schaltkontakt in Bauteilkoordinaten: u längs der Leitung, w quer dazu (negativ =
-   Seite, zu der der Hebel öffnet). Schalter und Taster teilen sich diese Geometrie,
-   der Taster setzt nur die Druckbetätigung darauf. */
+   Seite, zu der sich der Hebel neigt und auf der die Betätigung sitzt – bei Schließer und
+   Öffner gleich, wie im DIN-Schaltzeichen). Schalter und Taster teilen sich diese
+   Geometrie, der Taster setzt nur die Druckbetätigung darauf. Die Box reicht bis ±17; mit
+   halber Hebelbreite (2,5) bleibt jede Hebelspitze innerhalb von |w| ≤ 13. */
 export type Uw = [u: number, w: number];
 const ROOT: Uw = [-15, 0];
 const TERMINAL: Uw = [15, 0];
-/* Ruhekontakt des Öffners: Querstrich, an dem der Hebel anliegt */
-const NC_STOP = 11;
-const NC_STOP_HALF = 9;
-/* offener Hebel, rund 30° gegen die Leitung wie im DIN-Schaltzeichen */
+/* offener Schließer, rund 30° gegen die Leitung wie im DIN-Schaltzeichen */
 const OPEN: Uw = [5, -11];
+/* Öffner nach DIN: der feste Kontakt endet in einem Haken, der zur Seite des Hebels
+   zeigt; der Hebel liegt in Ruhe schräg daran an, ein Stück darüber hinaus. Vom Schließer
+   unterscheidet ihn allein dieser Haken, deshalb bleibt er in jeder Stellung stehen.
+   Betätigt kippt der Hebel weiter vom Haken weg, nicht zur Leitung hin – dort läge er
+   dicht am festen Kontakt und sähe geschlossen aus. Beide Hebellagen sind gleich lang
+   (≈ 22). */
+const HOOK_U = 5;
+const HOOK_W = -8;
+const NC_REST: Uw = [6, -7.5];
+const NC_OPEN: Uw = [3, -13];
 
 export const toBoard =
   (cx: number, cy: number, v: boolean) =>
   ([u, w]: Uw): [number, number] =>
     v ? [cx - w, cy - u] : [cx + u, cy + w];
 
-/** Hebelspitze: geschlossen am Gegenkontakt (beim Öffner am Querstrich), sonst offen. */
+/** Hebelspitze: geschlossen am Gegenkontakt (beim Öffner am Haken), sonst offen. */
 export const leverTip = (nc: boolean, closed: boolean): Uw =>
-  closed ? (nc ? [NC_STOP, 0] : TERMINAL) : OPEN;
+  nc ? (closed ? NC_REST : NC_OPEN) : closed ? TERMINAL : OPEN;
 
 /** Querabstand des Hebels an der Stelle u – dort setzt die Betätigung an. */
 export function leverAt(u: number, tip: Uw): Uw {
@@ -30,8 +39,9 @@ export function leverAt(u: number, tip: Uw): Uw {
 }
 
 /* `closed` heißt überall „leitet“. Ein Öffner startet deshalb mit closed: true, und
-   der Querstrich am festen Anschluss – der Kontakt, gegen den der Hebel drückt – ist
-   die Unterscheidung zum Schließer. */
+   der Haken am festen Anschluss – der Kontakt, an dem der Hebel anliegt – ist die
+   Unterscheidung zum Schließer. Er bleibt in Umrissfarbe, auch wenn Strom fließt: sonst
+   verblasste beim Betätigen genau das Merkmal, an dem man den Öffner erkennt. */
 export function contactEls(
   cx: number,
   cy: number,
@@ -43,18 +53,17 @@ export function contactEls(
 ) {
   const p = toBoard(cx, cy, v);
   const [r, t] = [p(ROOT), p(leverTip(nc, closed))];
-  const [s1, s2] = [p([NC_STOP, -NC_STOP_HALF]), p([NC_STOP, NC_STOP_HALF])];
+  const hook: Uw[] = [TERMINAL, [HOOK_U, 0], [HOOK_U, HOOK_W]];
   return (
     <>
       {nc && (
-        <line
-          x1={s1[0]}
-          y1={s1[1]}
-          x2={s2[0]}
-          y2={s2[1]}
+        <polyline
+          points={hook.map((q) => p(q).join(",")).join(" ")}
+          fill="none"
           stroke={edge}
           strokeWidth={2.5}
           strokeLinecap="round"
+          strokeLinejoin="round"
         />
       )}
       <line

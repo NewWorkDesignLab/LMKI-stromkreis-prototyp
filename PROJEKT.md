@@ -327,7 +327,10 @@ Bauteileigenschaften:
 - `nc` — macht aus einem `switch` oder `button` einen **Öffner**. Achtung: `closed` heißt auch dort
   „leitet“, nicht „betätigt“ — ein Öffner startet deshalb mit `closed: true`. Dadurch
   bleiben Löser, Zielprüfung und Schalterkombinationen unverändert; `nc` ändert nur
-  das Symbol (Querstrich am festen Kontakt) und die Beschriftung.
+  das Symbol und die Beschriftung. Das Symbol folgt DIN: der Hebel neigt sich wie beim
+  Schließer zur Betätigung hin, der feste Kontakt endet in einem Haken zu dieser Seite,
+  an dem der Hebel in Ruhe anliegt. Betätigt kippt der Hebel weiter vom Haken weg. Der
+  Haken ist das einzige Unterscheidungsmerkmal und bleibt deshalb in jeder Stellung.
 - `name` — überschreibt die Beschriftung unter der Zelle (z. B. „Not-Aus“, „Schließer“).
 - `danger` — zeichnet Umriss und Ruhekontakt rot (Not-Aus).
 
