@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import type { BuildStep, CheckResult, Circuit, Readings, Tried } from "../../domain/types";
+import type { BuildStep, CheckResult, Circuit, PartId, Readings, Tried } from "../../domain/types";
 import { cloneCircuit, emptyCircuit } from "../../engine/circuit";
-import { advanceTried, checkLevel } from "../../engine/goals";
+import {
+  advanceOperated,
+  checkLevel,
+  keepTried,
+  startOperated,
+  tryPress,
+  tryRelease,
+} from "../../engine/goals";
 import { latchTripped, type PlayMode } from "../../engine/editing";
 import { simulate } from "../../engine/simulate";
 import { useBoardEditor } from "./useBoardEditor";
@@ -43,18 +50,33 @@ export function usePlaySession(
   const [readings, setReadings] = useState<Readings>({});
   const setReading = (id: string, text: string) => setReadings((r) => ({ ...r, [id]: text }));
 
-  /* Ausprobieren zählt Betätigungen über die Zeit – wie `seen` ein Zustand des Versuchs */
+  /* Was an verdrahteten Zweigen schon betätigt wurde – wie `seen` ein Zustand des Versuchs,
+     abgeleitet aus der Folge der Schaltungen */
+  const [operated, setOperated] = useState(() => startOperated(circuit));
+  useEffect(() => setOperated((o) => advanceOperated(o, level, circuit)), [level, circuit]);
+
+  /* Ausprobieren in der Funktionsansicht: gemeldet im Handler (labPress, labRelease) */
   const [tried, setTried] = useState<Tried>({});
 
   const check = useMemo(
-    () => (mode === "level" ? checkLevel(level, circuit, sim, seen, readings, tried) : NOT_PLAYING),
-    [mode, level, circuit, sim, seen, readings, tried],
+    () =>
+      mode === "level"
+        ? checkLevel(level, circuit, sim, { seen, readings, tried, operated: operated.ids })
+        : NOT_PLAYING,
+    [mode, level, circuit, sim, seen, readings, tried, operated],
   );
   const won = check.won;
 
-  useEffect(() => {
-    setTried((t) => advanceTried(t, level, circuit, check));
-  }, [level, circuit, check]);
+  useEffect(() => setTried((t) => keepTried(t, check)), [check]);
+
+  const labPress = (id: PartId) => {
+    editor.press(id);
+    setTried((t) => tryPress(t, id));
+  };
+  const labRelease = (id: PartId) => {
+    editor.release();
+    setTried((t) => tryRelease(t, id));
+  };
 
   useEffect(() => {
     if (won && mode === "level") onSolved?.(circuit);
@@ -79,5 +101,17 @@ export function usePlaySession(
   };
   const clear = () => commit(() => emptyCircuit());
 
-  return { ...editor, sim, check, won, readings, setReading, tried, reset, clear };
+  return {
+    ...editor,
+    sim,
+    check,
+    won,
+    readings,
+    setReading,
+    tried,
+    labPress,
+    labRelease,
+    reset,
+    clear,
+  };
 }

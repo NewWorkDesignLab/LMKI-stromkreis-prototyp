@@ -173,14 +173,18 @@ export type Goal =
       inputs: string[];
       /** zusätzlich muss die Schaltung gerade wirklich durchgeschaltet sein */
       live?: boolean;
+      /** zusätzlich muss jeder Eingang einmal betätigt worden sein, während dieses Ziel
+          verdrahtet war: die Wirkung soll gesehen, nicht nur verdrahtet sein */
+      operated?: true;
       label: string;
     }
   | { k: "toggle"; at: PartId; inputs: PartId[]; label: string }
   | { k: "state"; pressed: Record<PartId, boolean>; label: string }
   | { k: "seen"; label: string }
   | { k: "fuse"; label?: string }
-  /** Ausprobieren: jeder Taster in `ats` wurde einmal betätigt und wieder losgelassen.
-      Zählt erst, wenn alle übrigen Ziele erreicht sind – erst bauen, dann ausprobieren. */
+  /** Ausprobieren: jeder Taster in `ats` wurde in der Funktionsansicht (`contactLab`) einmal
+      betätigt und wieder losgelassen – am Brett zählt es nicht. Zählt erst, wenn alle übrigen
+      Ziele erreicht sind: erst bauen, dann ausprobieren. */
   | { k: "tried"; ats: PartId[]; label: string };
 
 /** Messgröße einer Messaufgabe: Strom durch ein Bauteil (Amperemeter) oder Spannung an ihm (Voltmeter). */
@@ -194,6 +198,17 @@ export type Readings = Record<string, string>;
 /** Fortschritt der Ausprobieren-Ziele je Taster: 1 = gerade betätigt, 2 = betätigt und
     wieder losgelassen. Fehlt ein Taster, ist er noch nicht angefasst. */
 export type Tried = Readonly<Record<PartId, 1 | 2>>;
+
+/** Was ein Versuch über die Zeit sammelt – für Ziele, die nicht nur den Jetztzustand prüfen. */
+export interface Attempt {
+  /** `latch`: die genannten Verbraucher liefen schon einmal gemeinsam (Ziel „seen“) */
+  seen: boolean;
+  readings: Readings;
+  /** Ausprobieren in der Funktionsansicht (Ziel „tried“) */
+  tried: Tried;
+  /** an verdrahteten Zweigen betätigt (Ziel „logic“ mit `operated`) */
+  operated: ReadonlySet<PartId>;
+}
 
 export interface CheckItem {
   /** Text der Checkliste */

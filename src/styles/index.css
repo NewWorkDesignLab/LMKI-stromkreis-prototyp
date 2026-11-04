@@ -150,6 +150,23 @@
     transform: scale(0.6);
   }
 }
+/* Ein Ziel, das nachträglich dazukommt: die Zeile zieht sich auf, statt das Panel springen
+   zu lassen. max-height nur während der Animation (backwards), sonst schnitte sie lange
+   Zeilen ab; der negative Rand gleicht den Abstand der Liste (gap-2) aus. */
+.goal-grow {
+  animation: goal-grow 0.6s ease-out backwards;
+}
+@keyframes goal-grow {
+  from {
+    max-height: 0;
+    margin-top: -0.5rem;
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    max-height: 4rem;
+  }
+}
 .win-in {
   animation: win-in 0.3s ease-out;
 }
@@ -169,6 +186,7 @@
   .board-solved::after,
   .goal-pop,
   .goal-in,
+  .goal-grow,
   .win-in {
     animation: none;
   }

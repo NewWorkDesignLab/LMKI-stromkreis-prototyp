@@ -3,7 +3,6 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import type { BuildStep, CheckResult, Readings, SimResult } from "../../domain/types";
 import type { PlayMode } from "../../engine/editing";
 import { fmtA } from "../../engine/format";
-import { othersMet } from "../../engine/goals";
 import { PANEL_HEADING } from "../../ui/heading";
 import { ProceedButton } from "../lesson/stepViews";
 
@@ -45,8 +44,8 @@ export function TaskBar({
 /** Die Ziele als Checkliste, untereinander: rechts neben dem Brett, auf schmalen Fenstern
     darunter. Messaufgaben haben ein Feld für den abgelesenen Wert. Ein offenes
     Ausprobieren-Ziel ist ein Verweis (orange, Pfeil nach unten): man erfüllt es in der
-    Anschauung unter dem Brett, und Antippen springt dorthin. Es erscheint erst, wenn die
-    übrigen Ziele erreicht sind – erst bauen, dann ausprobieren, und der Blick wandert mit. */
+    Anschauung unter dem Brett, und Antippen springt dorthin. Es erscheint mit der Anschauung,
+    erst nach den übrigen Zielen – erst bauen, dann ausprobieren, und der Blick wandert mit. */
 export function GoalList({
   check,
   readings,
@@ -63,11 +62,12 @@ export function GoalList({
   intro?: boolean;
   /** Ziele nach der Einblendung nacheinander erscheinen lassen */
   goalsEnter?: boolean;
-  /** springt zur Anschauung, in der man die Ausprobieren-Ziele erfüllt */
+  /** springt zur Anschauung, in der man die Ausprobieren-Ziele erfüllt; ohne sie stehen
+      diese Ziele noch nicht da */
   onTried?: () => void;
 }) {
   if (check.items.length === 0) return null;
-  const items = othersMet(check) ? check.items : check.items.filter((it) => !it.tried);
+  const items = onTried ? check.items : check.items.filter((it) => !it.tried);
   return (
     <section
       aria-label="Ziele"
@@ -81,8 +81,11 @@ export function GoalList({
           return (
             <li
               key={i}
-              style={goalsEnter ? { animationDelay: `${i * GOAL_STAGGER_MS}ms` } : undefined}
-              className={`flex items-start gap-1.5 text-sm ${it.ok ? "text-emerald-700" : pointer ? "text-amber-700" : "text-stone-700"} ${(goalsEnter && !intro) || it.tried ? "goal-in" : ""}`}
+              style={
+                goalsEnter && !it.tried ? { animationDelay: `${i * GOAL_STAGGER_MS}ms` } : undefined
+              }
+              /* Das Ausprobieren-Ziel kommt später dazu und zieht seine Zeile auf */
+              className={`flex items-start gap-1.5 text-sm ${it.ok ? "text-emerald-700" : pointer ? "text-amber-700" : "text-stone-700"} ${it.tried ? "goal-grow" : goalsEnter && !intro ? "goal-in" : ""}`}
             >
               {it.ok ? (
                 <CheckCircle2 size={17} className="goal-pop mt-px shrink-0" aria-label="erreicht" />

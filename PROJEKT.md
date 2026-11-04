@@ -466,11 +466,13 @@ dem Brett und als „vereinfachte Funktionsansicht“ beschriftet, damit die Sch
 Sprache auf dem Brett unberührt bleibt. Das Muster taugt auch für den Wechselschalter
 oder später ein Relais.
 
-Was dort zu tun ist, ist ein gewöhnliches Ziel `tried` (siehe Zielsystem); die Ansicht liest
-nur dessen Fortschritt und schreibt am Ende knapp „Beide Taster ausprobiert.“ – der Merksatz
+Was dort zu tun ist, ist ein gewöhnliches Ziel `tried` (siehe Zielsystem); es zählt nur
+Betätigungen in der Ansicht, nicht am Brett. Die Ansicht meldet sie und schreibt am Ende knapp „Beide Taster ausprobiert.“ – der Merksatz
 folgt im nächsten Schritt. Ziel und Funktionsansicht erscheinen erst, wenn die Schaltung
-gebaut ist (alle übrigen Ziele erreicht): vorher lenkten sie vom Bauen ab, danach führen sie
-den Blick nach unten. Offen steht das Ziel orange mit Pfeil nach unten als Verweis, Antippen
+gebaut ist (alle übrigen Ziele erreicht – in Level 24 heißt das auch: beide Taster am Brett
+einmal betätigt, `operated`), mit 2,5 s Abstand (`LAB_DELAY_MS`), damit man erst die
+Lampen-Ziele grün werden sieht: vorher lenkten sie vom Bauen ab, danach führen sie den Blick
+nach unten. Offen steht das Ziel orange mit Pfeil nach unten als Verweis, Antippen
 springt zur Funktionsansicht. Ein Level mit `contactLab` muss ein `tried`-Ziel mit beiden
 Tastern haben, sonst meldet die Prüfung einen Fehler.
 
@@ -510,7 +512,7 @@ Ziele stehen pro Level in `goals`; für Verbraucher ohne eigenes Ziel wird autom
 | `state`  | die genannten Kontakte sind **jetzt** betätigt bzw. nicht betätigt            |
 | `seen`   | die in `latch` genannten Verbraucher liefen im Verlauf schon einmal gemeinsam |
 | `fuse`   | die Sicherung hält                                                            |
-| `tried`  | jeder Taster in `ats` wurde einmal betätigt und wieder losgelassen            |
+| `tried`  | jeder Taster in `ats` wurde in der Funktionsansicht betätigt und losgelassen  |
 
 `logic` und `toggle` **simulieren alle Schalterkombinationen durch**, nicht nur den aktuellen
 Zustand. Dadurch wird wirklich die Verdrahtung geprüft.
@@ -519,6 +521,13 @@ Ihre Eingänge bedeuten dabei **„betätigt“, nicht „leitet“** — beim �
 gegenläufig. Ein vorangestelltes `!` dreht einen Eingang um: `inputs: ["!S1", "S2"]`
 heißt „Not-Aus nicht gedrückt UND Schalter zu“. Bei gewöhnlichen Kontakten fallen beide
 Lesarten zusammen, dort ändert das nichts.
+
+`operated: true` an einem `logic`-Ziel verlangt zusätzlich, dass jeder Eingang einmal
+betätigt wurde, **während dieses Ziel verdrahtet war**: die Wirkung soll gesehen, nicht nur
+verdrahtet sein (`advanceOperated` in `engine/goals.ts`). Wer danach einen anderen Zweig
+verdrahtet, behält das Gesehene; erst wenn die Verdrahtung des Ziels selbst nicht mehr
+stimmt, ist es vergessen. Gezählt wird der Wechsel in die betätigte Stellung bei Tastern und
+Schaltern (geschlossener Schalter = betätigt), nicht bei Wechselschaltern.
 
 `state` und `seen` gibt es, weil manche Aufgaben eine **Reihenfolge** verlangen. Level 29
 ließe sich sonst lösen, indem man erst den Not-Aus drückt und dann die Schalter umlegt —
@@ -529,9 +538,10 @@ Wechselschaltung je nach Verdrahtung XOR _oder_ XNOR ergibt — beides ist richt
 gemeinsame Merkmal ist das Umschalten.
 
 `tried` zählt **reihenfolgefrei** je Taster 1 (gedrückt) und 2 (gedrückt und wieder
-losgelassen), `advanceTried` in `engine/goals.ts`. Gezählt wird erst, wenn alle übrigen Ziele
-erreicht sind – bis dahin beginnt der Fortschritt von vorn, ein Drücken an der halb
-verdrahteten Schaltung gilt nicht. Zurücksetzen löscht ihn wie den `latch`-Merker.
+losgelassen) – gemeldet von den Knöpfen der Funktionsansicht (`tryPress`, `tryRelease` in
+`engine/goals.ts`), am Brett zählt es nicht. Die Prüfung verlangt deshalb, dass jeder Taster
+eines `tried`-Ziels zur `contactLab` gehört. Solange die übrigen Ziele offen sind, beginnt der
+Fortschritt von vorn (`keepTried`). Zurücksetzen löscht ihn wie den `latch`-Merker.
 
 Messgeräte-Level brauchen keine Sonderregel: wer ein Amperemeter parallel schaltet, macht
 den Verbraucher dunkel; wer ein Voltmeter in Reihe schaltet, sperrt den Stromkreis. Die Physik

@@ -184,6 +184,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
         at: "2,2",
         expr: "id",
         inputs: ["2,1"],
+        operated: true,
         label: "Die linke Lampe leuchtet nur, solange der Schließer betätigt ist",
       },
       {
@@ -191,6 +192,7 @@ export const erweiterungLevels: LegacyLevelDef[] = [
         at: "4,2",
         expr: "not",
         inputs: ["4,1"],
+        operated: true,
         label: "Die rechte Lampe erlischt, solange der Öffner betätigt ist",
       },
       {

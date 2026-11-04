@@ -17,6 +17,7 @@ import { GoalList, StatusBar, TaskBar, WinPanel } from "./BuildPanels";
 import { ToolBar } from "./ToolBar";
 import { usePlaySession } from "./usePlaySession";
 import { ValueInput } from "./ValueInput";
+import { useSettled } from "./useSettled";
 import { useTaskIntro } from "./useTaskIntro";
 
 interface Props {
@@ -39,6 +40,10 @@ interface Props {
    Aufgabenzeile (40 rem) – sonst bräche der Aufgabentext bei kleinen Brettern in viele
    kurze Zeilen. */
 const MIN_COLUMN_PX = 640;
+
+/* Abstand zwischen fertiger Schaltung und Funktionsansicht samt ihrem Ziel: erst sieht man
+   die Lampen-Ziele grün werden, dann kommt das Nächste – nacheinander statt gleichzeitig. */
+const LAB_DELAY_MS = 2500;
 
 /* Ein Bauschritt: eine Spalte aus Aufgabe, Brett (mit Werkzeugleiste oben links) und
    Zustand – in Leserichtung untereinander, so breit wie das Brett. Ab xl stehen das
@@ -112,6 +117,7 @@ export function PlayArea({
 
   /* Das Ausprobieren-Ziel verweist auf die Funktionsansicht unter dem Brett */
   const labRef = useRef<HTMLDivElement>(null);
+  const labShown = useSettled(!!step.contactLab && othersMet(s.check), LAB_DELAY_MS);
   const showLab = () =>
     labRef.current?.scrollIntoView({
       behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
@@ -203,12 +209,12 @@ export function PlayArea({
               onReading={s.setReading}
               intro={intro.intro}
               goalsEnter={intro.goalsEnter}
-              onTried={step.contactLab ? showLab : undefined}
+              onTried={labShown ? showLab : undefined}
             />
             {win}
             {settings.debug && debug && <DebugPanel rows={debug} />}
           </div>
-          {step.contactLab && othersMet(s.check) && (
+          {step.contactLab && labShown && (
             /* Die Funktionsansicht kommt erst nach dem Verdrahten dazu – vorher lenkte sie vom
                Bauen ab. „Geschafft“ steht zweimal: unter den Zielen, weil man auch am Brett
                ausprobieren kann, und neben der Unterkante der Ansicht bei ihren Tastern, wo es
@@ -219,8 +225,8 @@ export function PlayArea({
                 circuit={s.circuit}
                 sim={s.sim}
                 tried={s.tried}
-                press={s.press}
-                release={s.release}
+                press={s.labPress}
+                release={s.labRelease}
               />
               {win && (
                 <div className="xl:absolute xl:bottom-0 xl:left-full xl:ml-2 xl:w-64">{win}</div>

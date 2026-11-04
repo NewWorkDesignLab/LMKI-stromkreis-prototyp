@@ -2,8 +2,8 @@ import type { BuildStep, Circuit, PartId, SimResult, Tried } from "../../domain/
 import { actuated } from "../../engine/parts";
 
 /* Funktionsansicht zu „Der Öffner“: zeigt den Kontakt im Taster. Ob beide Taster einmal
-   gedrückt UND wieder losgelassen wurden, prüft das Ziel „tried“ (engine/goals.ts); die
-   Ansicht liest nur dessen Fortschritt. Sie erscheint erst nach dem Verdrahten (PlayArea).
+   gedrückt UND wieder losgelassen wurden, prüft das Ziel „tried“ (engine/goals.ts); gezählt
+   werden nur Betätigungen hier, nicht am Brett. Sie erscheint erst nach dem Verdrahten (PlayArea).
    Welche Taster und Lampen gemeint sind, steht im Level (`contactLab`). */
 
 type Config = NonNullable<BuildStep["contactLab"]>;
@@ -14,7 +14,7 @@ interface Props {
   sim: SimResult;
   tried: Tried;
   press: (id: PartId) => void;
-  release: () => void;
+  release: (id: PartId) => void;
 }
 
 export function ContactLab({ config, circuit, sim, tried, press, release }: Props) {
@@ -113,9 +113,9 @@ export function ContactLab({ config, circuit, sim, tried, press, release }: Prop
                   e.currentTarget.setPointerCapture(e.pointerId);
                   press(at);
                 }}
-                onPointerUp={release}
-                onPointerCancel={release}
-                onLostPointerCapture={release}
+                onPointerUp={() => release(at)}
+                onPointerCancel={() => release(at)}
+                onLostPointerCapture={() => release(at)}
                 onKeyDown={(e) => {
                   if ((e.key === " " || e.key === "Enter") && !e.repeat) {
                     e.preventDefault();
@@ -125,10 +125,10 @@ export function ContactLab({ config, circuit, sim, tried, press, release }: Prop
                 onKeyUp={(e) => {
                   if (e.key === " " || e.key === "Enter") {
                     e.preventDefault();
-                    release();
+                    release(at);
                   }
                 }}
-                onBlur={release}
+                onBlur={() => release(at)}
               >
                 {down ? "Loslassen zum Zurückkehren" : "Gedrückt halten"}
               </button>

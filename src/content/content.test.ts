@@ -78,7 +78,7 @@ describe("Inhalte", () => {
           const readings = Object.fromEntries(
             measuredResults(b, b.solution, sim).map((r) => [r.id, r.reading]),
           );
-          const { items } = checkLevel(b, b.solution, sim, true, readings);
+          const { items } = checkLevel(b, b.solution, sim, { seen: true, readings });
           expect(items.length > 0 && items.every((i) => i.ok), `${l.id}/${b.id}`).toBe(true);
         }
   });

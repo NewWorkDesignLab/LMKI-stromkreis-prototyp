@@ -143,7 +143,7 @@ describe("Prüfung der Schritte", () => {
     expect(errorsOf([build([ziel(["S1", "S2"])])])).toBe("");
     expect(errorsOf([build([])])).toMatch(/S1.*tried/);
     expect(errorsOf([build([ziel(["S1"])])])).toMatch(/S2/);
-    expect(errorsOf([build([ziel(["S1", "E1"])])])).toMatch(/kein Taster/);
+    expect(errorsOf([build([ziel(["S1", "S2", "E1"])])])).toMatch(/E1.*Funktionsansicht/);
   });
 
   it("kennt keine fremden Schrittarten", () => {

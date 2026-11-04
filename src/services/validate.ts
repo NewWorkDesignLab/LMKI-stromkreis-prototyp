@@ -304,14 +304,18 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
         );
     }
   }
+  /* Ausprobiert wird nur in der Funktionsansicht – ein Taster außerhalb wäre unerreichbar */
+  const labContacts = new Set(
+    l.contactLab ? [l.contactLab.closer?.contact, l.contactLab.opener?.contact] : [],
+  );
   for (const g of l.goals ?? [])
     if (g?.k === "tried") {
       if (!isText(g.label)) e("Ziel „tried“: label fehlt");
       if (!Array.isArray(g.ats) || !g.ats.length) e("Ziel „tried“: ats fehlt");
       else
         for (const id of g.ats)
-          if (parts[id] && parts[id].type !== "button")
-            e(`Ziel „tried“: „${id}“ ist kein Taster – nur Taster kehren von selbst zurück`);
+          if (!labContacts.has(id))
+            e(`Ziel „tried“: „${id}“ ist kein Taster der Funktionsansicht (contactLab)`);
     }
   for (const id of l.latch?.lit ?? []) ref(id, "latch");
   if (l.contactLab) {
