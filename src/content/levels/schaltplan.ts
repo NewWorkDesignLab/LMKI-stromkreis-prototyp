@@ -18,7 +18,17 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     ratings: "nominal",
     task: "Zwei getrennte Stromkreise – trotzdem ein Kurzschluss. Finde die Ursache und behebe sie mit Kreuzungen.",
     lesson:
-      "Die eingesetzten Kreuzungen führen die waagerechte und die senkrechte Leitung elektrisch getrennt aneinander vorbei. So bleiben die beiden Stromkreise getrennt und die Kurzschlüsse sind behoben.",
+      "Ein Knotenpunkt verbindet alle Leitungen, die sich dort treffen. An einer Kreuzung laufen die Leitungen ohne Verbindung aneinander vorbei.",
+    explanation: [
+      {
+        k: "p",
+        text: "Im Schaltplan ist ein Knotenpunkt als ausgefüllter Punkt gezeichnet. Wo kein Knotenpunkt ist, sind sich kreuzende Leitungen elektrisch getrennt.",
+      },
+      {
+        k: "p",
+        text: "An den vier Stellen lagen Knotenpunkte. Dadurch hingen alle Leitungen zusammen, und beide Spannungsquellen waren kurzgeschlossen. Mit Kreuzungen bleiben die Stromkreise getrennt.",
+      },
+    ],
     cells: {
       "0,2": { type: "battery", orient: "v" },
       "6,2": { type: "lamp", orient: "v" },
@@ -43,8 +53,14 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     stock: { ammeter: 1 },
     ratings: "nominal",
     task: "Hier sind die Knotenpunkte gewollt. Wie groß ist die Stromstärke durch die Lampe?",
-    lesson:
-      "Knotenregel: Am Knotenpunkt fließt so viel heraus, wie hineinfließt. 99 mA + 148 mA = 247 mA.",
+    lesson: "Knotenregel: Am Knotenpunkt fließt so viel Strom heraus, wie hineinfließt.",
+    explanation: [
+      {
+        k: "p",
+        text: "Lampe und Motor haben verschiedene Widerstände, deshalb teilt sich der Strom ungleich auf. Zusammen ergeben die Zweigströme den Strom in der Stammleitung.",
+      },
+      { k: "formula", text: "I_ges = I_1 + I_2 ≈ 99 mA + 148 mA = 247 mA" },
+    ],
     cells: {
       "3,1": { type: "battery", orient: "v" },
       "0,1": { type: "lamp", orient: "v" },
@@ -71,8 +87,13 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     H: 5,
     palette: BASE,
     task: "Baue die UND-Schaltung aus „Reihenschaltung = UND“ nach – diesmal läuft der Stromkreis außen um das Brett herum.",
-    lesson:
-      "Ein Schaltplan zeigt die elektrische Verschaltung, nicht die räumliche Anordnung der Bauteile. Dieselbe Schaltung kann daher auf unterschiedliche Weise gezeichnet werden, solange die elektrischen Verbindungen unverändert bleiben.",
+    lesson: "Ein Schaltplan zeigt, was elektrisch verbunden ist, nicht wo die Bauteile liegen.",
+    explanation: [
+      {
+        k: "p",
+        text: "Dieselbe Schaltung lässt sich auf viele Arten zeichnen. Solange dieselben Anschlüsse verbunden sind, bleibt es dieselbe Schaltung – hier wieder zwei Schalter in Reihe, also UND wie in „Reihenschaltung = UND“.",
+      },
+    ],
     cells: {
       "0,2": { type: "battery", orient: "v" },
       "6,2": { type: "lamp", orient: "v" },
@@ -101,7 +122,14 @@ export const schaltplanLevels: LegacyLevelDef[] = [
     ratings: "nominal",
     task: "Die Lampe braucht 18 V. Schalte beide Spannungsquellen so in Reihe, dass sich ihre Spannungen addieren.",
     lesson:
-      "In Reihe addieren sich die Spannungen – aber nur, wenn Plus an Minus liegt. Gegeneinander gepolt heben sie sich auf.",
+      "In Reihe geschaltete Spannungsquellen addieren ihre Spannungen, wenn der Pluspol der einen am Minuspol der anderen liegt.",
+    explanation: [
+      { k: "formula", text: "U_ges = U_1 + U_2 = 9 V + 9 V = 18 V" },
+      {
+        k: "p",
+        text: "Gegeneinander gepolt, Pluspol an Pluspol, heben sich die beiden Spannungen auf, und die Lampe bleibt dunkel.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "3,0": { type: "battery", orient: "h", rev: true, flip: true },

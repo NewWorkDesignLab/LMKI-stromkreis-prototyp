@@ -13,7 +13,17 @@ export const schutzLevels: LegacyLevelDef[] = [
     ratings: "nominal",
     task: "Die Lampe bleibt dunkel, obwohl der Stromkreis geschlossen ist. Finde den Kurzschluss und beseitige ihn.",
     lesson:
-      "Ein Kurzschluss verbindet + und − ohne Verbraucher. Die Brücke hat keinen Widerstand: an der Lampe liegt keine Spannung mehr, also fließt durch sie kein Strom.",
+      "Ein Kurzschluss verbindet Pluspol und Minuspol ohne Verbraucher. Der Verbraucher wird dabei überbrückt.",
+    explanation: [
+      {
+        k: "p",
+        text: "Die Brücke ist eine Leitung ohne nennenswerten Widerstand und liegt parallel zur Lampe. Zwischen ihren Enden liegt deshalb keine Spannung an – auch nicht an der Lampe, sie bleibt dunkel.",
+      },
+      {
+        k: "p",
+        text: "Durch die Brücke selbst fließt dafür ein sehr großer Strom, den nur der kleine Innenwiderstand der Spannungsquelle begrenzt. Leitungen und Spannungsquelle werden dabei überlastet – davor schützt eine Sicherung.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "5,1": { type: "lamp", orient: "v" },
@@ -31,7 +41,17 @@ export const schutzLevels: LegacyLevelDef[] = [
     ratings: "nominal",
     task: "Die Sicherung hat ausgelöst. Beseitige die Ursache und schalte die Sicherung wieder ein.",
     lesson:
-      "Eine Sicherung trennt den Stromkreis bei Überstrom – sie schützt Leitung und Spannungsquelle. Einschalten hilft erst, wenn die Ursache weg ist.",
+      "Eine Sicherung trennt den Stromkreis, wenn die Stromstärke zu groß wird. Wieder einschalten hilft erst, wenn die Ursache beseitigt ist.",
+    explanation: [
+      {
+        k: "p",
+        text: "Die Sicherung liegt in Reihe im Stromkreis, der ganze Strom fließt durch sie. Übersteigt die Stromstärke ihren Nennstrom, löst sie aus und unterbricht den Stromkreis. So schützt sie Leitungen und Spannungsquelle vor Überlastung.",
+      },
+      {
+        k: "p",
+        text: "Die Ursache war ein Kurzschluss wie in „Der Kurzschluss“. Solange er besteht, löst die Sicherung nach dem Einschalten sofort wieder aus.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "6,1": { type: "lamp", orient: "v" },
@@ -51,7 +71,17 @@ export const schutzLevels: LegacyLevelDef[] = [
     ratings: "nominal",
     task: "Verdrahte den Stromkreis und baue die LED in Durchlassrichtung ein.",
     lesson:
-      "Die LED leitet nur von Anode zur Kathode (Balken). Falsch gepolt sperrt sie vollständig.",
+      "Eine LED leitet nur in Durchlassrichtung, von der Anode zur Kathode. In Sperrrichtung fließt kein Strom.",
+    explanation: [
+      {
+        k: "p",
+        text: "Im Schaltzeichen zeigt das Dreieck in Durchlassrichtung, der Balken markiert die Kathode. Die Anode muss zum Pluspol, die Kathode zum Minuspol zeigen.",
+      },
+      {
+        k: "p",
+        text: "Anders als eine Lampe hat die LED eine Polung: Falsch herum eingebaut sperrt sie und bleibt dunkel.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "2,0": { type: "resistor", orient: "h", r: 470 },
@@ -68,7 +98,18 @@ export const schutzLevels: LegacyLevelDef[] = [
     palette: BASE,
     ratings: "nominal",
     task: "Verdrahte den Stromkreis und wähle den Vorwiderstand so, dass ein LED-Strom zwischen 12 mA und 18 mA fließt. Mehr als 30 mA verträgt die LED nicht.",
-    lesson: "Eine LED braucht immer einen Vorwiderstand: R = (Uq − UF) / I.",
+    lesson: "Eine LED braucht einen Vorwiderstand, der die Stromstärke begrenzt.",
+    explanation: [
+      {
+        k: "p",
+        text: "In Durchlassrichtung fällt an der LED eine fast feste Spannung ab, die Durchlassspannung U_F, hier etwa 2 V. Die übrige Spannung der Spannungsquelle liegt am Vorwiderstand an, und er bestimmt die Stromstärke.",
+      },
+      { k: "formula", text: "R_V = (U − U_F) / I = (9 V − 2 V) / 0,015 A ≈ 470 Ω" },
+      {
+        k: "p",
+        text: "Ohne Vorwiderstand begrenzt nichts die Stromstärke: Sie stiege weit über die 30 mA, die die LED verträgt.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "2,0": {

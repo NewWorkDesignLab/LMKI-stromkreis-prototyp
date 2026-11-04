@@ -416,8 +416,8 @@ gelöst, ist alles offen). Gelöst ist ein Level, wenn alle Schritte erledigt si
   („Stromstärke: 47 mA“, so wie das Messgerät es zeigt). Rechts steht ein Panel: _Merke_, die
   Vermutung, dann _Warum das so ist_ aus `blocks`. Eine Zielliste gibt es dort bewusst nicht –
   was erreicht ist, zeigt die Schaltung, und lange Erklärungen verlängern nur die rechte
-  Spalte. Im Altformat steht diese Erklärung in `explanation`; bisher haben sie
-  die Level in `levels/messen.ts`, die übrigen folgen.
+  Spalte. Im Altformat steht diese Erklärung in `explanation`. Wie Merke und Erklärung
+  geschrieben werden, steht unter „Arbeitsweise“ (Abschlussseite).
 - Die Prototyp-Level werden zu „Bauen“ + „Merksatz“ übersetzt; `before` stellt Schritte im
   heutigen Format davor. So zeigen „Das Licht im Schalter“ und „Der Öffner“ ihren
   Alltagsbezug als ersten Schritt statt hinter einem „?“.
@@ -642,6 +642,18 @@ Muster: die Simulation selbst war robust, die Fehler saßen in **Level-Geometrie
 - **Vor Tests und Screenshots fragen.** Steht so in seinen globalen Vorgaben.
 - **Konzeptnamen gehören in den Leveltitel**, nicht in den Merksatz — der Titel wird schon
   beim Bauen gelesen und lenkt das Erkennen. Merksätze bleiben ein bis zwei Sätze.
+- **Abschlussseite = Merke + „Warum das so ist“** (entschieden 2026-11-04). Maßstab ist,
+  was das Level vermitteln will – nicht, dass überall Physik oder eine Begründung steht.
+  - _Merke_ (`lesson`, fett): der Kern in ein bis zwei Sätzen. Führt das Level ein
+    allgemeines Konzept ein, steht hier die übertragbare Regel. Keine nacherzählte Lösung,
+    keine Werte des Levels, keine Begründungssätze, keine Großbuchstaben zur Betonung.
+  - _Warum das so ist_ (`blocks`, im Altformat `explanation`): sachliche Darlegung dessen,
+    was man zum Verstehen braucht – je nach Level Aufbau und Funktionsweise eines Bauteils,
+    die Physik, das Schaltzeichen, die Auflösung von Einstieg oder Vermutung, die Werte des
+    Bretts als Rechnung. Wo es trägt, ein Bezug auf ein früheres Level („Der Taster aus
+    ‚Der Taster‘ war ein Schließer“). Jedes Level im Lehrplan hat diesen Teil.
+  - Begriffe wie in den Aufgaben: „Stromstärke“ statt „Strom“, wo die Größe gemeint ist,
+    „Spannungsquelle“, „Pluspol/Minuspol“; Formelzeichen nur, wenn sie erklärt sind.
 - **Aufgabe und Ziele sprechen mit Operatoren** (entschieden 2026-10-26), wie in Ausbildung
   und Prüfung: verdrahten, schalten, schließen an, messen, ablesen, prüfen, untersuchen,
   einstellen, berechnen, Fehler finden und beheben. Die **Aufgabe** stellt die Frage oder

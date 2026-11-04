@@ -12,7 +12,8 @@ export const messenLevels: LegacyLevelDef[] = [
     palette: BASE,
     ratings: "resistance",
     task: "Verdrahte den Stromkreis. Wie groß ist die Stromstärke mit dem Widerstand?",
-    lesson: "Ein Widerstand begrenzt den Strom. Mehr Widerstand im Stromkreis heißt weniger Strom.",
+    lesson:
+      "Ein Widerstand begrenzt die Stromstärke: Je größer der Widerstand im Stromkreis, desto kleiner die Stromstärke.",
     explanation: [
       {
         k: "p",
@@ -49,16 +50,19 @@ export const messenLevels: LegacyLevelDef[] = [
     stock: { ammeter: 1 },
     ratings: "nominal",
     task: "Wie groß ist die Stromstärke durch die Lampe? Die Lampe soll dabei weiter leuchten.",
-    lesson:
-      "Ein Amperemeter wird IN REIHE eingebaut. Parallel geschaltet würde sein sehr kleiner Innenwiderstand den Verbraucher kurzschließen.",
+    lesson: "Ein Amperemeter wird in Reihe zum Bauteil geschaltet.",
     explanation: [
       {
         k: "p",
-        text: "Der Strom hat nur einen Weg: von der Spannungsquelle durch die Lampe und zurück. Das Amperemeter sitzt auf diesem Weg und wird vom selben Strom durchflossen – es zeigt deshalb genau den Lampenstrom.",
+        text: "Das Amperemeter misst die Stromstärke, die durch es selbst fließt. Es muss deshalb im Stromweg liegen: Der Strom fließt von der Spannungsquelle durch Amperemeter und Lampe und zurück, durch beide derselbe.",
       },
       {
         k: "p",
-        text: "Sein Innenwiderstand ist sehr klein, der Stromkreis verändert sich durch den Einbau kaum. Die Lampe leuchtet weiter.",
+        text: "Damit es den Stromkreis dabei nicht verändert, hat es einen sehr kleinen Innenwiderstand. Die Lampe leuchtet nach dem Einbau weiter wie zuvor.",
+      },
+      {
+        k: "p",
+        text: "Parallel zur Lampe geschaltet, wäre es wegen dieses kleinen Innenwiderstands fast eine leitende Brücke – ein Kurzschluss wie in „Der Kurzschluss“ wäre die Folge.",
       },
     ],
     cells: {
@@ -86,16 +90,19 @@ export const messenLevels: LegacyLevelDef[] = [
     stock: { voltmeter: 1 },
     ratings: "nominal",
     task: "Welche Spannung liegt an der Lampe an?",
-    lesson:
-      "Ein Voltmeter wird PARALLEL zum Bauteil geschaltet. In Reihe sperrt sein hoher Innenwiderstand den Stromkreis nahezu.",
+    lesson: "Ein Voltmeter wird parallel zum Bauteil geschaltet.",
     explanation: [
       {
         k: "p",
-        text: "Spannung liegt zwischen zwei Punkten an. Das Voltmeter wird deshalb an beide Anschlüsse der Lampe gelegt – parallel. Dort liegt dieselbe Spannung an wie an der Lampe, hier die volle Quellenspannung.",
+        text: "Spannung liegt zwischen zwei Punkten an. Das Voltmeter wird deshalb an beide Anschlüsse der Lampe gelegt und zeigt die Spannung zwischen ihnen, hier die volle Spannung der Spannungsquelle.",
       },
       {
         k: "p",
-        text: "Sein Innenwiderstand ist sehr hoch: Es zieht kaum Strom aus dem Stromkreis und verfälscht die Messung nicht.",
+        text: "Damit es dabei kaum Strom aus dem Stromkreis zieht und die Messung nicht verfälscht, hat es einen sehr hohen Innenwiderstand.",
+      },
+      {
+        k: "p",
+        text: "In Reihe geschaltet, würde dieser hohe Innenwiderstand den Stromkreis nahezu unterbrechen – die Lampe ginge aus. Beim Amperemeter ist es genau umgekehrt.",
       },
     ],
     cells: {
@@ -124,14 +131,17 @@ export const messenLevels: LegacyLevelDef[] = [
     ratings: "nominal",
     task: "Zwei gleiche Lampen liegen in Reihe. Welche Spannung liegt an der linken Lampe an?",
     lesson:
-      "In der Reihenschaltung teilt sich die Spannung auf die Verbraucher auf – bei zwei gleichen Lampen je die Hälfte.",
+      "In der Reihenschaltung teilt sich die Spannung der Spannungsquelle auf die Verbraucher auf.",
     explanation: [
       {
         k: "p",
         text: "Durch beide Lampen fließt derselbe Strom. Haben sie gleiche Widerstände, fällt an beiden die gleiche Spannung ab.",
       },
       { k: "formula", text: "U_1 = U_2 = U_ges / 2 = 4,5 V" },
-      { k: "p", text: "Die Teilspannungen ergeben zusammen wieder die Quellenspannung." },
+      {
+        k: "p",
+        text: "Die Teilspannungen ergeben zusammen wieder die Spannung der Spannungsquelle. Bei ungleichen Widerständen teilt sie sich ungleich auf: Am größeren Widerstand fällt die größere Spannung ab.",
+      },
       { k: "formula", text: "U_ges = U_1 + U_2" },
     ],
     cells: {
@@ -162,7 +172,7 @@ export const messenLevels: LegacyLevelDef[] = [
     ratings: "nominal",
     task: "Der Stromkreis ist fertig verdrahtet. Wie groß ist der Gesamtstrom, den die Spannungsquelle liefert?",
     lesson:
-      "In der Parallelschaltung teilt sich der Strom auf die Zweige auf – der Gesamtstrom ist die Summe.",
+      "In der Parallelschaltung teilt sich der Strom auf die Zweige auf. Der Gesamtstrom ist die Summe der Zweigströme.",
     explanation: [
       {
         k: "p",
@@ -171,7 +181,7 @@ export const messenLevels: LegacyLevelDef[] = [
       { k: "formula", text: "I_ges = I_1 + I_2 ≈ 100 mA + 100 mA = 200 mA" },
       {
         k: "p",
-        text: "Säße das Amperemeter in einem Zweig, zeigte es nur dessen Teilstrom.",
+        text: "Säße das Amperemeter in einem Zweig, zeigte es nur dessen Teilstrom. An jedem Zweig liegt dabei dieselbe Spannung, wie in „Parallelschaltung – beide Lampen“.",
       },
     ],
     cells: {

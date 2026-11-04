@@ -95,7 +95,17 @@ export const beispielLevels: LevelDef[] = [
         kind: "summary",
         id: "merksatz",
         lesson:
-          "In Reihe teilen sich die Lampen die Spannung der Quelle. Jede bekommt weniger als allein – deshalb leuchten sie dunkler, und fällt eine aus, ist der ganze Kreis unterbrochen.",
+          "In der Reihenschaltung teilen sich die Lampen die Spannung der Spannungsquelle. Fällt eine aus, ist der ganze Stromkreis unterbrochen.",
+        blocks: [
+          {
+            k: "p",
+            text: "Jede Lampe bekommt nur einen Teil der Spannung, hier 4,5 V statt 9 V. Dadurch fließt weniger Strom, und beide leuchten dunkler als eine Lampe allein.",
+          },
+          {
+            k: "p",
+            text: "Es gibt nur einen Stromweg, und er führt nacheinander durch jede Lampe. Brennt eine durch, ist er unterbrochen – wie bei der Lichterkette im Einstieg.",
+          },
+        ],
         recall: "vermutung",
       },
     ],

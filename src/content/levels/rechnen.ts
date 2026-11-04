@@ -93,7 +93,21 @@ export const rechnenLevels: LevelDef[] = [
         kind: "summary",
         id: "merksatz",
         lesson:
-          "R = U / I. Der Gesamtwiderstand einer Reihenschaltung ist die Summe aller Widerstände.",
+          "I = U / R: Die Stromstärke wächst mit der Spannung und sinkt mit dem Widerstand. In der Reihenschaltung zählt der Gesamtwiderstand, die Summe aller Widerstände.",
+        blocks: [
+          {
+            k: "p",
+            text: "Bei gleichem Widerstand verdoppelt sich die Stromstärke, wenn sich die Spannung verdoppelt. Umgestellt lässt sich jede der drei Größen berechnen, wenn die beiden anderen bekannt sind.",
+          },
+          { k: "formula", text: "U = R · I" },
+          { k: "formula", text: "R = U / I" },
+          { k: "formula", text: "I = U / R" },
+          {
+            k: "p",
+            text: "Für einen ganzen Stromkreis gilt das Gesetz mit dem Gesamtwiderstand. In der Reihenschaltung addieren sich die Widerstände, deshalb blieb für den Vorwiderstand der Rest.",
+          },
+          { k: "formula", text: "R_ges = R_L + R_V" },
+        ],
       },
     ],
   },

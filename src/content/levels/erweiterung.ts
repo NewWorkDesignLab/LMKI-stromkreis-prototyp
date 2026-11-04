@@ -13,7 +13,18 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     ratings: "nominal",
     task: "Verdrahte den Stromkreis und stelle am Widerstand die dunkelste Stufe ein, bei der die Lampe noch leuchtet.",
     lesson:
-      "Ein Widerstand in Reihe dimmt die Lampe: mehr Widerstand, weniger Strom, weniger Licht. Wird er zu groß, reicht der Strom zum Leuchten nicht mehr aus.",
+      "Je größer der Widerstand in Reihe zur Lampe, desto kleiner die Stromstärke und desto dunkler leuchtet die Lampe.",
+    explanation: [
+      {
+        k: "p",
+        text: "Widerstand und Lampe liegen in Reihe, ihre Widerstände addieren sich zum Gesamtwiderstand. Bei gleicher Spannung sinkt deshalb die Stromstärke, wenn der Widerstand steigt.",
+      },
+      { k: "formula", text: "I = U / R_ges = 9 V / (220 Ω + 90 Ω) ≈ 29 mA" },
+      {
+        k: "p",
+        text: "Unterhalb einer Mindeststromstärke leuchtet die Lampe nicht mehr. Mit 470 Ω ist dieser Punkt unterschritten.",
+      },
+    ],
     cells: {
       "0,1": { type: "battery", orient: "v" },
       "6,1": { type: "lamp", orient: "v" },
@@ -49,7 +60,17 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     palette: BASE,
     task: "Dieselbe Flurschaltung wie vorhin – nur lässt sich das Licht nicht mehr ausschalten. Eine Leitung ist zu viel: Finde den Fehler und behebe ihn.",
     lesson:
-      "Die beiden korrespondierenden Leitungen müssen getrennt bleiben. Sind sie verbunden, findet der Strom in jeder Schalterstellung einen Weg – und beide Schalter sind wirkungslos.",
+      "Die beiden korrespondierenden Leitungen einer Wechselschaltung dürfen nicht miteinander verbunden sein.",
+    explanation: [
+      {
+        k: "p",
+        text: "Die Wechselschaltung funktioniert nur, weil die Schalter zwischen zwei getrennten Leitungen wählen. Die überzählige Leitung verband die beiden korrespondierenden Leitungen.",
+      },
+      {
+        k: "p",
+        text: "Dann gibt es in jeder Schalterstellung einen geschlossenen Stromweg zur Lampe, und keiner der beiden Schalter kann sie mehr ausschalten.",
+      },
+    ],
     cells: {
       "0,2": { type: "battery", orient: "v" },
       "6,2": { type: "lamp", orient: "v" },
@@ -104,7 +125,21 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     ],
     task: "Die LED mit Vorwiderstand steht für die Glimmleuchte. Verdrahte den Stromkreis so, dass die LED nur bei ausgeschalteter Lampe leuchtet.",
     lesson:
-      "Die LED liegt parallel zum Schalter. Bei offenem Schalter fließt ein minimaler Strom durch LED und Lampe (hier 6,3 mA). Der LED (Glimmleuchte) reicht das zum Leuchten, der Lampe bei Weitem nicht. Geschlossen überbrückt der Schalter die LED, sie bekommt keine Spannung mehr und erlischt.",
+      "Ein Bauteil parallel zum Schalter wird überbrückt, sobald der Schalter geschlossen ist.",
+    explanation: [
+      {
+        k: "p",
+        text: "Die LED mit ihrem Vorwiderstand liegt parallel zum Schalter und damit in Reihe mit der Lampe.",
+      },
+      {
+        k: "p",
+        text: "Bei offenem Schalter fließt der Strom durch LED, Vorwiderstand und Lampe. Der Vorwiderstand hält die Stromstärke klein, hier 6,3 mA: Der LED reicht das zum Leuchten, der Lampe bei Weitem nicht.",
+      },
+      {
+        k: "p",
+        text: "Ist der Schalter geschlossen, überbrückt er die LED. An ihr liegt keine Spannung mehr, sie erlischt, und die Lampe bekommt die volle Spannung. Das Überbrücken wirkt wie beim Kurzschluss – nur gewollt, denn die Lampe begrenzt die Stromstärke.",
+      },
+    ],
     cells: {
       "0,2": { type: "battery", orient: "v" },
       "6,2": { type: "lamp", orient: "v" },
@@ -164,7 +199,21 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     ],
     task: "Schließe beide Lampenzweige an die Spannungsquelle an. Untersuche dann Schließer und Öffner: Was verbindet sich beim Betätigen, was trennt sich?",
     lesson:
-      "Der Name sagt, was beim Betätigen passiert: Der Öffner öffnet den Stromkreis, im Ruhezustand leitet er. Der Schließer schließt den Stromkreis, im Ruhezustand ist er offen.",
+      "Ein Öffner leitet im Ruhezustand und trennt, solange er betätigt wird. Ein Schließer verhält sich umgekehrt.",
+    explanation: [
+      {
+        k: "p",
+        text: "Ruhezustand heißt unbetätigt. In diesem Zustand wird ein Kontakt auch im Schaltzeichen gezeichnet: der Öffner geschlossen, der Schließer offen. Der Taster aus „Der Taster“ war ein Schließer.",
+      },
+      {
+        k: "p",
+        text: "Im Kühlschrank drückt die geschlossene Tür den Öffner, die Lampe ist aus. Öffnet man die Tür, wird er losgelassen und leitet – das Licht geht an.",
+      },
+      {
+        k: "p",
+        text: "Der Name sagt, was beim Betätigen passiert: Der Öffner öffnet, der Schließer schließt.",
+      },
+    ],
     cells: {
       "0,2": { type: "battery", orient: "v" },
       "2,1": {
@@ -211,7 +260,17 @@ export const erweiterungLevels: LegacyLevelDef[] = [
     palette: BASE,
     task: "Verdrahte Motor und Lampe mit je einem eigenen Schalter so, dass der Not-Aus beide gemeinsam abschaltet. Prüfe es: Nimm beide in Betrieb und betätige dann den Not-Aus.",
     lesson:
-      "Der Not-Aus liegt in der Hauptleitung und ist ein Öffner: Betätigt trennt er den ganzen Stromkreis, ganz gleich welcher Zweigschalter eingeschaltet ist. Dass er im Ruhezustand leitet, ist Absicht – reißt die Leitung zu ihm ab, bleibt die Maschine stehen, statt weiterzulaufen.",
+      "Der Not-Aus ist ein Öffner in der Hauptleitung: Betätigt trennt er die ganze Anlage, ganz gleich, welcher Schalter eingeschaltet ist.",
+    explanation: [
+      {
+        k: "p",
+        text: "Alle Zweige hängen an der Hauptleitung. Unterbricht der Not-Aus sie, bekommt kein Zweig mehr Strom – die Schalter in den Zweigen spielen dann keine Rolle.",
+      },
+      {
+        k: "p",
+        text: "Dass er als Öffner im Ruhezustand leitet, ist Absicht: Reißt die Leitung zu ihm ab, ist der Stromkreis genauso unterbrochen, und die Maschine bleibt stehen, statt weiterzulaufen. Man nennt das drahtbruchsicher.",
+      },
+    ],
     cells: {
       "0,2": { type: "battery", orient: "v" },
       "1,0": {
