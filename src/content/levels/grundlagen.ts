@@ -16,7 +16,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     explanation: [
       {
         k: "p",
-        text: "Ein Stromkreis besteht aus Spannungsquelle, Verbraucher und zwei Leitungen: der Hinleitung vom Pluspol zum Verbraucher und der Rückleitung vom Verbraucher zum Minuspol.",
+        text: "Der einfachste Stromkreis besteht aus Spannungsquelle, Verbraucher und zwei Leitungen: der Hinleitung vom Pluspol zum Verbraucher und der Rückleitung vom Verbraucher zum Minuspol.",
       },
       {
         k: "p",
@@ -68,7 +68,7 @@ export const grundlagenLevels: LegacyLevelDef[] = [
     explanation: [
       {
         k: "p",
-        text: "In der Reihenschaltung gibt es nur einen Stromweg, und er führt nacheinander durch beide Schalter. Ist einer davon offen, ist der Stromweg unterbrochen.",
+        text: "In der Reihenschaltung gibt es nur einen Stromweg, und er führt nacheinander durch alle Schalter. Ist einer davon offen, ist der Stromweg unterbrochen.",
       },
       {
         k: "list",
