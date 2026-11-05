@@ -146,6 +146,44 @@ describe("Prüfung der Schritte", () => {
     expect(errorsOf([build([ziel(["S1", "S2", "E1"])])])).toMatch(/E1.*Funktionsansicht/);
   });
 
+  it("koppelt immer genau zwei Wechselschalter und nimmt nur einen davon als Eingang", () => {
+    const wechsel = (y: number, link?: string) => ({ type: "spdt", x: 0, y, dir: "W", link });
+    const build = (parts: Record<string, unknown>, inputs = ["S1"]) => ({
+      kind: "build",
+      id: "bauen",
+      W: 3,
+      H: 4,
+      palette: ["wire"],
+      task: "…",
+      circuit: { parts: { ...parts, E1: { type: "lamp", x: 2, y: 0, orient: "v" } }, wires: {} },
+      goals: [{ k: "toggle", at: "E1", inputs, label: "Jeder Schalter schaltet das Licht um" }],
+    });
+    const paar = { S1: wechsel(0, "K1"), S2: wechsel(2, "K1") };
+    expect(errorsOf([build(paar)])).toBe("");
+    expect(errorsOf([build({ S1: wechsel(0, "K1") })])).toMatch(/genau zwei/);
+    expect(errorsOf([build({ ...paar, S3: wechsel(3, "K1") })])).toMatch(/genau zwei/);
+    expect(errorsOf([build(paar, ["S1", "S2"])])).toMatch(/nur einer/);
+    expect(
+      errorsOf([build({ S1: { type: "switch", x: 0, y: 0, orient: "h", link: "K1" } })]),
+    ).toMatch(/nur beim Wechselschalter/);
+  });
+
+  it("lässt Geräterahmen nur auf dem Brett und mit nicht leerem Namen zu", () => {
+    const build = (frames: unknown) => ({
+      kind: "build",
+      id: "bauen",
+      W: 4,
+      H: 3,
+      palette: ["wire"],
+      task: "…",
+      circuit: { parts: {}, wires: {} },
+      frames,
+    });
+    expect(errorsOf([build([{ x: 1, y: 0, w: 3, h: 3, label: "Kreuzschalter" }])])).toBe("");
+    expect(errorsOf([build([{ x: 2, y: 0, w: 3, h: 3 }])])).toMatch(/Rahmen 1/);
+    expect(errorsOf([build([{ x: 0, y: 0, w: 2, h: 2, label: " " }])])).toMatch(/label/);
+  });
+
   it("kennt keine fremden Schrittarten", () => {
     expect(errorsOf([{ kind: "tanz", id: "x" }])).toMatch(/unbekannte Art/);
   });

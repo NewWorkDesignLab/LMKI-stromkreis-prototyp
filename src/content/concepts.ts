@@ -22,6 +22,7 @@ export const CONCEPTS: ConceptDef[] = [
   { id: "logik-oder", name: "ODER (parallel)", requires: ["parallelschaltung"] },
   { id: "logik-xor", name: "Wechselschaltung (XOR)", requires: ["wechselschalter"] },
   { id: "wechselschalter", name: "Wechselschalter", requires: ["schalter"] },
+  { id: "kreuzschaltung", name: "Kreuzschaltung", requires: ["logik-xor"] },
   { id: "steuerlogik", name: "Steuerlogik", requires: ["oeffner", "logik-und"] },
   { id: "kurzschluss", name: "Kurzschluss", requires: ["stromkreis"] },
   { id: "sicherung", name: "Sicherung", requires: ["kurzschluss"] },

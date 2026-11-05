@@ -239,11 +239,14 @@ export type ChapterId = string;
 /** Fachliche Kompetenz, die ein Level übt – Grundlage für die spätere Bewertung. */
 export type ConceptId = string;
 
+/** Geräterahmen über mehrere Punkte: links oben (x, y), Breite und Höhe in Punkten. */
 export interface Frame {
   x: number;
   y: number;
   w: number;
   h: number;
+  /** Gerätename, steht unten im Rahmen */
+  label?: string;
 }
 
 /** Namen der Einblendungen, die Level aufrufen dürfen (siehe features/tutorial). */

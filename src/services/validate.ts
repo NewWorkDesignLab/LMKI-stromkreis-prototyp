@@ -104,6 +104,9 @@ function validateCircuit(
   const inBoard = (x: number, y: number) =>
     Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < W && y < H;
   const taken = new Map<string, string>();
+  /* Kopplung: ein Kreuzschalter sind genau zwei Wechselschalter; mehr oder einer allein
+     springen nicht so um, wie ein echtes Gerät schaltet. */
+  const linked = new Map<string, string[]>();
   for (const [id, p] of Object.entries(c.parts)) {
     if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(id)) err(`Bauteil-ID „${id}“ ist ungültig`);
     if (!p || !PART_TYPES.has(p.type)) {
@@ -116,6 +119,10 @@ function validateCircuit(
     if (taken.has(k)) err(`Bauteile ${taken.get(k)} und ${id} liegen beide auf ${k}`);
     taken.set(k, id);
     if (p.type === "spdt" && !SIDE_SET.has(p.dir)) err(`Wechselschalter ${id} braucht dir`);
+    if (p.link !== undefined) {
+      if (p.type !== "spdt") err(`Bauteil ${id}: link gibt es nur beim Wechselschalter`);
+      linked.set(p.link, [...(linked.get(p.link) ?? []), id]);
+    }
     if (p.orient !== undefined && p.orient !== "h" && p.orient !== "v")
       err(`Bauteil ${id}: orient muss "h" oder "v" sein`);
     if (p.range !== undefined) {
@@ -127,6 +134,9 @@ function validateCircuit(
       if (p.values !== undefined) err(`Bauteil ${id}: range und values schließen sich aus`);
     }
   }
+  for (const [link, ids] of linked)
+    if (ids.length !== 2)
+      err(`link „${link}“ koppelt ${ids.join(", ")} – ein Kreuzschalter braucht genau zwei`);
   for (const key of Object.keys(c.wires)) {
     if (!isWireKey(key)) {
       err(`Leitung „${key}“ verbindet keine benachbarten Punkte in Normalform (wireKey)`);
@@ -275,6 +285,16 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
     validateCircuit(l.circuit, W, H, walls, e);
     if (l.solution !== undefined) validateCircuit(l.solution, W, H, walls, e);
   }
+  if (l.frames !== undefined) {
+    if (!Array.isArray(l.frames)) e("frames muss eine Liste sein");
+    else
+      l.frames.forEach((f, i) => {
+        const whole = [f?.x, f?.y, f?.w, f?.h].every(Number.isInteger);
+        if (!whole || f.x < 0 || f.y < 0 || f.w < 1 || f.h < 1 || f.x + f.w > W || f.y + f.h > H)
+          e(`Rahmen ${i + 1} liegt nicht ganz auf dem Brett`);
+        if (f?.label !== undefined && !isText(f.label)) e(`Rahmen ${i + 1}: label ist leer`);
+      });
+  }
 
   const parts = l.circuit?.parts ?? {};
   const ref = (id: string, what: string) => {
@@ -287,6 +307,13 @@ function validateBuild(l: BuildStep, where: string, err: (m: string) => void) {
       continue;
     }
     for (const id of goalRefs(g)) ref(id, `Ziel „${g.k}“`);
+    /* Die Stellungsprüfung führt den Partner eines gekoppelten Wechselschalters mit; stünden
+       beide als Eingang, prüfte sie Stellungen, die es am Kreuzschalter nicht gibt. */
+    if (g.k === "logic" || g.k === "toggle") {
+      const links = g.inputs.map((k) => parts[k[0] === "!" ? k.slice(1) : k]?.link).filter(Boolean);
+      if (new Set(links).size < links.length)
+        e(`Ziel „${g.k}“: von gekoppelten Wechselschaltern gehört nur einer in inputs`);
+    }
     if (g.k === "measure") {
       if (!isText(g.id)) e("Ziel „measure“: id fehlt");
       else if (measureIds.has(g.id)) e(`Ziel „measure“: id „${g.id}“ kommt doppelt vor`);

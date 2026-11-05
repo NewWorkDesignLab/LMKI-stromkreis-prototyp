@@ -155,19 +155,38 @@ export function Board({
   /* Gerätegrenze: gestrichelter Rahmen, der mehrere Punkte als EIN Bauteil
      zusammenfasst – die Konvention aus dem Installationsplan. Reines Dekor,
      die Simulation sieht ihn nicht. */
+  /* Der Gerätename steht innen an der Unterkante: zwischen der untersten Punktreihe
+     (Mitte 30 px über der Kante) und dem Rahmen ist Platz, außen läge er am Brettrand
+     womöglich schon außerhalb der viewBox. */
   const frameEls = (cfg.frames || []).map((f, i) => (
-    <rect
-      key={`fr${i}`}
-      x={f.x * CELL + 7}
-      y={f.y * CELL + 7}
-      width={f.w * CELL - 14}
-      height={f.h * CELL - 14}
-      rx={12}
-      fill="none"
-      stroke={MUTE}
-      strokeWidth={2}
-      strokeDasharray="5 6"
-    />
+    <g key={`fr${i}`}>
+      <rect
+        x={f.x * CELL + 7}
+        y={f.y * CELL + 7}
+        width={f.w * CELL - 14}
+        height={f.h * CELL - 14}
+        rx={12}
+        fill="none"
+        stroke={MUTE}
+        strokeWidth={2}
+        strokeDasharray="5 6"
+      />
+      {f.label && (
+        <text
+          x={(f.x + f.w / 2) * CELL}
+          y={(f.y + f.h) * CELL - 12}
+          textAnchor="middle"
+          fontSize={10.5}
+          fontWeight="600"
+          fill={MUTE}
+          stroke={BG}
+          strokeWidth={3}
+          paintOrder="stroke"
+        >
+          {f.label}
+        </text>
+      )}
+    </g>
   ));
 
   for (const k of Object.keys(circuit.wires)) {
@@ -280,8 +299,10 @@ export function Board({
       if (labels[id]) label(id, c, labels[id]);
       continue;
     }
+    /* Ein Name aus den Leveldaten ersetzt die Standardbeschriftung (Not-Aus, Etage …). */
+    if (c.name) label(id, c, c.name);
     /* Messwerte und Bauteilwerte; ✎ = Wert frei eintragbar, ⟳ = Wert weiterschalten */
-    if (c.type === "ammeter") label(id, c, fmtA(sim.cur[id] || 0));
+    else if (c.type === "ammeter") label(id, c, fmtA(sim.cur[id] || 0));
     else if (c.type === "voltmeter") label(id, c, fmtV(sim.volt[id] || 0));
     /* Der Widerstandswert steht kräftig, obwohl er ein Kennwert ist: man stellt ihn ein. */
     else if (c.type === "resistor")
@@ -293,8 +314,8 @@ export function Board({
     else if (c.type === "fuse")
       label(id, c, sim.tripped.has(id) ? "ausgelöst ⟳" : fmtA(P(c, "imax")), !sim.tripped.has(id));
     /* Ein Öffner ist am Symbol allein zu leicht zu übersehen – er sagt es dazu. */
-    else if ((c.type === "switch" || c.type === "button") && (c.name || c.nc || cfg.labelSwitches))
-      label(id, c, c.name || (c.nc ? "Öffner" : "Schließer"));
+    else if ((c.type === "switch" || c.type === "button") && (c.nc || cfg.labelSwitches))
+      label(id, c, c.nc ? "Öffner" : "Schließer");
     /* Betriebswerte nur, wo es ausdrücklich gewollt ist (Merksatz, Frei bauen) – beim Bauen
        zeigen sie die Messgeräte, die Bauteile tragen nur ihre Kennwerte. */
     else if (live) {

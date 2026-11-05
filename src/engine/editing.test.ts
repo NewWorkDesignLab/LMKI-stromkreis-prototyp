@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Circuit } from "../domain/types";
-import { wires } from "../content/helpers";
+import { kreuzschalter, wires } from "../content/helpers";
 import { wireKey } from "./circuit";
 import {
   activate,
@@ -20,6 +20,7 @@ import {
 
 const level: EditContext = { board: { W: 5, H: 3, walls: ["2,1"] }, mode: "level" };
 const sandbox: EditContext = { ...level, mode: "sandbox" };
+const ids = { a: "S3", b: "S4", cross: "X1", link: "K1" };
 
 const loop = (): Circuit => ({
   parts: {
@@ -132,6 +133,15 @@ describe("Antippen", () => {
     expect(pressed.circuit.parts.S1.closed).toBe(true);
     expect(pressed.pressed).toBe("S1");
     expect(release(pressed.circuit, "S1").parts.S1.closed).toBe(false);
+  });
+
+  it("schaltet gekoppelte Wechselschalter gemeinsam um", () => {
+    const k: Circuit = { parts: kreuzschalter(0, 0, ids).parts, wires: {} };
+    const um = activate(k, level, "S3");
+    expect(um.kind).toBe("operate");
+    expect([um.circuit.parts.S3.pos, um.circuit.parts.S4.pos]).toEqual([1, 1]);
+    const zurueck = activate(um.circuit, level, "S4").circuit;
+    expect([zurueck.parts.S3.pos, zurueck.parts.S4.pos]).toEqual([0, 0]);
   });
 
   it("dreht eigene Bauteile und löst dabei Leitungen, die ins Leere liefen", () => {

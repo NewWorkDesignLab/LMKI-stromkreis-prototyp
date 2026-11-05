@@ -582,15 +582,16 @@ Kurzschluss und Überlastung lassen ein Level immer scheitern.
   Motor und Summer haben im Modell keine Nennwerte und tragen nur dort ihren Widerstand.
 - **Kurzschluss ist eine Stromschwelle je Quelle.** Im freien Baumodus können sehr viele
   parallele Lampen fälschlich als Kurzschluss gelten.
-- **Keine Kreuzschaltung.** Ein Kreuzschalter braucht vier Anschlüsse mit zwei
-  Anschlusspaaren — auf einem Raster mit vier Zellseiten wird das Symbol unleserlich.
-  Der Ausweg wäre, ihn aus **zwei gekoppelten Wechselschaltern** zu bauen (dafür gibt
-  es `link`); daran scheitert es auch nicht. Es scheitert am Platz: der Kreuzschalter
-  allein braucht einen Block von rund 5 × 5 Zellen samt einer `cross`-Zelle, dazu
-  kommen die zwei korrespondierenden Leitungen auf jeder Seite und die beiden
-  Wechselschalter. Das ergibt etwa 10 × 6 Zellen. Seit dem Desktop-Layout (Oktober 2026)
-  füllt das Brett die Mitte und lässt sich zoomen, der Platz ist also kein Hindernis
-  mehr. Machbar, aber ein eigener Schritt, kein Beiwerk.
+- **Kreuzschalter als Block, nicht als Bauteil** (Demo seit 2026-11-04). Ein Kreuzschalter
+  braucht vier Anschlüsse mit zwei Anschlusspaaren; ein Rasterpunkt hat je Seite nur
+  einen, und ein Bauteil über mehrere Punkte bräche die Regel „ein Bauteil je Punkt“.
+  Er besteht deshalb aus **zwei gekoppelten Wechselschaltern** (`link`, sie springen
+  gemeinsam um) und einer Kreuzung, fest verdrahtet in einem Block von 3 × 6 Punkten mit
+  gestricheltem Geräterahmen (`kreuzschalter` in `content/helpers.ts`). Man sieht so ins
+  Gerät hinein; das echte Gerät mit eigenem Schaltzeichen gibt es nicht. In Zielen steht
+  nur einer der beiden Wechselschalter als Eingang, `validateLevel` prüft das und dass
+  ein `link` genau zwei Wechselschalter koppelt. Bisher nur im Demo-Level „Die
+  Kreuzschaltung“; Werkzeug in der Palette gibt es keins.
 - **Genau ablesen, nicht genau messen** (entschieden 2026-10-26). Die Anwendung übt das
   exakte Ablesen und Umrechnen einer eindeutigen Anzeige. Messabweichung, Genauigkeitsklassen
   und springende letzte Stellen echter Messgeräte gehören in die Praxis; ob es später Level

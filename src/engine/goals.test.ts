@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CheckResult, Circuit, Goal, PartId, Tried } from "../domain/types";
-import { wires } from "../content/helpers";
+import { kreuzschalter, wires } from "../content/helpers";
 import { shownA, shownV } from "./format";
 import {
   advanceOperated,
@@ -197,6 +197,51 @@ describe("Ausprobieren in der Funktionsansicht", () => {
     const t = tasten(["S1", "drück"], ["S1", "los"]);
     expect(tryCue(t, "S1")).toBe("done");
     expect(tryCue(t, "S2")).toBe("press");
+  });
+});
+
+describe("Kreuzschaltung", () => {
+  /* Wechselschalter S1 – Kreuzschalter (S3/S4 gekoppelt, Kreuzung X1) – Wechselschalter S2 */
+  const block = kreuzschalter(5, 0, { a: "S3", b: "S4", cross: "X1", link: "K1" });
+  const kreis = (gekoppelt = true): Circuit => {
+    const parts: Circuit["parts"] = {
+      G1: { type: "battery", x: 0, y: 3, orient: "v" },
+      S1: { type: "spdt", x: 2, y: 2, dir: "W", pos: 0 },
+      S2: { type: "spdt", x: 10, y: 2, dir: "E", pos: 0 },
+      E1: { type: "lamp", x: 12, y: 3, orient: "v" },
+      ...block.parts,
+    };
+    if (!gekoppelt) parts.S4 = { ...parts.S4, link: undefined };
+    return {
+      parts,
+      wires: {
+        ...block.wires,
+        ...wires([
+          "0,3 0,2 2,2",
+          `2,2 2,1 ${block.ports.a}`,
+          `2,2 2,4 ${block.ports.b}`,
+          `${block.ports.c} 10,0 10,2`,
+          `${block.ports.d} 10,3 10,2`,
+          "10,2 12,2 12,3",
+          "12,3 12,6 0,6 0,3",
+        ]),
+      },
+    };
+  };
+  const umschalten: Goal = {
+    k: "toggle",
+    at: "E1",
+    inputs: ["S1", "S3", "S2"],
+    label: "Jeder Schalter schaltet das Licht um",
+  };
+  const erfuellt = (c: Circuit) => checkLevel({ goals: [umschalten] }, c, simulate(c)).won;
+
+  it("lässt jeden der drei Schalter das Licht umschalten", () => {
+    expect(erfuellt(kreis())).toBe(true);
+  });
+
+  it("ist ohne Kopplung kein Kreuzschalter", () => {
+    expect(erfuellt(kreis(false))).toBe(false);
   });
 });
 

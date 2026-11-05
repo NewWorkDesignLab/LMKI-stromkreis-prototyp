@@ -79,5 +79,10 @@ export const DEFAULT_CURRICULUM: Curriculum = {
       name: "Demo: Brettgrößen",
       levelIds: ["demo-brett-klein", "demo-brett-breit", "demo-brett-maximal"],
     },
+    {
+      id: "demo-kreuzschaltung",
+      name: "Demo: Kreuzschaltung",
+      levelIds: ["die-kreuzschaltung"],
+    },
   ],
 };

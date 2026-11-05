@@ -9,6 +9,7 @@ import { erweiterungLevels } from "./levels/erweiterung";
 import { beispielLevels } from "./levels/beispiele";
 import { brettgroessenLevels } from "./levels/brettgroessen";
 import { rechnenLevels } from "./levels/rechnen";
+import { kreuzschaltungLevels } from "./levels/kreuzschaltung";
 
 /* Alle geschriebenen Level, unabhängig davon, ob der Lehrplan sie gerade
    verwendet. Neue Level kommen hier hinzu, ihre Einordnung steht in curriculum.ts.
@@ -28,4 +29,5 @@ export const LEVEL_CATALOG: LevelDef[] = [
   ...rechnenLevels,
   ...beispielLevels,
   ...brettgroessenLevels,
+  ...kreuzschaltungLevels,
 ];
